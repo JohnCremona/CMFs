@@ -32,7 +32,7 @@ NewspaceDecomposition (N,G,chi, k) =
   Snew = mfinit([N, k, [G,chi]], 0);
   if (!mfdim(Snew), return([]));
   pols = mfsplit(Snew,,1)[2];
-  print(pols);
+  \\print(pols);
   return ([cd*poldegree(P) | P<-pols]);
 }
 

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+N1=1
+N2=1000
+k1=$1
+k2=$2
+
+echo "DecomposeSpaces(\"N${N1}-${N2}k${k1}-${k2}\",${N1},${N2},${k1},${k2})" > N${N1}-${N2}k${k1}-${k2}.in
+./gp -q mf.gp N${N1}-${N2}k${k1}-${k2}.in > N${N1}-${N2}k${k1}-${k2}.out &
+
