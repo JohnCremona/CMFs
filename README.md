@@ -15,8 +15,17 @@ mf.py: Python (Sage) scripts for reading and comparing output from DecomposeSpac
 Data
 -------
 
-mfdecomp_100_10.m.txt: Magma output levels 1-100, weights 2-10
-mfdecomp_100_10.gp.txt: Magma output levels 1-100, weights 2-10
+Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:[n1,n2,...] where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and [n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi)
+
+mfdecomp_100_10.m.txt: Magma output levels 1-100, weights 2-10 (this data is incorrect due to bug/inconsitency in magma!)
+mfdecomp_100_10.gp.txt: gp output levels 1-100, weights 2-10
+
+mfdecomp_500.m.txt: gp output for Nk <= 500 (corrects inconsistency in mfdecomp_100_10 files, timings for N=1,2 are bogus)
+mfdecomp_500.gp.txt: Magma output for Nk <= 500
+mfdecomp_500.txt : Galois orbit decomposition data for Nk <= 500 (as independently computed by gp and Magma)
+
+mfdecomp_1000.gp.txt gp output for Nk <= 1000
+mfdecomp_1000.txt : Galois orbit decomposition data for Nk <= 1000 (as computed by gp, to be confirmed by Magma)
 
 
 
