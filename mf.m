@@ -23,7 +23,7 @@ function NewspaceDecomposition (chi, k)
     // Initially check for conjugate forms by comparing absolute traces up to the Sturm bound
     // If we hit a trace match we will then check minpolys
     n := SturmBound(Modulus(chi),k);
-    T:= Sort([<[Integers()|a in Integers() select a else Integers()!AbsoluteTrace(a):a in Coefficients(Eigenform(D[i],n))],i>:i in [1..#D]]);
+    T:= [<[Integers()|a in Integers() select a else Integers()!AbsoluteTrace(a):a in Coefficients(Eigenform(D[i],n))],i>:i in [1..#D]];
     A := AssociativeArray();
     for r in T do
         A[r[1]] := IsDefined(A,r[1]) select Append(A[r[1]],r[2]) else [r[2]];
