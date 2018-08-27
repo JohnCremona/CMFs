@@ -6,7 +6,7 @@ Table name: `mf_newspaces`.
 This table represents spaces `S_k^{new}(\Gamma_1(N), \chi)`.  We pick one representative `\chi` from each Galois orbit.
 
 Column | Type | Notes
----------------------
+-------|------|------
 id | bigint |
 label | text | (N.k.i)
 level | integer | (N)
@@ -27,7 +27,7 @@ Table name: `mf_oldsubs`.
 This table represents embeddings of oldspaces into cusp spaces.
 
 Column | Type | Notes
----------------------
+-------|------|------
 id | bigint |
 space_label | text | The label for the modular form space `S_k(\Gamma_1(N), \chi)`
 new_label | text | The label for the newspace `S_k^{new}(\Gamma_1(M), \psi)` that embeds
@@ -67,7 +67,7 @@ Hecke eigenvalues
 Table name: `mf_eigsystems`
 
 Column | Type | Notes
----------------------
+-------|------|------
 id | bigint |
 label |  text | (N.k.i.x)
 embedding | integer | index of the embedding of the Hecke field into C or R (exact specification to be discussed)
