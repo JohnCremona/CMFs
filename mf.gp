@@ -39,15 +39,17 @@ NewspaceDecomposition (N,G,chi, k) =
 polytype(f) =
 {
  for(i=0,poldegree(f),
-         c=polcoeff(f,i);
-         if(type(c)=="t_POLMOD",return(c.mod)));
- return("int");
+          c=polcoeff(f,i);
+          if(type(c)=="t_POLMOD",return(c.mod)));
+ return("Q");
 }
 
-Absolutise(f, flag=0) =
+Absolutise(G, chi, f, flag=0) =
 {
- field=polytype(f);
- if(field=="int",pol=f,pol = rnfequation(nfinit(c.mod),f));
+ ord = charorder(G,chi);
+ field = polytype(f);
+ if(field=="Q", if(ord<=2, pol=f, Qchi=nfinit(polcyclo(ord,xx));pol=rnfequation(Qchi,f)),
+                Qchi=nfinit(field);pol=rnfequation(Qchi,f));
  if(flag,pol=polredabs(pol),pol=polredbest(pol));
  return(pol);
 }
@@ -59,8 +61,9 @@ NewspaceDecompositionWithPolys (N,G,chi, k, dmax) =
   if (!mfdim(Snew), return([]));
   pols = mfsplit(Snew,,1)[2];
   \\print(pols);
-  res = [if(cd*poldegree(P)<=dmax,Vec(Absolutise(P)),cd*poldegree(P)) | P<-pols];
-  return (res);
+  dims = [cd*poldegree(P) | P<-pols];
+  polys = [Vecrev(Absolutise(G,chi,P)) | P<-pols, cd*poldegree(P)<=dmax];
+  return ([dims,polys]);
 }
 
 \\ Thanks to Karim for this funtion to remove whitespace from a list:
@@ -79,32 +82,36 @@ fmt = "%d:%d:%d:%.3f:[%s]";
 
 DecomposeSpaces(filename,minN, maxN, mink, maxk) =
 {
-   scr = (filename=="");
+   screen = (filename=="");
    for(N=minN, maxN,
-   if(!scr,printf("N = %d: ", N));
+   if(!screen,printf("N = %d: ", N));
    G = znstar(N,1);
    Chars = DirichletCharacterGaloisReps(N);
    for(k=mink, maxk,
-   if(!scr,printf(" [k=%d] ", k));
+   if(!screen,printf(" [k=%d] ", k));
    for(i=1,length(Chars),
           my (T = gettime(), X);
           X = NewspaceDecomposition(N,G,Chars[i],k);
           t = gettime()/1000;
-          if(scr, printf(concat(fmt,"\n"), N,k,i, t , X), fprintf(filename, fmt,  N,k,i, t , vtostr(X)));
-   )); if(!scr,printf("\n")));
+          if(screen, printf(concat(fmt,"\n"), N,k,i, t , X), fprintf(filename, fmt,  N,k,i, t , vtostr(X)));
+   )); if(!screen,printf("\n")));
 }
 
+fmt2 = "%d:%d:%d:[%s]:[%s]";
 DecomposeCharSpaces(filename,N,k,ch,dmax) =
 {
-   scr = (filename=="");
-   if(!scr,printf("N = %d: ", N));
+   screen = (filename=="");
+   if(!screen,printf("N = %d: ", N));
    G = znstar(N,1);
    Chars = DirichletCharacterGaloisReps(N);
-   if(!scr,printf(" [k=%d] ", k));
+   chi=Chars[ch];
+   if(!screen,printf(" [k=%d] ", k));
    my (T = gettime(), X);
-   X = NewspaceDecompositionWithPolys(N,G,Chars[ch],k,dmax);
+   dims_polys = NewspaceDecompositionWithPolys(N,G,chi,k,dmax);
+   dims  = dims_polys[1];
+   polys = dims_polys[2];
    t = gettime()/1000;
-   if(scr, printf(concat(fmt,"\n"), N,k,ch, t , X), fprintf(filename, fmt,  N,k,ch, t , vtostr(X)));
-   if(!scr,printf("\n"));
+   if(screen, printf(concat(fmt2,"\n"), N,k,ch, dims, polys), fprintf(filename, fmt2,  N,k,ch, vtostr(dims), vtostr(polys)));
+   if(!screen,printf("\n"));
 }
 
