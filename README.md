@@ -24,8 +24,8 @@ Format of mffield_xxx_m.txt is N:k:i:[n1,n2,...]:[f1,f2,...] where N,k,n1,n2,...
 * mfdecomp_100_10.m.txt: Magma output levels 1-100, weights 2-10 (this data is incorrect due to bug/inconsitency in magma!)
 * mfdecomp_100_10.gp.txt: gp output levels 1-100, weights 2-10
 
-* mfdecomp_500.m.txt: gp output for Nk <= 500 (corrects inconsistency in mfdecomp_100_10 files, timings for N=1,2 are bogus)
-* mfdecomp_500.gp.txt: Magma output for Nk <= 500
+* mfdecomp_500.m.txt: Magma output for Nk <= 500 (corrects inconsistency in mfdecomp_100_10 files, timings for N=1,2 are bogus)
+* mfdecomp_500.gp.txt: gp output for Nk <= 500
 * mfdecomp_500.txt : Galois orbit decomposition data for Nk <= 500 (as independently computed by gp and Magma)
 * mffield_500.m.txt : Coefficient field data for Nk <= 500 for fields of degree d <= 20 computed in Magma
 
