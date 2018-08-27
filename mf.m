@@ -1,9 +1,26 @@
-// We identify Galois conjugacy classes or Dirichlet characters of modulus N
-// by ordinal in reverse lex ordering of traces of values on 1,2,3,..N
+function OldDirichletCharacterGaloisReps(N)
+    G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
+    T := Sort([<[Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
+    return Reverse([G[T[i][2]]:i in [1..#G]]);
+end function;
+
+// Returns Galois orbit reps sorted by order and then lex order on traces of values
 function DirichletCharacterGaloisReps(N)
-  G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
-  T := Sort([<[Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
-  return Reverse([G[T[i][2]]:i in [1..#G]]);
+    G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
+    T := Sort([<[Order(G[i])] cat [Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
+    return [G[T[i][2]]:i in [1..#G]];
+end function;
+
+function DirichletCharacterOrbitMapOldToNew(N)
+    Old := OldDirichletCharacterGaloisReps(N);
+    New := DirichletCharacterGaloisReps(N);
+    return [[i:i in [1..#New]|New[i] eq Old[j]][1]:j in [1..#Old]];
+end function;
+
+function DirichletCharacterOrbitMapNewToOld(N)
+    Old := OldDirichletCharacterGaloisReps(N);
+    New := DirichletCharacterGaloisReps(N);
+    return [[i:i in [1..#Old]|Old[i] eq New[j]][1]:j in [1..#New]];
 end function;
 
 function SturmBound (N, k)
