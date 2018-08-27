@@ -70,5 +70,6 @@ Column | Type | Notes
 -------|------|------
 id | bigint |
 label |  text | (N.k.i.x)
-embedding | integer | index of the embedding of the Hecke field into C or R (exact specification to be discussed)
-eigvals | jsonb | list of pairs of doubles
+embedding_re | real | real part of the root of `field_poly` giving this embedding
+embedding_im | real | imaginary part of the root of `field_poly` giving this embedding
+angles | jsonb | list of doubles giving values `\theta_p` where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`
