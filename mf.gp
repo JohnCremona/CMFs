@@ -36,6 +36,33 @@ NewspaceDecomposition (N,G,chi, k) =
   return ([cd*poldegree(P) | P<-pols]);
 }
 
+polytype(f) =
+{
+ for(i=0,poldegree(f),
+         c=polcoeff(f,i);
+         if(type(c)=="t_POLMOD",return(c.mod)));
+ return("int");
+}
+
+Absolutise(f, flag=0) =
+{
+ field=polytype(f);
+ if(field=="int",pol=f,pol = rnfequation(nfinit(c.mod),f));
+ if(flag,pol=polredabs(pol),pol=polredbest(pol));
+ return(pol);
+}
+
+NewspaceDecompositionWithPolys (N,G,chi, k, dmax) =
+{
+  cd = eulerphi(charorder(G,chi));
+  Snew = mfinit([N, k, [G,chi]], 0);
+  if (!mfdim(Snew), return([]));
+  pols = mfsplit(Snew,,1)[2];
+  \\print(pols);
+  res = [if(cd*poldegree(P)<=dmax,Vec(Absolutise(P)),cd*poldegree(P)) | P<-pols];
+  return (res);
+}
+
 \\ Thanks to Karim for this funtion to remove whitespace from a list:
 
 vtostr(v) =
@@ -66,3 +93,18 @@ DecomposeSpaces(filename,minN, maxN, mink, maxk) =
           if(scr, printf(concat(fmt,"\n"), N,k,i, t , X), fprintf(filename, fmt,  N,k,i, t , vtostr(X)));
    )); if(!scr,printf("\n")));
 }
+
+DecomposeCharSpaces(filename,N,k,ch,dmax) =
+{
+   scr = (filename=="");
+   if(!scr,printf("N = %d: ", N));
+   G = znstar(N,1);
+   Chars = DirichletCharacterGaloisReps(N);
+   if(!scr,printf(" [k=%d] ", k));
+   my (T = gettime(), X);
+   X = NewspaceDecompositionWithPolys(N,G,Chars[ch],k,dmax);
+   t = gettime()/1000;
+   if(scr, printf(concat(fmt,"\n"), N,k,ch, t , X), fprintf(filename, fmt,  N,k,ch, t , vtostr(X)));
+   if(!scr,printf("\n"));
+}
+
