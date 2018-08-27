@@ -38,7 +38,7 @@ Hecke orbits
 Table name: `mf_newforms`
 
 Column | Type | Notes
----------------------
+-------|------|------
 id | bigint |
 label |  text | (N.k.i.x)
 level | integer | (N)
