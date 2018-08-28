@@ -16,12 +16,12 @@ def polredbestbest(f):
     while fold != fnew:
         fold = fnew
         fnew = QQx(str(gp.polredbest(fold)))
-    return map(ZZ, list(f)),map(ZZ, QQx(fnew)) #map(ZZ, QQx(str(gp.polredabs(fnew))).list())
+    return map(ZZ, list(f)),map(ZZ, QQx(fnew)), None #map(ZZ, QQx(str(gp.polredabs(fnew))).list())
 
 def polredmap(inputstr):
     f, redf, _ = map(eval, inputstr.split(":"))
     if redf is None:
-        print ("%s:%s" % polredbestbest(f)).replace(" ","")
+        print ("%s:%s:%s" % polredbestbest(f)).replace(" ","")
     else:
         return inputstr
 
