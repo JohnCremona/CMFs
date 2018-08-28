@@ -32,5 +32,6 @@ Format of mffield_xxx_m.txt is N:k:i:[n1,n2,...]:[f1,f2,...] where N,k,n1,n2,...
 * mfdecomp_1000.gp.txt gp output for Nk <= 1000
 * mfdecomp_1000.txt : Galois orbit decomposition data for Nk <= 1000 (as computed by gp, to be confirmed by Magma)
 
+* mfdecomp_full_100.txt : Galois decomposition data for NK <= 100 computed by Magma with the following format N:k:i:t:[n1,n2,...]:[t1,t2,...]:[f1,f2,...]:[h1,h2,...], where N,k,i,t are as above, [t1,t2,...] is a list of vectors of absolute traces of Hecke eigenvalues a_n for 1<=n<=100 sorted lexicographically (this will match the order of n1,n2,.. because the trace of 1 gives the degree of the coefficient field), [f1,f2,...] is a list of polredbest-stable polynomials defining the coefficient fields for those orbits of dimension <= 20, and [h1,h2,...] is a list of pairs <p,h_p(x)> where p is a prime not dividing N and h_p(x) is the minimal polynomial of T_p (over a cyclotomic field).  The [h1,h2,...] vector only addresses spaces of dimension up to 20, and each list includes p's sufficient to uniquely distinguish each Galois orbit.  All of the vectors that occur are sorted consistently (but note that the last two match prefixes of the first two).
 
 
