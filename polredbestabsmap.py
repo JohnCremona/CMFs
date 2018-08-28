@@ -1,5 +1,14 @@
-from sage.all import PolynomialRing, gp, QQ
+from sage.all import PolynomialRing, gp, QQ, ZZ
 import sys
+import signal
+
+
+def sigterm_handler(_signo, _stack_frame):
+    print sys.argv[1]
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, sigterm_handler)
+
 QQx = PolynomialRing(QQ, "x")
 def polredbestabs(f):
     fnew = QQx(f)
@@ -7,7 +16,7 @@ def polredbestabs(f):
     while fold != fnew:
         fold = fnew
         fnew = QQx(str(gp.polredbest(fold)))
-    return f, QQx(str(gp.polredabs(fnew))).list()
+    return map(ZZ, list(f)), map(ZZ, QQx(str(gp.polredabs(fnew))).list())
 
 def polredmap(inputstr):
     f, redf = map(eval, inputstr.split(":"))
@@ -17,4 +26,7 @@ def polredmap(inputstr):
         return inputstr
 
 if __name__ == '__main__':
-    polredmap(sys.argv[1])
+    try:
+        print polredmap(sys.argv[1])
+    except KeyboardInterrupt:
+        print sys.argv[1]
