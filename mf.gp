@@ -66,6 +66,26 @@ NewspaceDecompositionWithPolys (N,G,chi, k, dmax) =
   return ([dims,polys]);
 }
 
+NewspaceDecompositionWithTraces (N,G,chi, k, dmax) =
+{
+  cd = eulerphi(charorder(G,chi));
+  Snew = mfinit([N, k, [G,chi]], 0);
+  newforms = mfeigenbasis(Snew);
+  coeffs = mfcoefs(Snew,100);
+  pols = mfsplit(Snew,,1)[2];
+  dims = [cd*poldegree(P) | P<-pols];
+  nnf=0;
+  for(i=1,#newforms,if(dims[i]<=dmax,nnf+=1));
+  \\print("Out of %d newforms, %d have dim <= %d", #newforms, nnf, dmax);
+  an_lists = vector(nnf, i, coeffs * mftobasis(Snew,newforms[i]));
+  \\print("an:");
+  \\for(i=1,nnf,print(an_lists[i]));
+  traces = [apply(trace,ans) | ans<-an_lists];
+  \\print("Tr(an):");
+  \\for(i=1,nnf,print(traces[i]));
+  return ([dims,traces]);
+}
+
 \\ Thanks to Karim for this funtion to remove whitespace from a list:
 
 vtostr(v) =
@@ -106,7 +126,7 @@ DecomposeCharSpaces(filename,N,k,ch,dmax) =
    Chars = DirichletCharacterGaloisReps(N);
    chi=Chars[ch];
    if(!screen,printf(" [k=%d] ", k));
-   my (T = gettime(), X);
+   my (T = gettime(), dims_polys);
    dims_polys = NewspaceDecompositionWithPolys(N,G,chi,k,dmax);
    dims  = dims_polys[1];
    polys = dims_polys[2];
@@ -115,3 +135,19 @@ DecomposeCharSpaces(filename,N,k,ch,dmax) =
    if(!screen,printf("\n"));
 }
 
+Traces(filename,N,k,ch,dmax) =
+{
+   screen = (filename=="");
+   if(!screen,printf("N = %d: ", N));
+   G = znstar(N,1);
+   Chars = DirichletCharacterGaloisReps(N);
+   chi=Chars[ch];
+   if(!screen,printf(" (N,k,chi)=(%d,%d,%d) ", N,k,ch));
+   my (T = gettime(), dims_polys);
+   dims_traces = NewspaceDecompositionWithTraces(N,G,chi,k,dmax);
+   dims  = dims_traces[1];
+   traces = dims_traces[2];
+   t = gettime()/1000;
+   if(screen, printf(concat(fmt2,"\n"), N,k,ch, dims, traces), fprintf(filename, fmt2,  N,k,ch, vtostr(dims), vtostr(traces)));
+   if(!screen,printf("\n"));
+}
