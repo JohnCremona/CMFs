@@ -10,13 +10,18 @@ def sigterm_handler(_signo, _stack_frame):
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 QQx = PolynomialRing(QQ, "x")
-def polredbestbestabs(g, f):
-    return map(ZZ, list(g)), map(ZZ, list(f)), map(ZZ, QQx(str(gp.polredabs(QQx(f)))).list())
+def polredbestbest(f):
+    fnew = QQx(f)
+    fold = None
+    while fold != fnew:
+        fold = fnew
+        fnew = QQx(str(gp.polredbest(fold)))
+    return map(ZZ, list(f)),map(ZZ, QQx(fnew)), None #map(ZZ, QQx(str(gp.polredabs(fnew))).list())
 
 def polredmap(inputstr):
     g, f, redf = map(eval, inputstr.split(":"))
     if redf is None:
-        return ("%s:%s:%s" % polredbestbestabs(f)).replace(" ","")
+        return ("%s:%s:%s" % polredbestbest(f)).replace(" ","")
     else:
         return inputstr
 
