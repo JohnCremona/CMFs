@@ -11,7 +11,7 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 
 QQx = PolynomialRing(QQ, "x")
 def polredbestbestabs(g, f):
-    return map(ZZ, list(f)),map(ZZ, QQx(f)), map(ZZ, QQx(str(gp.polredabs(QQx(f)))).list())
+    return map(ZZ, list(f)), map(ZZ, QQx(f)), map(ZZ, QQx(str(gp.polredabs(QQx(f)))).list())
 
 def polredmap(inputstr):
     g, f, redf = map(eval, inputstr.split(":"))
