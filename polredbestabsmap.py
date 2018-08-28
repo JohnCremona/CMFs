@@ -5,7 +5,7 @@ import signal
 
 def sigterm_handler(_signo, _stack_frame):
     print sys.argv[1]
-    sys.exit(0)
+    sys.exit(1)
 
 signal.signal(signal.SIGTERM, sigterm_handler)
 
@@ -27,6 +27,7 @@ def polredmap(inputstr):
 
 if __name__ == '__main__':
     try:
+        gp.allocatemem(900000000)
         print polredmap(sys.argv[1])
-    except KeyboardInterrupt:
+    except:
         print sys.argv[1]
