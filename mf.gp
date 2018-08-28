@@ -95,7 +95,7 @@ NewspaceDecompositionWithPolys (N,G,chi, k, dmax) =
   pols = mfsplit(Snew,,1)[2];
   \\print(pols);
   dims = [cd*poldegree(P) | P<-pols];
-  polys = [Vecrev(Absolutise(G,chi,P,1)) | P<-pols, cd*poldegree(P)<=dmax];
+  polys = [Vecrev(Absolutise(G,chi,P)) | P<-pols, cd*poldegree(P)<=dmax];
   return ([dims,polys]);
 }
 
