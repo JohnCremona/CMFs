@@ -12,7 +12,7 @@ character_traces(N, G, chi) =
         return(v);
 }
 
-DirichletCharacterGaloisReps(N) =
+oldDirichletCharacterGaloisReps(N) =
 {
         ZNstar = znstar(N,1);
         phiN = ZNstar[1];
@@ -22,6 +22,30 @@ DirichletCharacterGaloisReps(N) =
         vv = Vecrev(vecsort(vector(nChars, i,  [character_traces(N,ZNstar,Chars[i]), i] )));
         sChars = vector(nChars, i, Chars[vv[i][2]]);
         return(sChars);
+}
+
+DirichletCharacterGaloisReps(N) =
+{
+        ZNstar = znstar(N,1);
+        phiN = ZNstar[1];
+        Chars = chargalois(ZNstar);
+        nChars = length(Chars);
+        vv = vecsort(vector(nChars, i,  [concat([charorder(ZNstar,Chars[i])],character_traces(N,ZNstar,Chars[i])), i] ));
+        sChars = vector(nChars, i, Chars[vv[i][2]]);
+        return(sChars);
+}
+
+VecFind(v,a) =
+{
+  for(i=1,#v,if(a==v[i],return(i)));
+  return(0);
+}
+
+DirCharPerm(N) =
+{
+  old = oldDirichletCharacterGaloisReps(N);
+  new = DirichletCharacterGaloisReps(N);
+  return(vector(#new,i,VecFind(old,new[i])));
 }
 
 \\ The next function is adapted from Karim's dims():
