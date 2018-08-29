@@ -112,7 +112,7 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
     if ComputeOperators then assert ComputeFields; end if;
     if ComputeEigenvalues then assert ComputeOperators; end if;
     chi := G[o];  N := Modulus(chi);
-    time S := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
+    S := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
     if #S eq 0 then
         s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-t, []);
         if ComputeTraces then s cat:= ":[]:[]"; end if;
