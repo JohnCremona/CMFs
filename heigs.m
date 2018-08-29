@@ -56,21 +56,36 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 	MZZ := Matrix([[Trace(e) : e in Eltseq(Tn)] : Tn in Tns]);  
 		// matrix with upsturmbnd rows and d^2 columns over ZZ
 
+/*
+  // small linear combinations doesn't really work for CM forms, better to just iterate
 	// find small linear combination which generates the Hecke field
 	_, E := LLL(MZZ);
 	Tref := &+[E[2][i]*Tns[i] : i in [1..#Tns]];  // usually the second works
 	Trefpol := CharacteristicPolynomial(Tref);
 	cnt := 0;
+	
 	while not IsIrreducible(Trefpol) do  
 		cnt +:= 1;
 		j := Random(1,Nrows(E));
-		print j, Factorization(Trefpol);
 		Tref +:= (-1)^(Random(1))*&+[E[j][i]*Tns[i] : i in [1..#Tns]];
 			 // add random vector; probabilistic, but we will throw this away soon anyway
 		Trefpol := CharacteristicPolynomial(Tref);
 		assert cnt lt 100;  // if this loop gets called more than 10 times, something is wrong
 	end while;
-
+*/
+  
+	Tref := 0;
+	foundirr := false;
+	for n := 2 to upsturmbnd do
+	  Tref +:= (n-1)*Tns[n];
+  	Trefpol := CharacteristicPolynomial(Tref);
+	  if IsIrreducible(Trefpol) then 
+	    foundirr := true;
+	    break;
+	  end if;
+	end for;
+  assert foundirr;
+  
 	Trefpows := [Tref^i : i in [0..d-1]];  // QQ(chi)-power basis for the Hecke algebra
 	Mrefpows := Matrix([Eltseq(Ti) : Ti in Trefpows]);  
 		// d x d^2 (flattened) matrix with rows the QQ(chi)-power basis
