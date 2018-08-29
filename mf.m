@@ -9,6 +9,8 @@ end function;
 function RestrictChiCodomain (chi)
     N := Modulus(chi); K := Codomain(chi);  QQ := Rationals();
     if K eq QQ then return chi; end if;
+    m := Order(chi);
+    F := CyclotomicField(m);
     F := sub<K|ValueList(chi)>;
     if F ne QQ then
         cyc,F := IsCyclotomic(F);
