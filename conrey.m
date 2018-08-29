@@ -50,29 +50,9 @@ function ConreyCharacterValues(q,n,M)
         return [GCD(p,m) eq 1 select RootOfUnity(8)^((1-a[1])*(1-b[1])) * RootOfUnity(2^(e-2))^(a[2]*b[2]) where b:=A[R!m] else 0 : m in [1..M]];
     end if;
 end function;
-    
+
 function ConreyTraces(q,n)
-    F:=CyclotomicField(Exponent(MultiplicativeGroup(Integers(q))));
+    G,pi:=MultiplicativeGroup(Integers(q));
+    F:=CyclotomicField(Order(Inverse(pi)(Integers(q)!n)));
     return [Trace(F!z):z in ConreyCharacterValues(q,n,q)];
-end function;
-
-function DirichletCharacterGaloisReps(N)
-  G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
-  T := Sort([<[Order(G[i])] cat [Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
-  return [G[T[i][2]]:i in [1..#G]];
-end function;
-
-function ConreyLabelOrbits(N)
-    G := DirichletCharacterGaloisReps(N);
-    A := AssociativeArray();
-    for i:=1 to #G do A[[Trace(z):z in ValueList(G[i])]]:=i; end for;
-    O := [[]:i in [1..#G]];
-    for n:=1 to N-1 do if GCD(N,n) eq 1 then Append(~O[A[ConreyTraces(N,n)]], n); end if; end for;
-    return O;
-end function;
-
-function ConreyLabels(chi)
-    N := Modulus(chi);
-    v := [Trace(z):z in ValueList(chi)];
-    return [n:n in [1..N-1]|GCD(n,N) eq 1 and ConreyTraces(N,n) eq v];
 end function;

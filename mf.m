@@ -1,10 +1,9 @@
 Attach("polredabs.m");
 Attach("heigs.m");
+load "conrey.m";
 
-function OldDirichletCharacterReps(N)
-    G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
-    T := Sort([<[Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
-    return Reverse([G[T[i][2]]:i in [1..#G]]);
+function HeckeOrbitCode (N,k,i,n)
+    return N+2^24*k+2^36*i+2^52*n;
 end function;
 
 function RestrictChiCodomain (chi)
@@ -12,6 +11,11 @@ function RestrictChiCodomain (chi)
     if K eq QQ then return chi; end if;
     m := Order(chi);
     F := CyclotomicField(m);
+    F := sub<K|ValueList(chi)>;
+    if F ne QQ then
+        cyc,F := IsCyclotomic(F);
+        assert cyc;
+    end if;
     reps := GaloisConjugacyRepresentatives(DirichletGroup(N,F));
     for x in reps do
         m := 2; while Trace(K!Evaluate(x,m)) eq Trace(Evaluate(chi,m)) and m lt N do m +:= 1; end while;
@@ -22,11 +26,51 @@ function RestrictChiCodomain (chi)
 end function;
 
 // Returns Galois orbit reps sorted by order and then lex order on traces of values
-function DirichletCharacterReps(N)
+function DirichletCharacterReps (N)
     G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
     T := Sort([<[Order(G[i])] cat [Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
     return [*RestrictChiCodomain(G[T[i][2]]):i in [1..#G]*];
 end function;
+
+function ConreyLabels (chi)
+    N := Modulus(chi);
+    v := [Trace(z):z in ValueList(chi)];
+    return [n:n in [1..N-1]|GCD(n,N) eq 1 and ConreyTraces(N,n) eq v];
+end function;
+
+function MinimalConreyLabel (chi)
+    n := Min(ConreyLabels(chi));
+    return n;
+end function;
+
+function DirichletCharacterRepToMinimalConreyLabel (N,i)
+    return MinimalConreyLabel (DirichletCharacterReps(N)[i]);
+end function;
+
+function ConreyCharacterRep (q, n)
+    G := DirichletCharacterReps(q);
+    v := ConreyTraces(q,n);
+    for i:=1 to #G do
+        if v eq [Trace(u):u in ValueList(G[i])] then return G[i]; end if;
+    end for;
+    printf "Unable to match traces for Conrey character q=%o, n=%o\n", q, n;
+    assert false;
+end function;
+
+function ConreyCharacterRepIndex (q, n)
+    G := DirichletCharacterReps(q);
+    v := ConreyTraces(q,n);
+    for i:=1 to #G do
+        if v eq [Trace(u):u in ValueList(G[i])] then return i; end if;
+    end for;
+    printf "Unable to match traces for Conrey character q=%o, n=%o\n", q, n;
+    assert false;
+end function;
+
+function DirichletCharacterFieldDegree (chi)
+    return EulerPhi(Order(chi));
+end function;
+
 
 function SturmBound (N, k)
     return Integers()!Ceiling (Index(Gamma0(N))*k/12);
@@ -36,7 +80,7 @@ function NewspaceDimension (chi, k)
     return Dimension(NewSubspace(CuspidalSubspace(ModularForms(chi,k))));
 end function;
 
-function CoefficientFieldPoly(f,d)
+function CoefficientFieldPoly (f, d)
     R<x>:=PolynomialRing(Rationals());
     if d eq 1 then return x; end if;
     a := Coefficients(f);
@@ -53,12 +97,13 @@ function CoefficientFieldPoly(f,d)
     assert false;
 end function;
 
-function Polredbestify(f)
-    while true do
+function Polredbestify (f)
+    for n:=1 to 10 do
         g := f;
         f := Polredbest(g);
         if f eq g then return f; end if;
-    end while;
+    end for;
+    return f;
 end function;
 
 function sum(X) return #X eq 0 select 0 else &+X; end function;
@@ -119,7 +164,6 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
     E := [];
     if ComputeEigenvalues and #[d:d in D|d gt 1 and d le EigenvalueDegreeBound] gt 0 then
         E := [<f,b,n,c select 1 else 0,e> where f,b,n,c,e := ExactHeckeEigenvalues(S[i]): i in [1..#S]|D[i] gt 1 and D[i] le EigenvalueDegreeBound];
-printf "%o:%o:%o:%o\n", N,k,o,StripWhiteSpace(Sprintf("%o",E));
     end if;
     s := Sprintf("%o:%o:%o:%o:%o", Modulus(chi), k, o, Cputime()-t, D);
     if ComputeTraces then s cat:= Sprintf(":%o:%o",T,AL); end if;
@@ -130,7 +174,7 @@ printf "%o:%o:%o:%o\n", N,k,o,StripWhiteSpace(Sprintf("%o",E));
 end function;
 
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for k*N <= B
-procedure DecomposeSpaces(filename,B,jobs,jobid:Quiet:=false,DimensionsOnly:=false)
+procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,DimensionsOnly:=false)
     n := 0;
     fp := Open(filename,"w");
     for N:=1 to Floor(B/2) do
