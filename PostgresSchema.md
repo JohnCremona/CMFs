@@ -44,6 +44,7 @@ level | integer | (N)
 weight | smallint | (k)
 char_orbit | integer | (i) As above
 hecke_orbit | integer | (X) The integer that is encoded into x in the label via 0=a, 1=b, 25=z, 26 = ba, 27=bb
+orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables
 dim | integer | the dimension of this Hecke orbit
 field_poly | jsonb | list of integers giving defining polynomial for the Hecke field (standard Sage order of coefficients)
 is_polredabs | bool | whether the polynomial has been reduced by Pari's `polredabs`
@@ -82,7 +83,7 @@ Table name: `mf_hecke_cc`
 Column | Type | Notes
 -------|------|------
 id | bigint |
-orbit | bigint | (N.k.i.x)
+orbit | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 embedding | integer | enumeration of which embedding (shows up in L-function link), corresponding to the embeddings list in the orbit table
 angles | jsonb | list of values `\theta_p` where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`
 
