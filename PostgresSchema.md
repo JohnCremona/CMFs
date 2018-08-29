@@ -19,6 +19,7 @@ sturm_bound | integer |
 dim | integer | Q-dimension of this newspace
 hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits
 eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding `M_k(N, \chi)`
+eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 
@@ -59,13 +60,13 @@ qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 embeddings | jsonb | list of pairs (x,y), giving an ordering of the complex roots x+iy of the field poly that define the embedding enumeration (corresponding to the lexicographic ordering of chi, n in the L-function labels)
 analytic_rank | smallint |
 is_cm | bool |
-cm_disc | smallint | The discriminant of the order by which we have CM (0 if no CM)
+cm_disc | smallint | The (negative) discriminant of the order by which we have CM (0 if no CM)
 cm_hecke_char | text | label for the Hecke character giving the CM
 cm_proved | bool | Whether the CM columns are proven correct
 has_inner_twist | bool | whether there is an inner twist
 is_twist_minimal | bool |
 inner_twist | jsonb | List of integers giving the Conrey indices for the nontrivial Dirichlet characters that give inner twists
-atkin_lehner_eigenvals | jsonb | a list of eigenvalues (1 or -1) for each prime divisor of N (NULL if nontrivial character)
+atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 
 Hecke eigenvalues
