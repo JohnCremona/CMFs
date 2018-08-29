@@ -11,11 +11,6 @@ function RestrictChiCodomain (chi)
     if K eq QQ then return chi; end if;
     m := Order(chi);
     F := CyclotomicField(m);
-    F := sub<K|ValueList(chi)>;
-    if F ne QQ then
-        cyc,F := IsCyclotomic(F);
-        assert cyc;
-    end if;
     reps := GaloisConjugacyRepresentatives(DirichletGroup(N,F));
     for x in reps do
         m := 2; while Trace(K!Evaluate(x,m)) eq Trace(Evaluate(chi,m)) and m lt N do m +:= 1; end while;
