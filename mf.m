@@ -65,9 +65,17 @@ function sum(X) return #X eq 0 select 0 else &+X; end function;
 
 function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, ComputeOperators:=false, NumberOfCoefficients:=0, DegreeBound:=0)
     t := Cputime();
-    if NumberOfCoefficients gt 0 then NumberOfCoefficients +:=1; end if;
+    if ComputeFields then assert ComputeTraces; end if;
+    if ComputeOperators then assert ComputeFields; end if;
     chi := G[o];
     S := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
+    if #S eq 0 then
+        s := Sprintf("%o:%o:%o:%o:%o", Modulus(chi), k, o, Cputime()-t, []);
+        if ComputeTraces then s cat:= ":[]"; end if;
+        if ComputeFields then s cat:= ":[]"; end if;
+        if ComputeOperators then s cat:= ":[]"; end if;
+        return StripWhiteSpace(s);
+    end if;
     d := EulerPhi(Order(chi));
     D := [d*Dimension(S[i]): i in [1..#S]];
     // if the dimensions are all distinct then we know that no conjugate spaces were returend by NewformDecomposition
@@ -75,16 +83,15 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
         assert sum(D) eq NewspaceDimension(chi,k);
         return StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o", Modulus(chi), k, o, Cputime()-t, Sort(D)));
     end if;
-    // Initially check for conjugate forms by comparing absolute traces up to the Sturm bound
-    // If we hit a trace match we will then check minpolys
-    n := Max([SturmBound(Modulus(chi),k),NumberOfCoefficients,10]);
-    F := [*Eigenform(S[i],n):i in [1..#S]*];
-    T := Sort([<[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a):a in Coefficients(F[i])],i>:i in [1..#F]]);
+    n := Max(SturmBound(Modulus(chi),k),NumberOfCoefficients);   // add a fudge factor to prevent Magma dropping trailing zeros
+    F := [*Eigenform(S[i],n+1):i in [1..#S]*];
+    T := Sort([<[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a) where a:=Coefficient(F[i],j) :j in [1..n]],i>:i in [1..#F]]);
     D := [D[T[i][2]]: i in [1..#T]];  S := [S[T[i][2]]: i in [1..#T]];  F := [*F[T[i][2]]: i in [1.. #T]*];
     T := [T[i][1]:i in [1..#T]];
-    if NumberOfCoefficients gt 0 and n gt NumberOfCoefficients then
+    if NumberOfCoefficients gt 0 and not &and[#t eq NumberOfCoefficients : t in T] then
         T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]];
     end if;
+    if not &and [#t eq NumberOfCoefficients:t in T] then print Modulus(chi),k,o, [#t:t in T], n, NumberOfCoefficients, T; assert false; end if;
     if ComputeFields then
         F := [Coefficients(Polredbestify(CoefficientFieldPoly(F[i],D[i]))):i in [1..#D]|DegreeBound eq 0 or D[i] le DegreeBound];
     end if;
