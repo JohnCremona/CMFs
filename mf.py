@@ -136,21 +136,31 @@ def compare_data(d1,d2, keylist=['dims', 'traces', 'polys']):
     for k in d1.keys():
         if d1[k]!=d2[k]:
             for key in keylist:
-                t1=d1[k][key]
-                t2=d2[k][key]
+                # take copies! we want to be able to change these without affecting the input dicts
+                t1=copy(d1[k][key])
+                t2=copy(d2[k][key])
                 if key=='polys':
                     n=len(t1)
                     for i in range(n):
                         if t1[i]!=t2[i]:
-                            t1 = list(polredabs(QX(t1[i])))
-                            t2 = list(polredabs(QX(t2[i])))
+                            pol1 = QX(t1[i])
+                            pol2 = QX(t2[i])
+                            F1 = NumberField(pol1,'a')
+                            F2 = NumberField(pol2,'a')
+                            if F1.is_isomorphic(F2):
+                                pol1=pol2=F1.optimized_representation()[0].defining_polynomial()
+                                t1[i]=t2[i]=list(pol1)
 
                 if key=='traces':
                     n=len(t1)
                     for i in range(n):
                         if t1[i]!=t2[i]:
+                            pass
                             m=min(len(t1[i]),len(t2[i]))
-                            t1[i]=t1[i][1:m]
-                            t2[i]=t2[i][1:m]
+                            t1[i]=t1[i][:m]
+                            t2[i]=t2[i][:m]
                 if t1!=t2:
-                    print("{} differ at {}: \nfirst  {}, \nsecond {}".format(key,k,t1,t2))
+                    if key=='traces':
+                        print("{} differ for {}: \nfirst #= {}, \nsecond #={}".format(key,k,[len(t) for t in t1],[len(t) for t in t2]))
+                    else:
+                        print("{} differ for {}: \nfirst  {}, \nsecond {}".format(key,k,t1,t2))

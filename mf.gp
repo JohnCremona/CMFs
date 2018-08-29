@@ -131,13 +131,15 @@ NewspaceDecompositionDimsPolysTraces (N,G,chi, k, dmax) =
   traces = vector(nnf,i, Vec(apply((a->abstrace(a,dims[i])),ans[i])));
   \\ Our forms are cuspidal so we delete the a_0 entry:
   traces = [vecextract(L,[2..#L]) | L<-traces];
+  \\ Avoid type inconsistency of a_1 leading to wrong traces:
+  for(i=1,#traces,traces[i][1]=dims[i]);
   polys = vector(nnf_small,i,Vecrev(Absolutise(G,chi,pols[i])));
   if(nnf>1,
    \\printf("\nBefore sorting:\nTraces:%s\nDims:%s\nPolys:%s",traces,dims,polys);
    perm = vecsort(traces,,1);
    traces = vecextract(traces,perm);
    dims = vecextract(dims,perm);
-   polys = vecextract(polys,perm);
+   polys = vecextract(polys,vecextract(perm,[1..nnf_small]));
    \\printf("\nAfter sorting:\nTraces:%s\nDims:%s\nPolys:%s",traces,dims,polys);
    );
   return([traces,dims,polys]);
