@@ -1,3 +1,6 @@
+Attach("polredabs.m");
+Attach("heigs.m");
+
 function OldDirichletCharacterReps(N)
     G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
     T := Sort([<[Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
@@ -63,17 +66,19 @@ end function;
 
 function sum(X) return #X eq 0 select 0 else &+X; end function;
 
-function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, ComputeOperators:=false, NumberOfCoefficients:=0, DegreeBound:=0)
+function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, ComputeOperators:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, EigenvalueDegreeBound:=0)
     t := Cputime();
     if ComputeFields then assert ComputeTraces; end if;
     if ComputeOperators then assert ComputeFields; end if;
-    chi := G[o];
+    if ComputeEigenvalues then assert ComputeOperators; end if;
+    chi := G[o];  N := Modulus(chi);
     S := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
     if #S eq 0 then
-        s := Sprintf("%o:%o:%o:%o:%o", Modulus(chi), k, o, Cputime()-t, []);
-        if ComputeTraces then s cat:= ":[]"; end if;
+        s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-t, []);
+        if ComputeTraces then s cat:= ":[]:[]"; end if;
         if ComputeFields then s cat:= ":[]"; end if;
         if ComputeOperators then s cat:= ":[]"; end if;
+        if ComputeEigenvalues then s cat:= ":[]"; end if;
         return StripWhiteSpace(s);
     end if;
     d := EulerPhi(Order(chi));
@@ -81,13 +86,14 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
     // if the dimensions are all distinct then we know that no conjugate spaces were returend by NewformDecomposition
     if not ComputeTraces and not ComputeFields and not ComputeOperators then
         assert sum(D) eq NewspaceDimension(chi,k);
-        return StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o", Modulus(chi), k, o, Cputime()-t, Sort(D)));
+        return StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-t, Sort(D)));
     end if;
-    n := Max(SturmBound(Modulus(chi),k),NumberOfCoefficients);   // add a fudge factor to prevent Magma dropping trailing zeros
+    n := Max(SturmBound(N,k),NumberOfCoefficients);   // add a fudge factor to prevent Magma dropping trailing zeros
     F := [*Eigenform(S[i],n+1):i in [1..#S]*];
     T := Sort([<[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a) where a:=Coefficient(F[i],j) :j in [1..n]],i>:i in [1..#F]]);
     D := [D[T[i][2]]: i in [1..#T]];  S := [S[T[i][2]]: i in [1..#T]];  F := [*F[T[i][2]]: i in [1.. #T]*];
     T := [T[i][1]:i in [1..#T]];
+    AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(S[i],p)),D[i])>:p in PrimeDivisors(N)]:i in [1..#S]] else [];
     if NumberOfCoefficients gt 0 and not &and[#t eq NumberOfCoefficients : t in T] then
         T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]];
     end if;
@@ -113,10 +119,16 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
             p := NextPrime(p);
         end while;
     end if;
+    E := [];
+    if ComputeEigenvalues and #[d:d in D|d gt 1 and d le EigenvalueDegreeBound] gt 0 then
+        E := [<f,b,n,c select 1 else 0,e> where f,b,n,c,e := ExactHeckeEigenvalues(S[i]): i in [1..#S]|D[i] gt 1 and D[i] le EigenvalueDegreeBound];
+printf "%o:%o:%o:%o\n", N,k,o,StripWhiteSpace(Sprintf("%o",E));
+    end if;
     s := Sprintf("%o:%o:%o:%o:%o", Modulus(chi), k, o, Cputime()-t, D);
-    if ComputeTraces then s cat:= Sprintf(":%o",T); end if;
+    if ComputeTraces then s cat:= Sprintf(":%o:%o",T,AL); end if;
     if ComputeFields then s cat:= Sprintf(":%o",F); end if;
     if ComputeOperators then s cat:= Sprintf(":%o",P); end if;
+    if ComputeEigenvalues then s cat:= Sprintf(":%o",E); end if;
     return StripWhiteSpace(s);
 end function;
 
@@ -126,14 +138,14 @@ procedure DecomposeSpaces(filename,B,jobs,jobid:Quiet:=false,DimensionsOnly:=fal
     fp := Open(filename,"w");
     for N:=1 to Floor(B/2) do
         G:=DirichletCharacterReps(N);
-        for k := 2 to Floor(B/N) do
+        for k := 2 to Floor(Sqrt(B/N)) do
             for o in [1..#G] do
                 n +:= 1;
                 if ((n-jobid) mod jobs) eq 0 then
                     if DimensionsOnly then
                         str := NewspaceData(G,k,o);
                     else
-                        str := NewspaceData(G,k,o:ComputeTraces,ComputeFields,ComputeOperators,NumberOfCoefficients:=100,DegreeBound:=20);
+                        str := NewspaceData(G,k,o:ComputeTraces,ComputeFields,ComputeOperators,ComputeEigenvalues,NumberOfCoefficients:=100,DegreeBound:=20,EigenvalueDegreeBound:=6);
                     end if;
                     if not Quiet then print str; end if;
                     Puts(fp,str);
