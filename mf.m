@@ -10,11 +10,8 @@ end function;
 function RestrictChiCodomain (chi)
     N := Modulus(chi); K := Codomain(chi);  QQ := Rationals();
     if K eq QQ then return chi; end if;
-    F := sub<K|ValueList(chi)>;
-    if F ne QQ then
-        cyc,F := IsCyclotomic(sub<K|ValueList(chi)>);
-        assert cyc;
-    end if;
+    m := Order(chi);
+    F := CyclotomicField(m);
     reps := GaloisConjugacyRepresentatives(DirichletGroup(N,F));
     for x in reps do
         m := 2; while Trace(K!Evaluate(x,m)) eq Trace(Evaluate(chi,m)) and m lt N do m +:= 1; end while;
