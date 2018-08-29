@@ -82,7 +82,11 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 	K_notbest_rel := ext<QQchi | Trefpol>;   // define Hecke field
 	K_notbest := AbsoluteField(K_notbest_rel);
 
-	Z := Matrix([Eltseq(K_notbest!K_notbest_rel!Eltseq(Z_rel[i])) : i in [1..Nrows(Z_rel)]]);
+  if Degree(Trefpol) eq 1 then
+  	Z := Matrix([Eltseq(K_notbest!K_notbest_rel!Z_rel[i][1]) : i in [1..Nrows(Z_rel)]]);
+  else
+  	Z := Matrix([Eltseq(K_notbest!K_notbest_rel!Eltseq(Z_rel[i])) : i in [1..Nrows(Z_rel)]]);
+  end if;
 
 	// Make best field
 	Trefpolbest, fbestroot := PolredbestWithRoot(MinimalPolynomial(K_notbest.1));  // iotaK is the isomorphism from Kabs_notbest to Kabs
