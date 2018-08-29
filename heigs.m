@@ -169,7 +169,7 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 	assert &and[Kbest!Eltseq(Zbest[m]) eq Kbest!&+[ZOE[m][i]*OLLLBasis[i] : i in [1..d*dchi]] : m in [1..Nrows(Z)]];
 
 	// Sequence of d*dchi elements giving an LLL-reduced basis for the Hecke ring
-	HeckeRingZZBasisSeq := [Eltseq(c) : c in OLLLBasis];   // bam
+	HeckeRingZZBasisSeq := [Eltseq(Kbest!c) : c in OLLLBasis];   // bam
 
 	return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)];
 end intrinsic;
