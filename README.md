@@ -11,7 +11,7 @@ karim.gp: Karim Belabas's original function
 * mf.gp: defines the DecomposeSpaces() function in gp for dimension split, traces, polnomials
 * mf.m: defines the DecomposeSpaces() and ComputeCoefficientFields() funtions in Magma
 * mf.py: Python (Sage) scripts for reading and comparing output from DecomposeSpaces()
-* polredabs.spec defines Magma interface to polredabs and polredbest
+* polredabs.m defines Magma interface to polredabs and polredbest (use Attach("polredabs.m"))
 * conrey.m: functions for converting between Galois orbits of Dirichlet characters and Conrey labels of Dirichlet characters
 
 Data
