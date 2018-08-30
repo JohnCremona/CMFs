@@ -31,7 +31,8 @@ Column | Type | Notes
 -------|------|------
 id | bigint |
 space_label | text | The label for the modular form space `S_k(N, \chi)`
-new_label | text | The label for the newspace `S_k^{new}(M, \psi)` that embeds
+new_label | text | The label for the newspace `S_k^{new}(M, [\psi])` that embeds
+new_minimal_conrey | integer | the minimal Conrey index for the newspace (giving `\psi`)
 
 Hecke orbits
 ============
@@ -89,5 +90,6 @@ Column | Type | Notes
 id | bigint |
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 embedding | integer | enumeration of which embedding (shows up in L-function link), corresponding to the embeddings list in the orbit table
-angles | jsonb | list of values `\theta_p` where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`
+an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
+angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p, with `\theta_p` between -0.5 and 0.5
 
