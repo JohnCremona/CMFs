@@ -17,14 +17,32 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:[n1,n2,...] where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and [n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
+Format of mfdata_xxx.m.txt is N:k:o:t:D:T:A:F:C:E where
+
+ 1) N = level
+ 2) k = weight
+ 3) o = character orbit
+ 4) t = time
+ 5) D = dims [d1,d2,...] of Galois stable subspaces
+ 6) T = traces [[trace(a_1),...trace(a_n)],...] one list of traces for each subspace listed in D
+ 7) A = Atkin-Lehner signs (only present if o=1) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D
+ 8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to degree-bound (currently 20)
+ 9) C = Hecke cutters [[<p,charpoly>,...],...] list of minimal lists of charpolys of T_p sufficient to distinguish subspaces listed in D up to degree-bound (???)
+10) E = Hecke Eigenvalue data [<f,b,n,m,e>,...] list of tuples <f,b,n,c,e> of Hecke eigenvalue data for each subspace listed in D of dimension up to eigenvalue-degree-bound (currently 6) where:
+      1) f is a polredbestified field poly (should be the same as corresponding poly in F),
+      2) b defines a basis for the Hecke ring in terms of power basis for f (list of lists of rationals),
+      3) n is an integer that divides the index of the order spanned by b in the maximal order
+      4) m is a boolean (0 or 1) indicating whether n is known to be maximal
+      5) e is a list of eigenvalues specified in terms of the basis b (list of d integers for each a_n, where d=deg(f))
+
+Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
 
 Format of mffield_xxx_m.txt is N:k:i:[n1,n2,...]:[f1,f2,...] where N,k,n1,n2,... are as in mfdecomp_xxx.m.txt and f1,f2,... are lists of integer coefficients of polredbest polynomials defining the coefficient fields (constant coefficient first) for the orbits of dimension at most 20 (so list of f's may be shorter than the list of n's).  Spaces for which the list of field polys would be empty (because the space contains no orbits of positive dimension at most 20) are ommitted.
 
-* mfdecomp_100_10.m.txt: Magma output levels 1-100, weights 2-10 (this data is incorrect due to bug/inconsitency in magma!)
-* mfdecomp_100_10.gp.txt: gp output levels 1-100, weights 2-10
+* mfdata_100.m.txt : Magma modular forms data for Nk^2 <= 100
+* mfdata_1000.m.txt : Magma modular forms data for NK^2 <= 1000
 
-* mfdecomp_500.m.txt: Magma output for Nk <= 500 (corrects inconsistency in mfdecomp_100_10 files, timings for N=1,2 are bogus)
+* mfdecomp_500.m.txt: Magma output for Nk <= 500 (timings for N=1,2 are bogus)
 * mfdecomp_500.gp.txt: gp output for Nk <= 500
 * mfdecomp_500.txt : Galois orbit decomposition data for Nk <= 500 (as independently computed by gp and Magma)
 * mffield_500.m.txt : Coefficient field data for Nk <= 500 for fields of degree d <= 20 computed in Magma
