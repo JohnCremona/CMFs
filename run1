@@ -1,10 +1,14 @@
 #!/bin/bash
 
-N1=1
-N2=1000
-k1=$1
-k2=$2
+N1=$1
+N2=$2
+k1=2
+k2=500
+filename=$3
 
-echo "DecomposeSpaces(\"N${N1}-${N2}k${k1}-${k2}\",${N1},${N2},${k1},${k2})" > N${N1}-${N2}k${k1}-${k2}.in
-./gp -q mf.gp N${N1}-${N2}k${k1}-${k2}.in > N${N1}-${N2}k${k1}-${k2}.out &
+cline="read(\"mf.gp\"); DecomposeSpaces(\"${filename}\",${N1},${N2},${k1},${k2},500,20);"
+
+echo ${cline} | ./gp &
+
+
 

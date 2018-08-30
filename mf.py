@@ -2,7 +2,7 @@
 # two dictionaries both with keys (N,k,nchar), one with valies
 # dimension-list, the other with times.
 
-from sage.all import ZZ, QQ, PolynomialRing, pari
+from sage.all import ZZ, QQ, PolynomialRing, pari, copy, NumberField
 
 def read_dims(fname):
     dims_dict = {}
@@ -78,6 +78,11 @@ def str_intlistlist_to_intlistlist(s):
         return []
     return [[int(i) for i in si.split(",")] for si in s[2:-2].split("],[")]
 
+def str_intlistlistlist_to_intlistlistlist(s):
+    if s=="[]":
+        return []
+    return eval(s)
+
 def read_dtp(fname):
     # read full data: N:k:i:t:dims:traces:polys:junk
     data = {}
@@ -86,23 +91,25 @@ def read_dtp(fname):
     nspaces = 0
     nspaces0 = 0 # exclude trvial spaces
     for L in open(fname).readlines():
-        N,k,chi,t,dims,traces,polys,junk = L.split(":")
-        N=int(N)
-        k=int(k)
-        chi=int(chi)
+        fields = L.split(":")
+        N=int(fields[0])
+        k=int(fields[1])
+        chi=int(fields[2])
         key = (N,k,chi)
         if key in data:
             print("Duplicate data for {}".format(key))
-        t=float(t)
+        t=float(fields[3])
         if t>max_time:
             max_time = t
             max_space = key
         tot_time += t
-        polys = str_intlistlist_to_intlistlist(polys)
-        traces = str_intlistlist_to_intlistlist(traces)
-        dims=str_intlist_to_intlist(dims)
+        dims =   str_intlist_to_intlist(fields[4])
+        traces = str_intlistlist_to_intlistlist(fields[5])
+        polys =  str_intlistlist_to_intlistlist(fields[6])
+        # NB field 7 only holds data in magma output, field 8 only in gp output
+        coeffs =  str_intlistlistlist_to_intlistlistlist(fields[8]) if len(fields)>=9 else []
 
-        data[key] = {'dims':dims, 'traces':traces, 'polys':polys}
+        data[key] = {'dims':dims, 'traces':traces, 'polys':polys, 'coeffs':coeffs}
         nspaces += 1
         if polys:
             nspaces0 += 1
@@ -151,14 +158,6 @@ def compare_data(d1,d2, keylist=['dims', 'traces', 'polys']):
                                 pol1=pol2=F1.optimized_representation()[0].defining_polynomial()
                                 t1[i]=t2[i]=list(pol1)
 
-                if key=='traces':
-                    n=len(t1)
-                    for i in range(n):
-                        if t1[i]!=t2[i]:
-                            pass
-                            m=min(len(t1[i]),len(t2[i]))
-                            t1[i]=t1[i][:m]
-                            t2[i]=t2[i][:m]
                 if t1!=t2:
                     if key=='traces':
                         print("{} differ for {}: \nfirst #= {}, \nsecond #={}".format(key,k,[len(t) for t in t1],[len(t) for t in t2]))
