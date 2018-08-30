@@ -21,6 +21,26 @@ Vf := Vfs[1];
 ExactHeckeEigenvalues(Vf);
 */
 
+function PolredbestifyWithRoot(f)
+  K0 := NumberField(f);
+  iota := hom<K0 -> K0 | K0.1>; // start with identity
+  cnt := 0;
+  Kfront := K0;
+  ffront := f;
+  while true and cnt lt 10 do
+    fbest, fbestroot := PolredbestWithRoot(ffront);
+    if fbest eq ffront then 
+      return ffront, Eltseq(iota(K0.1)), cnt;
+    end if;
+    cnt +:= 1;
+    Kbest := NumberField(fbest);
+    fbestroot := fbestroot cat [0 : i in [1..Degree(fbest)-#fbestroot]];
+  	iota := iota*hom<Kfront -> Kbest | fbestroot>;
+    Kfront := Kbest;
+    ffront := fbest; 
+  end while;
+end function;
+
 // input is a Hecke irreducible space Vf;
 // output is:
 //    KbestSeq, a sequence [...,1] of integers giving the minimal polynomial of the Hecke field 
@@ -56,21 +76,36 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 	MZZ := Matrix([[Trace(e) : e in Eltseq(Tn)] : Tn in Tns]);  
 		// matrix with upsturmbnd rows and d^2 columns over ZZ
 
+/*
+  // small linear combinations doesn't really work for CM forms, better to just iterate
 	// find small linear combination which generates the Hecke field
 	_, E := LLL(MZZ);
 	Tref := &+[E[2][i]*Tns[i] : i in [1..#Tns]];  // usually the second works
 	Trefpol := CharacteristicPolynomial(Tref);
 	cnt := 0;
+	
 	while not IsIrreducible(Trefpol) do  
 		cnt +:= 1;
 		j := Random(1,Nrows(E));
-		print j, Factorization(Trefpol);
 		Tref +:= (-1)^(Random(1))*&+[E[j][i]*Tns[i] : i in [1..#Tns]];
 			 // add random vector; probabilistic, but we will throw this away soon anyway
 		Trefpol := CharacteristicPolynomial(Tref);
 		assert cnt lt 100;  // if this loop gets called more than 10 times, something is wrong
 	end while;
-
+*/
+  
+	Tref := 0;
+	foundirr := false;
+	for n := 2 to upsturmbnd do
+	  Tref +:= (n-1)*Tns[n];
+  	Trefpol := CharacteristicPolynomial(Tref);
+	  if IsIrreducible(Trefpol) then 
+	    foundirr := true;
+	    break;
+	  end if;
+	end for;
+  assert foundirr;
+  
 	Trefpows := [Tref^i : i in [0..d-1]];  // QQ(chi)-power basis for the Hecke algebra
 	Mrefpows := Matrix([Eltseq(Ti) : Ti in Trefpows]);  
 		// d x d^2 (flattened) matrix with rows the QQ(chi)-power basis
@@ -82,10 +117,14 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 	K_notbest_rel := ext<QQchi | Trefpol>;   // define Hecke field
 	K_notbest := AbsoluteField(K_notbest_rel);
 
-	Z := Matrix([Eltseq(K_notbest!K_notbest_rel!Eltseq(Z_rel[i])) : i in [1..Nrows(Z_rel)]]);
+  if Degree(Trefpol) eq 1 then
+  	Z := Matrix([Eltseq(K_notbest!K_notbest_rel!Z_rel[i][1]) : i in [1..Nrows(Z_rel)]]);
+  else
+  	Z := Matrix([Eltseq(K_notbest!K_notbest_rel!Eltseq(Z_rel[i])) : i in [1..Nrows(Z_rel)]]);
+  end if;
 
 	// Make best field
-	Trefpolbest, fbestroot := PolredbestWithRoot(MinimalPolynomial(K_notbest.1));  // iotaK is the isomorphism from Kabs_notbest to Kabs
+	Trefpolbest, fbestroot := PolredbestifyWithRoot(MinimalPolynomial(K_notbest.1));  // iotaK is the isomorphism from Kabs_notbest to Kabs
 	Kbest := NumberField(Trefpolbest);
 	fbestroot := fbestroot cat [0 : i in [1..Degree(Trefpolbest)-#fbestroot]];
 	iotabest := hom<K_notbest -> Kbest | fbestroot>;
@@ -130,7 +169,7 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 	assert &and[Kbest!Eltseq(Zbest[m]) eq Kbest!&+[ZOE[m][i]*OLLLBasis[i] : i in [1..d*dchi]] : m in [1..Nrows(Z)]];
 
 	// Sequence of d*dchi elements giving an LLL-reduced basis for the Hecke ring
-	HeckeRingZZBasisSeq := [Eltseq(c) : c in OLLLBasis];   // bam
+	HeckeRingZZBasisSeq := [Eltseq(Kbest!c) : c in OLLLBasis];   // bam
 
-	return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, ZOE;
+	return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)];
 end intrinsic;
