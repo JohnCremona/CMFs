@@ -78,10 +78,18 @@ def str_intlistlist_to_intlistlist(s):
         return []
     return [[int(i) for i in si.split(",")] for si in s[2:-2].split("],[")]
 
-def str_intlistlistlist_to_intlistlistlist(s):
+def str_nested_list_to_nested_list(s, level=1, T=ZZ, closed=True):
+    s=s.replace(" ","")
     if s=="[]":
         return []
-    return eval(s)
+    if level==1:
+        if closed:
+            s=s[1:-1]
+        return [T(a) for a in s.split(",")]
+    if closed:
+        s=s[level:-level]
+    delim = "]"*(level-1) + "," + "["*(level-1)
+    return [str_nested_list_to_nested_list(a,level-1,T,False)  for a in s.split(delim)]
 
 def read_dtp(fname):
     # read full data: N:k:i:t:dims:traces:polys:junk
@@ -91,6 +99,7 @@ def read_dtp(fname):
     nspaces = 0
     nspaces0 = 0 # exclude trvial spaces
     for L in open(fname).readlines():
+        L=L.replace("\n","")
         fields = L.split(":")
         N=int(fields[0])
         k=int(fields[1])
@@ -103,11 +112,13 @@ def read_dtp(fname):
             max_time = t
             max_space = key
         tot_time += t
-        dims =   str_intlist_to_intlist(fields[4])
-        traces = str_intlistlist_to_intlistlist(fields[5])
-        polys =  str_intlistlist_to_intlistlist(fields[6])
+        dims =   str_nested_list_to_nested_list(fields[4])
+        traces = str_nested_list_to_nested_list(fields[5],2)
+        polys =  str_nested_list_to_nested_list(fields[6],2)
         # NB field 7 only holds data in magma output, field 8 only in gp output
-        coeffs =  str_intlistlistlist_to_intlistlistlist(fields[8]) if len(fields)>=9 else []
+        coeffs = []
+        if len(fields)>=9 :
+            coeffs =  str_nested_list_to_nested_list(fields[8],3,QQ)
 
         data[key] = {'dims':dims, 'traces':traces, 'polys':polys, 'coeffs':coeffs}
         nspaces += 1

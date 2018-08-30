@@ -264,7 +264,7 @@ fprintf(file,format,args[..]) = write(file,call(Strprintf,[format,args]));
 fmt = "%d:%d:%d:%.3f:[%s]";
 fmt3 = "%d:%d:%d:%.3f:[%s]:[%s]:[%s]::[%s]";
 
-DecomposeSpaces(filename,minN, maxN, mink, maxk, Nkmax, dmax) =
+DecomposeSpaces(filename,minN, maxN, mink, maxk, Nk2max, dmax, njobs=1, jobno=0) =
 \\ Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
 {
    screen = (filename=="");
@@ -273,7 +273,7 @@ DecomposeSpaces(filename,minN, maxN, mink, maxk, Nkmax, dmax) =
    G = znstar(N,1);
    Chars = DirichletCharacterGaloisReps(N);
    for(k=mink, maxk,
-   if(N*k<=Nkmax,
+   if(N*k*k<=Nk2max && (N+k)%njobs==jobno,
    if(!screen,printf(" [k=%d] ", k));
    for(i=1,length(Chars),
           my (T = gettime(), dims);

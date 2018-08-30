@@ -1,0 +1,21 @@
+#!/bin/bash
+
+Nmax=$1
+k1=2
+k2=500
+filename=$2
+njobs=$3
+let 'njobs1 = njobs - 1'
+
+for jobno in `seq 0 ${njobs1}`; do
+
+cline="read(\"mf.gp\"); DecomposeSpaces(\"${filename}-${jobno}\",1,${Nmax},${k1},${k2},500,20,${njobs},${jobno});"
+
+ln -s gp gp-${jobno};
+#echo ${cline};
+echo ${cline}  | ./gp-${jobno} -q > /dev/null &
+done
+
+
+
+
