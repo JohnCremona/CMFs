@@ -17,11 +17,11 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdata_xxx.m.txt is N:k:o:t:D:T:A:F:C:E where
+Format of mfdata_xxx.m.txt is N:k:i:t:D:T:A:F:C:E where
 
  1) N = level
  2) k = weight
- 3) o = character orbit
+ 3) i = character orbit
  4) t = time
  5) D = dims [d1,d2,...] of Galois stable subspaces
  6) T = traces [[trace(a_1),...trace(a_n)],...] one list of traces for each subspace listed in D
