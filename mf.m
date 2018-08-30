@@ -2,8 +2,21 @@ Attach("polredabs.m");
 Attach("heigs.m");
 load "conrey.m";
 
+// encode Hecke orbit as a 64-bit int
 function HeckeOrbitCode (N,k,i,n)
     return N+2^24*k+2^36*i+2^52*n;
+end function;
+
+// test whether two irreducible polys define the same field (much faster thatn IsIsomorphic)
+function FieldPolysMatch (f,g)
+    R<x> := PolynomialRing(Rationals());
+    if Type(f) eq SeqEnum then f:=R!f; end if;
+    if Type(g) eq SeqEnum then g:=R!g; end if;
+    assert IsIrreducible(f) and IsIrreducible(g);
+    if Degree(f) ne Degree(g) then return false; end if;
+    RR<t>:=PolynomialRing(NumberField(f));
+    // if g has a root in Q[x]/(f) then Q[x]/(g) is contained in Q[x]/(f) and we must have equality because degrees match
+    return #Roots(RR!Coefficients(g)) gt 0;
 end function;
 
 function RestrictChiCodomain (chi)
@@ -103,44 +116,56 @@ end function;
 
 function sum(X) return #X eq 0 select 0 else &+X; end function;
 
-function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, ComputeOperators:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, EigenvalueDegreeBound:=0)
-    t := Cputime();
+function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, ComputeCutters:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, EigenvalueDegreeBound:=0, Detail:=false)
+    st := Cputime();
     if ComputeFields then assert ComputeTraces; end if;
-    if ComputeOperators then assert ComputeFields; end if;
-    if ComputeEigenvalues then assert ComputeOperators; end if;
+    if ComputeCutters then assert ComputeFields; end if;
+    if ComputeEigenvalues then assert ComputeCutters; end if;
     chi := G[o];  N := Modulus(chi);
+    if Detail then printf "Decomposing space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     S := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
+    if Detail then printf "took %o secs\n", Cputime()-t; end if;
     if #S eq 0 then
+        if Detail then printf "The space %o:%o:%o is empty\n",N,k,o; end if;
         s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-t, []);
         if ComputeTraces then s cat:= ":[]:[]"; end if;
         if ComputeFields then s cat:= ":[]"; end if;
-        if ComputeOperators then s cat:= ":[]"; end if;
+        if ComputeCutters then s cat:= ":[]"; end if;
         if ComputeEigenvalues then s cat:= ":[]"; end if;
         return StripWhiteSpace(s);
     end if;
     d := EulerPhi(Order(chi));
     D := [d*Dimension(S[i]): i in [1..#S]];
+    if Detail then printf "dims = %o\n", D; end if;
     // if the dimensions are all distinct then we know that no conjugate spaces were returend by NewformDecomposition
-    if not ComputeTraces and not ComputeFields and not ComputeOperators then
+    if not ComputeTraces and not ComputeFields and not ComputeCutters then
         assert sum(D) eq NewspaceDimension(chi,k);
         return StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-t, Sort(D)));
     end if;
+    if Detail then printf "Computing traces for space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     n := Max(SturmBound(N,k),NumberOfCoefficients);   // add a fudge factor to prevent Magma dropping trailing zeros
     F := [*Eigenform(S[i],n+1):i in [1..#S]*];
     T := Sort([<[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a) where a:=Coefficient(F[i],j) :j in [1..n]],i>:i in [1..#F]]);
     D := [D[T[i][2]]: i in [1..#T]];  S := [S[T[i][2]]: i in [1..#T]];  F := [*F[T[i][2]]: i in [1.. #T]*];
     T := [T[i][1]:i in [1..#T]];
+    if Detail then printf "took %o secs\n", Cputime()-t; printf "Lex sorted traces = %o\n",T; end if;
+    if Detail and Order(chi) eq 1 then printf "Computing Atkin-Lehner signs for space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(S[i],p)),D[i])>:p in PrimeDivisors(N)]:i in [1..#S]] else [];
+    if Detail and Order(chi) eq 1 then printf "took %o secs.\n", Cputime()-t; printf "Atkin-Lehner signs %o\n", AL; end if;
     if NumberOfCoefficients gt 0 and not &and[#t eq NumberOfCoefficients : t in T] then
         T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]];
     end if;
-    if not &and [#t eq NumberOfCoefficients:t in T] then print Modulus(chi),k,o, [#t:t in T], n, NumberOfCoefficients, T; assert false; end if;
-    if ComputeFields then
-        F := [Coefficients(Polredbestify(CoefficientFieldPoly(F[i],D[i]))):i in [1..#D]|DegreeBound eq 0 or D[i] le DegreeBound];
+    if not &and [#t eq NumberOfCoefficients:t in T] then printf "Wrong number of traces for space %o:%o:%o, n=%o, NumberOfCoefficients=%o, T=%o\n",N,k,o, [#t:t in T], n, NumberOfCoefficients, T; assert false; end if;
+    HF := [];
+    if ComputeFields and DegreeBound eq 0 or Min(D) le DegreeBound then
+        if Detail then printf "Computing Hecke field polys with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
+        HF := [Coefficients(Polredbestify(CoefficientFieldPoly(F[i],D[i]))):i in [1..#D]|DegreeBound eq 0 or D[i] le DegreeBound];
+        if Detail then printf "took %o secs\n", Cputime()-t;  printf "Polredbestified Hecke field polys = %o\n", HF; end if;
     end if;
-    if ComputeOperators then
-        P:=[[]:d in D|DegreeBound eq 0 or d le DegreeBound];
-        N := Modulus(chi);
+    // TODO: is it really enough to only go up to degree bound
+    P:=[[]:d in D|DegreeBound eq 0 or d le DegreeBound];   
+    if ComputeCutters and #P gt 0 then
+        if Detail then printf "Computing Hecke cutters with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
         p := 2;
         while true do
             if N mod p ne 0 then
@@ -155,33 +180,39 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
             end if;
             p := NextPrime(p);
         end while;
+        if Detail then printf "took %o secs\n", Cputime()-t; end if;
     end if;
     E := [];
     if ComputeEigenvalues and #[d:d in D|d gt 1 and d le EigenvalueDegreeBound] gt 0 then
-        E := [<f,b,n,c select 1 else 0,e> where f,b,n,c,e := ExactHeckeEigenvalues(S[i]): i in [1..#S]|D[i] gt 1 and D[i] le EigenvalueDegreeBound];
+        if Detail then printf "Computing exact Hecke eigenvalues with degreebound %o for space %o:%o:%o...", EigenvalueDegreeBound,N,k,o; t:=Cputime(); end if;
+        E := [<f,b,n,m select 1 else 0,e> where f,b,n,m,e := ExactHeckeEigenvalues(S[i]): i in [1..#S]|D[i] gt 1 and D[i] le EigenvalueDegreeBound];
+        if Detail then printf "took %o secs\n", Cputime()-t; end if;
     end if;
-    s := Sprintf("%o:%o:%o:%o:%o", Modulus(chi), k, o, Cputime()-t, D);
+    s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, D);
     if ComputeTraces then s cat:= Sprintf(":%o:%o",T,AL); end if;
-    if ComputeFields then s cat:= Sprintf(":%o",F); end if;
-    if ComputeOperators then s cat:= Sprintf(":%o",P); end if;
+    if ComputeFields then s cat:= Sprintf(":%o",HF); end if;
+    if ComputeCutters then s cat:= Sprintf(":%o",P); end if;
     if ComputeEigenvalues then s cat:= Sprintf(":%o",E); end if;
     return StripWhiteSpace(s);
 end function;
 
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for k*N <= B
-procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,DimensionsOnly:=false)
+procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=100,DegBound:=20,EDegBound:=6)
     n := 0;
     fp := Open(filename,"w");
     for N:=1 to Floor(B/2) do
+        if Loud then printf "Constructing CharacterGroup for modulus %o...", N; t:=Cputime(); end if;
         G:=DirichletCharacterReps(N);
+        if Loud then printf "took %o secs\n",Cputime()-t; end if;
         for k := 2 to Floor(Sqrt(B/N)) do
             for o in [1..#G] do
                 n +:= 1;
                 if ((n-jobid) mod jobs) eq 0 then
                     if DimensionsOnly then
-                        str := NewspaceData(G,k,o);
+                        str := NewspaceData(G,k,o:Detail:=Loud);
                     else
-                        str := NewspaceData(G,k,o:ComputeTraces,ComputeFields,ComputeOperators,ComputeEigenvalues,NumberOfCoefficients:=100,DegreeBound:=20,EigenvalueDegreeBound:=6);
+                        if Loud then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o, eig-deg-bound %o\n", N,k,o, Coeffs, DegBound,EDegBound; end if;
+                        str := NewspaceData(G,k,o:ComputeTraces,ComputeFields,ComputeCutters,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,EigenvalueDegreeBound:=EDegBound,Detail:=Loud);
                     end if;
                     if not Quiet then print str; end if;
                     Puts(fp,str);
