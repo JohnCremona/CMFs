@@ -7,7 +7,6 @@ This table represents spaces `S_k^{new}(N, \chi)`.  We pick one representative `
 
 Column | Type | Notes
 -------|------|------
-id | bigint |
 label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
@@ -30,7 +29,6 @@ This table represents embeddings of oldspaces into cusp spaces.
 
 Column | Type | Notes
 -------|------|------
-id | bigint |
 space_label | text | The label for the modular form space `S_k(N, \chi)`
 new_label | text | The label for the newspace `S_k^{new}(M, [\psi])` that embeds
 new_minimal_conrey | integer | the minimal Conrey index for the newspace (giving `\psi`)
@@ -42,7 +40,6 @@ Table name: `mf_newforms`
 
 Column | Type | Notes
 -------|------|------
-id | bigint |
 label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
 level | integer | (N)
@@ -80,7 +77,6 @@ Table name: `mf_hecke_nf`
 
 Column | Type | Notes
 -------|------|------
-id | bigint |
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 n | integer |
 an | jsonb | list of integers, giving the Hecke eigenvalue as a linear combination of the basis specified in the orbit table
@@ -90,9 +86,35 @@ Table name: `mf_hecke_cc`
 
 Column | Type | Notes
 -------|------|------
-id | bigint |
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 embedding | integer | enumeration of which embedding (shows up in L-function link), corresponding to the embeddings list in the orbit table
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
 angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p, with `\theta_p` between -0.5 and 0.5
 
+Dirichlet characters
+====================
+
+Table name: `char_dir_orbits`
+
+Column | Type | Notes
+-------|------|------
+orbit_label | text | (N.i)
+orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
+modulus | smallint
+conductor | smallint
+order | smallint
+parity | smallint
+galois_orbit | jsonb | list of conrey_labels in the same galois orbit
+galois_orbit_size | smallint
+is_real | boolean | if quadratic or trivial
+is_primitive | boolean | if modulus = conductor
+cyc_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order
+
+Table name: `char_dir_values`
+
+Column | Type | Notes
+-------|------|------
+label | text | N.n where N is the modulus and n is the conrey label
+orbit_label | text | N.i where N is the modulus and i is the orbit_label
+values | jsonb | list of the first twelve values on -1,1, then the next ten integers relatively prime to the modulus
+values_gens | jsonb | list of pairs [n, chi(n)] for n generating the unit group
