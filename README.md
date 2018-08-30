@@ -25,7 +25,7 @@ Format of mfdata_xxx.m.txt is N:k:o:t:D:T:A:F:C:E where
  4) t = time
  5) D = dims [d1,d2,...] of Galois stable subspaces
  6) T = traces [[trace(a_1),...trace(a_n)],...] one list of traces for each subspace listed in D
- 7) A = Atkin-Lehner signs (only present if o=1) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D
+ 7) A = Atkin-Lehner signs (empty list if character is not trivial (0=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D
  8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to degree-bound (currently 20)
  9) C = Hecke cutters [[<p,charpoly>,...],...] list of minimal lists of charpolys of T_p sufficient to distinguish subspaces listed in D up to degree-bound (???)
 10) E = Hecke Eigenvalue data [<f,b,n,m,e>,...] list of tuples <f,b,n,c,e> of Hecke eigenvalue data for each subspace listed in D of dimension up to eigenvalue-degree-bound (currently 6) where:
