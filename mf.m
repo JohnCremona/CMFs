@@ -175,13 +175,6 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
     if NumberOfCoefficients gt 0 and not &and[#t eq NumberOfCoefficients : t in T] then
         T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]];
     end if;
-    if Detail then printf "Finding CM forms in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
-    cm := [a select b else 0 where a,b:=IsCM(f:Proof:=true):f in S];
-    if Detail then printf "took %o secs\n", Cputime()-t; printf "CM discriminants: %o\n",cm; end if;
-    if Detail then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
-    if #Keys(DCRepTable) eq 0 then DCRepTable:=DirichletCharacterRepTable(G); end if;
-    it := [cm[i] eq 0 select [DCRepTable[t[j]]:j in [2..#t]] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]|D[i] le DegreeBound];
-    if Detail then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n",it; end if;
     HF := [];
     if ComputeFields and DegreeBound eq 0 or Min(D) le DegreeBound then
         if Detail then printf "Computing Hecke field polys with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
@@ -208,17 +201,24 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
         end while;
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
     end if;
-    E := [];
+    if Detail then printf "Finding CM forms in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
+    cm := [a select b else 0 where a,b:=IsCM(f:Proof:=true):f in S];
+    if Detail then printf "took %o secs\n", Cputime()-t; printf "CM discriminants: %o\n",cm; end if;
+    E := []; it:=[];
     if ComputeEigenvalues and #[d:d in D|d gt 1 and d le DegreeBound] gt 0 then
         if Detail then printf "Computing exact Hecke eigenvalues with degreebound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
         E := [<f,b,n,m select 1 else 0,e> where f,b,n,m,e := ExactHeckeEigenvalues(S[i]:Tnbnd:=n): i in [1..#S]|D[i] gt 1 and D[i] le DegreeBound];
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
+        if Detail then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
+        if #Keys(DCRepTable) eq 0 then DCRepTable:=DirichletCharacterRepTable(G); end if;
+        it := [cm[i] eq 0 select [DCRepTable[t[j]]:j in [2..#t]] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]|D[i] le DegreeBound];
+        if Detail then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n",it; end if;
     end if;
     s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, D);
-    if ComputeTraces then s cat:= Sprintf(":%o:%o:%o:%o",T,cm,it,AL); end if;
+    if ComputeTraces then s cat:= Sprintf(":%o:%o",T,AL); end if;
     if ComputeFields then s cat:= Sprintf(":%o",HF); end if;
     if ComputeCutters then s cat:= Sprintf(":%o",P); end if;
-    if ComputeEigenvalues then s cat:= Sprintf(":%o",E); end if;
+    if ComputeEigenvalues then s cat:= Sprintf(":%o:%o:%o",E,cm,it); end if;
     return StripWhiteSpace(s);
 end function;
 
