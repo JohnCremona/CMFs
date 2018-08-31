@@ -114,11 +114,11 @@ def read_dtp(fname):
         tot_time += t
         dims =   str_nested_list_to_nested_list(fields[4])
         traces = str_nested_list_to_nested_list(fields[5],2)
-        polys =  str_nested_list_to_nested_list(fields[6],2)
-        # NB field 7 only holds data in magma output, field 8 only in gp output
+        polys =  str_nested_list_to_nested_list(fields[7],2)
+        # NB field 8 only holds data in magma output, field 9 only in gp output
         coeffs = []
-        if len(fields)>=9 :
-            coeffs =  str_nested_list_to_nested_list(fields[8],3,QQ)
+        if len(fields)>=10 :
+            coeffs =  str_nested_list_to_nested_list(fields[9],3,QQ)
 
         data[key] = {'dims':dims, 'traces':traces, 'polys':polys, 'coeffs':coeffs}
         nspaces += 1
