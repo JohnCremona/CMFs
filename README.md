@@ -54,6 +54,10 @@ Format of mffield_xxx_m.txt is N:k:i:[n1,n2,...]:[f1,f2,...] where N,k,n1,n2,...
 
 * mfdecomp_full_100.gp.txt : As above but output from gp, excluding the [h1,...]
 
+* mfdata_wt1_500.gp.txt: weight 1, levels 1-500, withh 1000 traces and
+  ans. The eigenvalue data field is underdeveloped, only containing
+  vectors in Q^d with no basis information (yet).
+
 * data/N1-1000k1 : dimension split for weight 1 forms, all levels to 1000.
 * data/N*k* : dimension splits for various weight/level ranges including all with N*k<=1000
 * data/all.txt : concatenation of previous

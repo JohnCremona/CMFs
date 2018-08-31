@@ -5,7 +5,16 @@ import "conrey.m" : ConreyTraces;
 
 // encode Hecke orbit as a 64-bit int
 function HeckeOrbitCode (N,k,i,n)
-    return N+2^24*k+2^36*i+2^52*n;
+    return N+2^24*k+2^36*(i-1)+2^52*(n-1);
+end function;
+
+// extract Hecke orbit invariants from code
+function SplitHeckeOrbitCode(c)
+    N := c mod 2^24;  c := ExactQuotient(c-N,2^24);
+    k := c mod 2^12;  c := ExactQuotient(c-k,2^12);
+    i := (c mod 2^16)+1; c := ExactQuotient(c-(i-1),2^16);
+    n := c+1;
+    return N,k,i,n;
 end function;
 
 // test whether two irreducible polys define the same field (much faster thatn IsIsomorphic)
