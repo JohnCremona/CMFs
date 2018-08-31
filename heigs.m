@@ -35,6 +35,20 @@ Vf := Vfs[1];
 ExactHeckeEigenvalues(Vf);
 */
 
+/*
+// Example 4: deals with a cyclotomic field example
+Attach("heigs.m");
+Attach("polredabs.m");
+Attach("mf.m");
+import "mf.m" : DirichletCharacterReps, RestrictChiCodomain;
+chi := DirichletCharacterReps(183)[24];
+chi := RestrictChiCodomain(chi);
+Snew := NewSubspace(CuspidalSubspace(ModularSymbols(chi,2,-1)));
+Vfs := NewformDecomposition(Snew);
+Vf := Vfs[1];
+ExactHeckeEigenvalues(Vf);
+*/
+
 
 function PolredbestifyWithRoot(f)
   K0 := NumberField(f);
@@ -88,27 +102,6 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
     M := Matrix([Eltseq(Tn) : Tn in Tns]); 
         // matrix with upsturmbnd rows and d^2 columns, 
         // entries in QQchi, but its rank is only d
-    MZZ := Matrix([[Trace(e) : e in Eltseq(Tn)] : Tn in Tns]);  
-        // matrix with upsturmbnd rows and d^2 columns over ZZ
-
-/*
-  // small linear combinations doesn't really work for CM forms, better to just iterate
-    // find small linear combination which generates the Hecke field
-    _, E := LLL(MZZ);
-    Tref := &+[E[2][i]*Tns[i] : i in [1..#Tns]];  // usually the second works
-    Trefpol := CharacteristicPolynomial(Tref);
-    cnt := 0;
-    
-    while not IsIrreducible(Trefpol) do  
-        cnt +:= 1;
-        j := Random(1,Nrows(E));
-        Tref +:= (-1)^(Random(1))*&+[E[j][i]*Tns[i] : i in [1..#Tns]];
-             // add random vector; probabilistic, but we will throw this away soon anyway
-        Trefpol := CharacteristicPolynomial(Tref);
-        assert cnt lt 100;  // if this loop gets called more than 10 times, something is wrong
-    end while;
-*/
-  
     Tref := 0;
     foundirr := false;
     for n := 2 to upsturmbnd do
@@ -119,8 +112,8 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
         break;
       end if;
     end for;
-  assert foundirr;
-  
+    assert foundirr;
+ 
     Trefpows := [Tref^i : i in [0..d-1]];  // QQ(chi)-power basis for the Hecke algebra
     Mrefpows := Matrix([Eltseq(Ti) : Ti in Trefpows]);  
         // d x d^2 (flattened) matrix with rows the QQ(chi)-power basis
@@ -175,17 +168,42 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
     // upsturmbnd x (d*dchi), the nth row write Tn as a linear combination of the chosen ZZ-basis for O
 
     // Now compute a small basis
-    _, E := LLL(MinkowskiLattice(O));   // E is the ZZ-change of basis to an LLL-reduced basis
+    Olat, mOlat := MinkowskiLattice(O);
+    _, E := LLL(Olat);  // E is the ZZ-change of basis to an LLL-reduced basis
+
+    // Theorem: The shortest vectors of Olat are the roots of unity.
+    // 1 has norm d*dchi
+    EinO := [O!Eltseq(e) : e in Rows(E)];
+    muEinO := [e : e in EinO | Abs(Norm(mOlat(e))-d*dchi) lt 10^(-Precision(BaseRing(Olat))*9/10) and e notin [1,-1]];
+    v := InfinitePlaces(Kbest)[1];
+    CC := Parent(Evaluate(Kbest!1,v));
+    pi := Pi(CC);
+    muexps := [Roots(PowerRelation(Argument(Evaluate(z,v))/(2*pi),1),Rationals()) : z in muEinO];
+        // recognize as exp(2*pi*i*mu) with mu in QQ
+    muexpshasroots := [i : i in [1..#muexps] | #muexps[i] gt 0];  // pick out ones where a good match was found
+    if #muexpshasroots gt 0 then
+      muEinO := [muEinO[i] : i in muexpshasroots];
+      muexps := [muexps[i][1][1] : i in muexpshasroots];
+      m := Lcm([Denominator(k) : k in muexps]);   // candidate denominator
+      mus := [z : z in muEinO | z^m eq 1];
+      if sub<Kbest | ChangeUniverse(mus,Kbest)> eq Kbest and O eq sub<O | mus> then
+        // cyclotomic ring!  Find a combination giving a primitive root of unity to get power basis
+        gcd, lincombo := Xgcd([Integers() | m*k : k in muexps]);
+        assert gcd eq 1;
+        zgen := &*[muEinO[i]^(lincombo[i]) : i in [1..#lincombo]];
+        assert O eq sub<O | [zgen^k : k in [0..d*dchi-1]]>;
+        E := Matrix(Integers(), [Eltseq(O!zgen^k) : k in [0..d*dchi-1]]);
+      end if;
+    end if;
 
   // ensure the first basis vector is 1
   Erows := [Eltseq(v) : v in Rows(E)];
   ind := Index(Erows,Eltseq(O!1));
-  // if 1 is not in the basis print a warning, otherwise make it the first vector
-  if ind eq 0 then
-    print "WARNING: 1 is not in the basis computed by ExactHeckeEigenvalues";
-  else
-    E := Matrix([Erows[ind]] cat Erows[1..(ind-1)] cat Erows[(ind+1)..#Erows]);
-  end if;
+    // Corollary: If 1 is not in a basis of shortest vectors, then 
+    //    Olat is spanned additively by roots of unity, so Olat is the maximal
+    //    order in a cyclotomic field.
+  assert ind ne 0;
+  E := Matrix([Erows[ind]] cat Erows[1..(ind-1)] cat Erows[(ind+1)..#Erows]);
   
     Einv := E^-1;
     OLLLBasis := [&+[ E[i][j]*OBasis[j] : j in [1..d*dchi]] : i in [1..d*dchi]];
@@ -196,6 +214,6 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 
     // Sequence of d*dchi elements giving an LLL-reduced basis for the Hecke ring
     HeckeRingZZBasisSeq := [Eltseq(Kbest!c) : c in OLLLBasis];   // bam
-  if ind ne 0 then assert HeckeRingZZBasisSeq[1] eq Eltseq(Kbest!1); end if;
-    return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)];
+    assert HeckeRingZZBasisSeq[1] eq Eltseq(Kbest!1);
+    return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)]; 
 end intrinsic;
