@@ -223,7 +223,7 @@ end function;
 procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,EDegBound:=20)
     n := 0;
     fp := Open(filename,"w");
-    for N:=1 to Floor(B/2) do
+    for N:=1 to Floor(B/4) do
         if Loud then printf "Constructing CharacterGroup for modulus %o...", N; t:=Cputime(); end if;
         G := DirichletCharacterReps(N);
         T := DirichletCharacterRepTable(G);
