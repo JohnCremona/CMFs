@@ -83,7 +83,7 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
         for n := 1 to #dims do
             id +:=1;
             label := space_label cat "." cat Base26Encode(n-1);
-            code := HeckeOrbitCode(N,k,o-1,n-1);
+            code := HeckeOrbitCode(N,k,o,n);
             trace_display := [r[6][n][2],r[6][n][3],r[6][n][5],r[6][n][7]];
             if dims[n] eq 1 then qexp_display := qExpansionString(r[6][n],10); else qexp_display := "\\N"; end if;
             atkin_lehner := #r[9] gt 0 select r[9][n] else "\\N";
@@ -181,7 +181,7 @@ procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
         assert #r ge 12;
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
         for i := 1 to #dims do
-            code := HeckeOrbitCode(N,k,o-1,i-1);
+            code := HeckeOrbitCode(N,k,o,i);
             if i le #r[12] then
                 assert #r[6] ge #r[12];
                 // TDOO: Verify traces!
