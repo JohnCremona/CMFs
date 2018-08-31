@@ -21,6 +21,21 @@ Vf := Vfs[1];
 ExactHeckeEigenvalues(Vf);
 */
 
+/*
+// Example 3: shows the necessity of taking 1 as first vector
+Attach("heigs.m");
+Attach("polredabs.m");
+Attach("mf.m");
+import "mf.m" : DirichletCharacterReps, RestrictChiCodomain;
+chi := DirichletCharacterReps(17)[4];
+chi := RestrictChiCodomain(chi);
+Snew := NewSubspace(CuspidalSubspace(ModularSymbols(chi,2,-1)));
+Vfs := NewformDecomposition(Snew);
+Vf := Vfs[1];
+ExactHeckeEigenvalues(Vf);
+*/
+
+
 function PolredbestifyWithRoot(f)
   K0 := NumberField(f);
   iota := hom<K0 -> K0 | K0.1>; // start with identity
@@ -161,6 +176,13 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 
     // Now compute a small basis
     _, E := LLL(MinkowskiLattice(O));   // E is the ZZ-change of basis to an LLL-reduced basis
+
+  // ensure the first basis vector is 1
+  Erows := [Eltseq(v) : v in Rows(E)];
+  ind := Index(Erows,Eltseq(O!1));
+  assert ind ne 0;
+  E := Matrix([Erows[ind]] cat Erows[1..(ind-1)] cat Erows[(ind+1)..#Erows]);
+  
     Einv := E^-1;
     OLLLBasis := [&+[ E[i][j]*OBasis[j] : j in [1..d*dchi]] : i in [1..d*dchi]];
     ZOE := ZO*Einv;   // still upsturmbnd x (d*dchi), now linear combo of LLL-reduced basis
@@ -170,6 +192,6 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 
     // Sequence of d*dchi elements giving an LLL-reduced basis for the Hecke ring
     HeckeRingZZBasisSeq := [Eltseq(Kbest!c) : c in OLLLBasis];   // bam
-
+  assert HeckeRingZZBasisSeq[1] eq Eltseq(Kbest!1);
     return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)];
 end intrinsic;
