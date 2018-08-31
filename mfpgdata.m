@@ -1,0 +1,220 @@
+load "mf.m";
+
+alphabet := "abcdefghijklmnopqrstuvwvyz";
+
+function Base26Encode(n)
+    s := alphabet[1 + n mod 26]; n := ExactQuotient(n-(n mod 26),26);
+    while n gt 0 do
+        s := alphabet[1 + n mod 26] cat s; n := ExactQuotient(n-(n mod 26),26);
+    end while;
+    return s;
+end function;
+    
+function qExpansionString(a,prec)
+    assert a[1] eq 1;
+    s := "q";
+    for n:=2 to prec-1 do
+        if a[n] ne 0 then
+            if a[n] eq 1 then s cat:= Sprintf("+q^%o",n); else
+                if a[n] eq -1 then s cat:= Sprintf("-q^%o",n); else
+                    if a[n] gt 0 then s cat:= "+"; end if;
+                    s cat:= n ge 10 select Sprintf("%oq^{%o}",a[n],n) else Sprintf("%oq^%o",a[n],n); 
+                end if;
+            end if;
+        end if;
+    end for;
+    s cat:= Sprintf("+O(q^{%o})",prec);
+    return StripWhiteSpace(s);
+end function;
+
+procedure FormatNewspaceData (infile, outfile: Loud:=false)
+    t:=Cputime();
+    infp := Open(infile,"r");
+    outfp := Open(outfile,"w");
+    Puts(outfp,"id:label:level:weight:char_orbit:conrey_labels:char_conductor:cyc_degree:parity:sturm_bound:dim:hecke_orbit_dims:eis_dim:eis_new_dim:cusp_dim:mf_dim");
+    Puts(outfp,"bigint:text:integer:smallint:integer:jsonb:integer:integer:smallint:integer:integer:jsonb:integer:integer:integer:integer");
+    Puts(outfp,"");
+    s := Gets(infp);
+    id := 0; oldN := 0;
+    while not IsEof(s) do
+        id +:=1;
+        r := <eval(a):a in Split(s,":")>;
+        N := r[1]; k := r[2]; o := r[3]; dims := r[5];
+        label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
+        if N ne oldN then G:=DirichletCharacterReps(N); end if;
+        chi := G[o];
+        M := ModularForms(chi,k);
+        S := CuspidalSubspace(M);
+        E := EisensteinSubspace(M);
+        NE := NewSubspace(E);
+        NS := NewSubspace(S);
+        assert sum(dims) eq Dimension(NS);
+        str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",id,label,N,k,o,ConreyLabels(chi),Conductor(chi),
+                DirichletCharacterFieldDegree(chi),IsOdd(chi) select -1 else 1,SturmBound(N,k),Dimension(NS),dims,Dimension(E),Dimension(NE),Dimension(S),Dimension(M)));
+        str := SubstituteString(str,"<","[");  str:= SubstituteString(str,">","]");
+        if Loud then print str; end if;
+        Puts(outfp,str);
+        s := Gets(infp);
+    end while;
+    printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-t;
+end procedure;
+
+procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
+    t:=Cputime();
+    printf "Loading polredabsmap_full.txt..."; t:=Cputime();
+    S:=Split(Read("polredabsmap_full.txt"),"\n"); // forms is pol:bpol:apol:lmfdb-label
+    A:=AssociativeArray();
+    for s in S do r:=Split(s,":"); if r[3] ne "None" then A[eval(r[2])]:= <eval(r[3]),r[4]>; end if; end for;
+    printf "took %o secs.\n", Cputime()-t;
+    t:=Cputime();
+    infp := Open(infile,"r");
+    outfp := Open(outfile,"w");
+    Puts(outfp,"id:label:space_label:level:weight:char_orbit:hecke_orbit:hecke_orbit_code:dim:field_poly:is_polredabs:nf_label:hecke_ring_numerators:hecke_ring_denominators:hecke_ring_index:hecke_ring_index_proven:trace_hash:qexp_prec:embeddings:analytic_rank:is_cm:cm_disc:cm_hecke_char:cm_proved:has_inner_twist:is_twist_minimal:inner_twist:atkin_lehner_eigenvals:hecke_cutters:qexp_display:trace_display");
+    Puts(outfp,"bigint:text:text:integer:smallint:integer:integer:bigint:integer:jsonb:boolean:text:jsonb:jsonb:integer:boolean:bigint:smallint:jsonb:smallint:boolean:smallint:text:boolean:boolean:boolean:jsonb:jsonb:jsonb:text:jsonb");
+    Puts(outfp,"");
+    s := Gets(infp);
+    id := 0; oldN := 0;
+    while not IsEof(s) do
+        r := <eval(a):a in Split(s,":")>;
+        assert #r ge 10;
+        N := r[1]; k := r[2]; o := r[3]; dims := r[5];
+        space_label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
+        m := #[d:d in dims|d eq 1];
+        for n := 1 to #dims do
+            id +:=1;
+            label := space_label cat "." cat Base26Encode(n-1);
+            code := HeckeOrbitCode(N,k,o-1,n-1);
+            trace_display := [r[6][n][2],r[6][n][3],r[6][n][5],r[6][n][7]];
+            if dims[n] eq 1 then qexp_display := qExpansionString(r[6][n],10); else qexp_display := "\\N"; end if;
+            atkin_lehner := #r[9] gt 0 select r[9][n] else "\\N";
+            trace_hash := "\\N";
+            analytic_rank := "\\N";
+            is_cm := r[7][n] ne 0 select 1 else 0;
+            cm_disc := r[7][n] eq 0 select "\\N" else r[7][n];
+            cm_hecke_char := "\\N";
+            cm_proved := 1;
+            has_inner_twist := #r[8][n] gt 0 select 1 else 0;
+            is_twist_minimal := "\\N";
+            inner_twist := r[8][n];
+            if n le #r[10] then
+                field_poly := r[10][n];
+                if IsDefined(A,field_poly) then
+                    fr := A[field_poly];
+                    field_poly := fr[1];
+                    nf_label := fr[2] eq "None" select "\\N" else fr[2];
+                    is_polredabs := 1;
+                else
+                    print field_poly;
+                    is_polredabs := "\\N";
+                    nf_label := "\\N";
+                end if;
+                embeddings := "\\N";
+                hecke_cutters := r[11][n];
+            else
+                field_poly := "\\N";
+                is_polredabs := "\\N";
+                nf_label := "\\N";
+                embeddings := "\\N";
+                hecke_cutters := "\\N";
+            end if;
+            if n le #r[11] then
+                hecke_cutters := r[11][n];
+            end if;
+            if n gt m and n-m le #r[12] then
+                nn := n-m;
+                hfield_poly := IsDefined(A,r[12][nn][1]) select A[r[12][nn][1]][1] else r[12][nn][1];
+                if field_poly ne hfield_poly then
+                    printf"field poly doesn't match Hecke eigenvalue poly for orbit %o, verifying iso...", label;
+                    if FieldPolysMatch(field_poly,hfield_poly) then print "good."; else
+                        print "Field poly mismatch!", field_poly, hfield_poly;
+                        assert false;
+                    end if;
+                    field_poly := r[12][nn][1];
+                    if IsDefined(A,field_poly) then
+                        fr := A[field_poly];
+                        if field_poly eq fr[1] then is_polredabs := "\\N"; end if;
+                        nf_label := fr[2] eq "None" select "\\N" else fr[2];
+                        is_polredabs := 1;
+                    else
+                        print field_poly;
+                        is_polredabs := "\\N";
+                        nf_label := "\\N";
+                    end if;
+                end if;
+                hecke_ring_denominators := [LCM([Denominator(x):x in r[12][nn][2][i]]):i in [1..#r[12][nn][2]]];
+                hecke_ring_numerators := [[hecke_ring_denominators[i]*x:x in r[12][nn][2][i]]:i in [1..#r[12][nn][2]]];
+                hecke_ring_index := r[12][nn][3]; 
+                hecke_ring_index_proven := r[12][nn][4];
+                qexp_prec := #r[12][nn][5]+2;
+            else
+                hecke_ring_denominators := "\\N";
+                hecke_ring_numerators := "\\N";
+                hecke_ring_index := "\\N";
+                hecke_ring_index_proven := "\\N";
+                qexp_prec := "\\N";
+            end if;
+            str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",
+                id,label,space_label,N,k,o,n-1,code,dims[n],field_poly,is_polredabs,nf_label,
+                hecke_ring_numerators,hecke_ring_denominators,hecke_ring_index,hecke_ring_index_proven,trace_hash,qexp_prec,embeddings,
+                analytic_rank,is_cm,cm_disc,cm_hecke_char,cm_proved,has_inner_twist,is_twist_minimal,inner_twist,
+                atkin_lehner,hecke_cutters,qexp_display,trace_display));
+            str := SubstituteString(str,"<","[");  str := SubstituteString(str,">","]");
+            if Loud then print str; end if;
+            Puts(outfp,str);
+        end for;
+        s := Gets(infp);
+    end while;
+    printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-t;
+end procedure;
+
+procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
+    t:=Cputime();
+    infp := Open(infile,"r");
+    outfp := Open(outfile,"w");
+    Puts(outfp,"id:hecke_orbit_code:n:an:trace_an");
+    Puts(outfp,"bigint:bigint:integer:jsonb:numeric");
+    Puts(outfp,"");
+    s := Gets(infp);
+    id := 0; oldN := 0;
+    while not IsEof(s) do
+        r := <eval(a):a in Split(s,":")>;
+        assert #r ge 12;
+        N := r[1]; k := r[2]; o := r[3]; dims := r[5];
+        for i := 1 to #dims do
+            code := HeckeOrbitCode(N,k,o-1,i-1);
+            if i le #r[12] then
+                assert #r[6] ge #r[12];
+                // TDOO: Verify traces!
+                for n := 1 to #r[12][i][5] do
+                    id +:= 1;
+                    an := r[12][i][5][n];
+                    trace_an := r[6][i][n];
+                    str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o",id,code,n,an,trace_an));
+                    str := SubstituteString(str,"<","[");  str := SubstituteString(str,">","]");
+                    if Loud then print str; end if;
+                    Puts(outfp,str);
+                end for;
+            else
+                if i le #r[6] then
+                    for n := 1 to #r[6][i] do
+                        id +:= 1;
+                        trace_an := r[6][i][n];
+                        an := dims[i] eq 1 select [trace_an] else "\\N";
+                        str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o",id,code,n,an,trace_an));
+                        str := SubstituteString(str,"<","[");  str := SubstituteString(str,">","]");
+                        if Loud then print str; end if;
+                        Puts(outfp,str);
+                    end for;
+                end if;
+            end if;
+        end for;
+        s := Gets(infp);
+    end while;
+    printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-t;
+end procedure;
+                    
+procedure GeneratePostgresDatafiles (B:detail:=false)
+    FormatNewspaceData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_newspaces_%o.txt",B):Loud:=detail);
+    FormatNewformData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_newforms_%o.txt",B),"polredabs_full.txt":Loud:=detail);
+    FormatHeckeEigenvalueData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_hecke_nf_%o.txt",B):Loud:=detail);
+end procedure;
