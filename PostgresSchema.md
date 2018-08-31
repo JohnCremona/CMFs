@@ -10,6 +10,7 @@ Column | Type | Notes
 label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
+odd_weight | bool | whether k is odd
 char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N
 conrey_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_conductor | integer | Conductor of the Dirichlet character
@@ -44,6 +45,7 @@ label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
+odd_weight | bool | whether k is odd
 char_orbit | integer | (i) As above
 hecke_orbit | integer | (X) The integer that is encoded into x in the label via 0=a, 1=b, 25=z, 26 = ba, 27=bb
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + (i<<36) + (a<<52).
@@ -65,7 +67,7 @@ cm_hecke_char | text | label for the Hecke character giving the CM
 cm_proved | bool | Whether the CM columns are proven correct
 has_inner_twist | bool | whether there is an inner twist
 is_twist_minimal | bool |
-inner_twist | jsonb | List of integers giving the Conrey indices for the nontrivial Dirichlet characters that give inner twists
+inner_twist | jsonb | List of integers giving the char_orbit values for the nontrivial Dirichlet characters that give inner twists
 atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
