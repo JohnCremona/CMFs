@@ -78,6 +78,7 @@ polredbest_stable(f) =
 
 Absolutise(G, chi, f, flag=0) =
 {
+ my(ord,field,pol);
  ord = charorder(G,chi);
  field = polytype(f);
  if(field=="Q", if(ord<=2, pol=f, Qchi=nfinit(polcyclo(ord,xx));pol=rnfequation(Qchi,f)),
@@ -89,6 +90,7 @@ Absolutise(G, chi, f, flag=0) =
 
 NewspaceDecompositionWithPolys (N,G,chi, k, dmax) =
 {
+  my(cd,Snew,pols,dims,polys);
   cd = eulerphi(charorder(G,chi));
   Snew = mfinit([N, k, [G,chi]], 0);
   if (!mfdim(Snew), return([]));
@@ -107,6 +109,7 @@ abstrace(x, deg) =
 \\ parameter.
 
 {
+  my(y);
   \\printf("Taking absolute trace of %s (type %s) in degree %d\n",x,type(s),deg);
   if(type(x)=="t_INT" || deg==1,return(deg*x));
   y=trace(x);
@@ -141,36 +144,70 @@ Note that we want the output to have a fixed length
 
 bipower_coeffs(a) =
 {
-\\ print("a=",a);
- dtop = poldegree(a.mod);
-\\ print("dtop=",dtop);
+ my(dtop = poldegree(a.mod), L);
  L = Vec(lift(a),dtop);
-\\ print("first L = ",L);
  for(i=1,dtop,if(type(L[i])=="t_POLMOD",dbot = poldegree(L[i].mod);break));
-\\ print("dbot=",dbot);
  for(i=1,dtop,if(type(L[i])=="t_POLMOD",L[i]=Vec(lift(L[i]),dbot),c=L[i];L[i]=vector(dbot,j,0);L[i][1]=c));
-\\ print("last  L = ",L);
  concat(L);
 }
 
+change_basis(an,M,newpol) =
+\\ Here the double Vecrev is because our matrices M are indexed from 0 to deg-1,
+\\ while gp's Vec() and Pol() functions start with the leading coefficient.
+{
+  my(d = poldegree(newpol));
+  Mod( Pol(Vecrev(Vecrev(lift(an),d)*M)), newpol);
+}
+
+change_basis_vec(anvec,oldpol,newpol) =
+{
+  my(d,alpha,M);
+  if(oldpol==newpol, return(anvec));
+  d = poldegree(oldpol);
+  alpha = Mod(nfisisom(oldpol,newpol)[1],newpol);
+  M = vector(d,i,Vecrev(lift(alpha^i),d));
+  M = matrix(#M,#M[1],i,j,M[i][j]);
+  for(j=1,#anvec,anvec[j] = change_basis(anvec[j],M,newpol));
+  anvec;
+}
+
+absolutize_vec(anvec,botpol,toppol,abspol) =
+{
+  my(zet,t,y,pol,pol1,gam);
+  \\ (1) embed small field into large field K: zeta is the image of the generator
+  zet = Mod(nfisincl(botpol,abspol)[1], abspol);
+  \\ (2) find a root of toppol in K
+  t = variable(botpol);
+  y = variable(toppol);
+  \\print(toppol, " of type ", type(toppol));
+  \\print(lift(toppol), " of type ", type(lift(toppol)));
+  pol =  Pol(subst(Vec(lift(toppol)),t,zet));
+  \\print(pol, " of type ", type(pol));
+  pol1 = [p | p<- factor(pol)[,1], poldegree(p)==1][1];
+  gam = -polcoef(pol1,0);
+  \\ now to convert a double-decker an we list twice and substitute xet for t and gam for y:
+  [subst(subst(lift(lift(an)),t,zet),y,gam) | an <- anvec];
+}
+
 nf_disc_bound = 100;
-verbose=0;
+verbose=1;
+number_of_an=100;
 
 NewspaceDecompositionDimsPolysTracesCoeffs (N,G,chi, k, dmax) =
 {
   if(verbose,printf("(N,k,chi)=(%d,%d,%s)",N,k,chi));
   ord = charorder(G,chi);
   if(verbose,printf(" (order(chi)=%d)\n",ord));
-  if(ord%4==2,ord=ord/2);
+  ord2 = if(ord%4==2,ord/2,ord);
   cd = eulerphi(ord);
   Snew = mfinit([N, k, [G,chi]], 0);
   newforms = mfeigenbasis(Snew);
   nnf=#newforms;
-  if(nnf==0,return([[],[],[],[]]));
+  if(nnf==0,return([[],[],[],[],[]]));
 
-  chipol = t;
-  if(ord>2, chipol=polcyclo(ord,t));
+  chipol=polcyclo(ord2,t);
   if(verbose,print("chipol = ",chipol));
+  if(verbose,print("modulus = ",Snew.mod));
   Qchi = nfinit([chipol,nf_disc_bound]);
   pols = mfsplit(Snew,,1)[2];
 
@@ -183,53 +220,82 @@ NewspaceDecompositionDimsPolysTracesCoeffs (N,G,chi, k, dmax) =
   if(verbose,print("pols: ",pols));
   dims = [cd*poldegree(P) | P<-pols];
   if(verbose,print("dims: ",dims));
-  rels = [d>cd && cd>1 | d<-dims];
-  if(verbose,print("genuine relative extensions: ",rels));
-  nnf_small=0;
-  for(i=1,nnf,if(dims[i]<=dmax,nnf_small+=1));
-  if(verbose,print("Out of %d newforms, %d have dim <= %d", #newforms, nnf, dmax));
+  nnf_small=#[d | d<-dims, d<=dmax];
+  if(verbose,printf("Out of %d newforms, %d have dim <= %d\n", nnf, nnf_small, dmax));
 
-  coeffs = mfcoefs(Snew,100);
-  \\ indices 0..100, we'll drop 0 later
+/* The rels array stores "how relative" is the Hecke field K:
+   0 for K = Q(chi) = Q: both extensions trivial
+   1 for K > Q(chi) = Q: bottom extension trivial
+   2 for K = Q(chi) > Q: top extension trivial
+   3 for K > Q(chi) > Q: fully relative
+
+   Note that we only see 0,1 when the character order is 1 or 2
+   (cd==1), and only see 2,3 otherwise (cd>1)
+*/
+
+  rels = [(d>cd)+2*(cd>1) | d<-dims];
+  if(verbose,print("relative extension codes: ",rels));
+
+  \\ Compute the Fourier coeffients a_n:
+
+  coeffs = mfcoefs(Snew,number_of_an);
   ans = vector(nnf, i, coeffs * mftobasis(Snew,newforms[i]));
-  ans = [vecextract(L,[2..#L]) | L<-ans];
   \\ Our forms are cuspidal so we delete the a_0 entry
-
+  ans = [vecextract(L,[2..#L]) | L<-ans];
 
   \\ compute the absolute polys (as polys):
-  polys = vector(nnf,i,if(rels[i], rnfequation(Qchi,pols[i]), if(ord==1,pols[i],chipol)));
-  if(verbose,printf("absolute polys (deg<=%d): %s\n",dmax,vecextract(polys,[1..nnf_small])));
-
-  coeffs=vector(nnf,i,[]);
-  for(i=1,nnf, coeffs[i] = if(rels[i], [bipower_coeffs(an) | an<-ans[i]],
-                             if(dims[i]==1,[[an] | an<-ans[i]],
-                               [Vec(lift(an),poldegree(polys[i])) | an<-ans[i]])));
+  polys = vector(nnf,i,relcode=rels[i]; if(relcode==3, rnfequation(Qchi,pols[i]), if(relcode==2,chipol,pols[i])));
+  if(verbose&&nnf_small, printf("absolute polys (deg<=%d): %s\n",dmax,vecextract(polys,[1..nnf_small])));
 
   \\ compute the trace vectors:
-  traces = vector(nnf,i, vector(100,j,abstrace(ans[i][j],dims[i])));
+  traces = vector(nnf,i, vector(number_of_an,j,abstrace(ans[i][j],dims[i])));
   \\ Avoid type inconsistency of a_1 leading to wrong traces:
   for(i=1,#nnf,traces[i][1]=dims[i]);
+  if(verbose&&nnf_small, print("Traces:"); for(i=1,nnf_small,print(traces[i])));
 
   \\ apply polredbest_stable to polys of degree<=dmax
-  for(i=1,nnf_small,polys[i]=polredbest_stable(polys[i]));
-  \\ convert the absolute polys to coefficient vectors:
-  polys = [Vecrev(f) | f<-polys];
-  if(verbose,printf("polys (deg<=%d): %s\n",dmax,vecextract(polys,[1..nnf_small])));
+  for(i=1,nnf_small,
+     polys[i]=polredbest_stable(polys[i]);
+     );
+
+  \\ convert an's to the power basis of the polredbested poly:
+  for(i=1,nnf_small,
+    if(rels[i]==1, ans[i] = change_basis_vec(ans[i], pols[i], polys[i]));
+    if(rels[i]==2, ans[i] = change_basis_vec(ans[i], chipol, polys[i]));
+    if(rels[i]==3, ans[i] = absolutize_vec(ans[i],chipol,pols[i],polys[i]));
+     );
+  if(verbose&&nnf_small, print("an:"); for(i=1,nnf_small,print(vecextract(ans[i],[1..5]))));
+
+  \\ Extract power basis coefficients of all an:
+  ancoeffs = [[Vec(lift(an), if(type(an)=="t_POLMOD",poldegree(an.mod),1)) | an<-ansi] | ansi <- ans];
+
+  \\ Conmpute coefficient vectors of the absolute polys:
+  polycoeffs = [Vecrev(f) | f<-vecextract(polys,[1..nnf_small])];
+  if(verbose,printf("poly coeffs (deg<=%d): %s\n",dmax,vecextract(polycoeffs,[1..nnf_small])));
+
+  \\ Atkin-Lehner eigenvalues:
+  Nfact = factor(N);
+  ALeigs=[]; \\ default
+  if(ord==1,
+  ALeigs=vector(nnf,i,[]);
+  for(i=1,matsize(Nfact)[1],p=Nfact[i,1];Q=p^Nfact[i,2];
+  alleigs = mfatkineigenvalues(Snew,Q);
+  for(j=1,nnf,ALeigs[j]=concat(ALeigs[j],[[p,alleigs[j][1]]])));
+  if(verbose,printf("AL-eigs: %s\n", ALeigs))
+  );
 
   \\ sort (when >1 irreducible component) by lexicographical order of trace vectors:
   if(nnf>1,
-   \\printf("\nBefore sorting:\nTraces:%s\nDims:%s\nPolys:%s",traces,dims,polys);
    perm = vecsort(traces,,1);
+   shortperm = vecextract(perm,[1..nnf_small]);
    traces = vecextract(traces,perm);
-   coeffs = vecextract(coeffs,perm);
+   ancoeffs = vecextract(ancoeffs,shortperm);
    dims = vecextract(dims,perm);
-   polys = vecextract(polys,perm);
-   \\polys = vecextract(polys,vecextract(perm,[1..nnf_small]));
-   \\printf("\nAfter sorting:\nTraces:%s\nDims:%s\nPolys:%s",traces,dims,polys);
+   polycoeffs = vecextract(polycoeffs,shortperm);
+   if(ord==1,ALeigs = vecextract(ALeigs,perm));
    );
-   \\ omit polys of degree>dmax:
-   polys=vecextract(polys,[1..nnf_small]);
-   return([traces,dims,polys,coeffs]);
+
+   return([traces,dims,polycoeffs,ancoeffs,ALeigs]);
 }
 
 \\ Thanks to Karim for this funtion to remove whitespace from a list:
@@ -242,27 +308,36 @@ vtostr(v) =
   concat(w);
 }
 
-vvtostr(v) =
+vvtostr(v,lb="[",rb="]") =
 { my (w, n = #v);
   if (!n, return (""));
   w = vector(n);
-  for (i = 1, n-1, w[i] = concat(["[",vtostr(v[i]),"],"]));
-  w[n] = concat(["[",vtostr(v[n]),"]"]);
+  for (i = 1, n-1, w[i] = concat([lb,vtostr(v[i]),rb,","]));
+  w[n] = concat([lb,vtostr(v[n]),rb]);
   concat(w);
 }
 
-vvvtostr(v) =
+vvvtostr(v,lb="[",rb="]") =
 { my (w, n = #v);
   if (!n, return (""));
   w = vector(n);
-  for (i = 1, n-1, w[i] = concat(["[",vvtostr(v[i]),"],"]));
-  w[n] = concat(["[",vvtostr(v[n]),"]"]);
+  for (i = 1, n-1, w[i] = concat([lb,vvtostr(v[i],lb,rb),rb,","]));
+  w[n] = concat([lb,vvtostr(v[n],lb,rb),rb]);
+  concat(w);
+}
+
+ALstr(v) =
+{ my (w, n = #v);
+  if (!n, return (""));
+  w = vector(n);
+  for (i = 1, n-1, w[i] = concat(["[",vvtostr(v[i],"<",">"),"]",","]));
+  w[n] = concat(["[",vvtostr(v[n],"<",">"),"]"]);
   concat(w);
 }
 
 fprintf(file,format,args[..]) = write(file,call(Strprintf,[format,args]));
 fmt = "%d:%d:%d:%.3f:[%s]";
-fmt3 = "%d:%d:%d:%.3f:[%s]:[%s]:[%s]::[%s]";
+fmt3 = "%d:%d:%d:%.3f:[%s]:[%s]:[%s]:[%s]::[%s]";
 
 DecomposeSpaces(filename,minN, maxN, mink, maxk, Nk2max, dmax, njobs=1, jobno=0) =
 \\ Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
@@ -280,10 +355,12 @@ DecomposeSpaces(filename,minN, maxN, mink, maxk, Nk2max, dmax, njobs=1, jobno=0)
           tdp = NewspaceDecompositionDimsPolysTracesCoeffs(N,G,Chars[i],k,dmax);
           traces = tdp[1];
           dims = tdp[2];
-          polys = tdp[3];
-          coeffs = tdp[4];
+          polycoeffs = tdp[3];
+          ancoeffs = tdp[4];
+          ALeigs = tdp[5];
           tim = gettime()/1000;
           if(screen, printf(concat(fmt,"\n"), N,k,i, tim , vtostr(dims)),
-                    fprintf(filename, fmt3,  N,k,i, tim , vtostr(dims), vvtostr(traces), vvtostr(polys), vvvtostr(coeffs)));
+                    fprintf(filename, fmt3,   N,k,i, tim , vtostr(dims), vvtostr(traces), ALstr(ALeigs), vvtostr(polycoeffs), vvvtostr(ancoeffs)));
    ))); if(!screen,printf("\n")));
 }
+
