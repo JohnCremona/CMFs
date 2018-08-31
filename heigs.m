@@ -180,8 +180,12 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
   // ensure the first basis vector is 1
   Erows := [Eltseq(v) : v in Rows(E)];
   ind := Index(Erows,Eltseq(O!1));
-  assert ind ne 0;
-  E := Matrix([Erows[ind]] cat Erows[1..(ind-1)] cat Erows[(ind+1)..#Erows]);
+  // if 1 is not in the basis print a warning, otherwise make it the first vector
+  if ind eq 0 then
+    print "WARNING: 1 is not in the basis computed by ExactHeckeEigenvalues";
+  else
+    E := Matrix([Erows[ind]] cat Erows[1..(ind-1)] cat Erows[(ind+1)..#Erows]);
+  end if;
   
     Einv := E^-1;
     OLLLBasis := [&+[ E[i][j]*OBasis[j] : j in [1..d*dchi]] : i in [1..d*dchi]];
@@ -192,6 +196,6 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
 
     // Sequence of d*dchi elements giving an LLL-reduced basis for the Hecke ring
     HeckeRingZZBasisSeq := [Eltseq(Kbest!c) : c in OLLLBasis];   // bam
-  assert HeckeRingZZBasisSeq[1] eq Eltseq(Kbest!1);
+  if ind ne 0 then assert HeckeRingZZBasisSeq[1] eq Eltseq(Kbest!1); end if;
     return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)];
 end intrinsic;
