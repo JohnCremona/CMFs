@@ -58,8 +58,8 @@ end function;
 
 function DirichletCharacterGaloisReps(N)
   G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
-  T := Sort([<[Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
-  return Reverse([G[T[i][2]]:i in [1..#G]]);
+  T := Sort([<[Order(G[i])] cat [Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
+  return [G[T[i][2]]:i in [1..#G]];
 end function;
 
 function ConreyLabelOrbits(N)
