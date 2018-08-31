@@ -32,18 +32,30 @@ function RestrictChiCodomain (chi)
     print "Unable to restric domain of Dirichlet character!";
     assert false;
 end function;
+    
+function ChiTraces(chi) return [Trace(z):z in ValueList(chi)]; end function;
 
 // Returns Galois orbit reps sorted by order and then lex order on traces of values
 function DirichletCharacterReps (N)
     G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
-    T := Sort([<[Order(G[i])] cat [Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
+    T := Sort([<[Order(G[i])] cat ChiTraces(G[i]),i>:i in [1..#G]]);
     return [*RestrictChiCodomain(G[T[i][2]]):i in [1..#G]*];
 end function;
 
+// This is expensive, only call it once per level
+function DirichletCharacterRepTable (G)
+    H := FullDirichletGroup(Modulus(G[1]));
+    A := AssociativeArray();
+    for i:=1 to #G do A[ChiTraces(G[i])]:=i; end for;
+    B := AssociativeArray();
+    for chi in Elements(H) do B[chi] := A[ChiTraces(RestrictChiCodomain(chi))]; end for;
+    return B;
+end function;
+    
 function ConreyLabels (chi)
     N := Modulus(chi);
-    v := [Trace(z):z in ValueList(chi)];
-    return [n:n in [1..N-1]|GCD(n,N) eq 1 and ConreyTraces(N,n) eq v];
+    v := ChiTraces(chi);
+    return [n:n in [1..N]|GCD(n,N) eq 1 and ConreyTraces(N,n) eq v];
 end function;
 
 function MinimalConreyLabel (chi)
@@ -59,7 +71,7 @@ function ConreyCharacterRep (q, n)
     G := DirichletCharacterReps(q);
     v := ConreyTraces(q,n);
     for i:=1 to #G do
-        if v eq [Trace(u):u in ValueList(G[i])] then return G[i]; end if;
+        if v eq ChiTraces(G[i]) then return G[i]; end if;
     end for;
     printf "Unable to match traces for Conrey character q=%o, n=%o\n", q, n;
     assert false;
@@ -69,7 +81,7 @@ function ConreyCharacterRepIndex (q, n)
     G := DirichletCharacterReps(q);
     v := ConreyTraces(q,n);
     for i:=1 to #G do
-        if v eq [Trace(u):u in ValueList(G[i])] then return i; end if;
+        if v eq ChiTraces(G[i]) then return i; end if;
     end for;
     printf "Unable to match traces for Conrey character q=%o, n=%o\n", q, n;
     assert false;
@@ -78,7 +90,6 @@ end function;
 function DirichletCharacterFieldDegree (chi)
     return EulerPhi(Order(chi));
 end function;
-
 
 function SturmBound (N, k)
     return Integers()!Ceiling (Index(Gamma0(N))*k/12);
@@ -106,7 +117,7 @@ function CoefficientFieldPoly (f, d)
 end function;
 
 function Polredbestify (f)
-    for n:=1 to 10 do
+    for n:=1 to 4 do
         g := f;
         f := Polredbest(g);
         if f eq g then return f; end if;
@@ -116,7 +127,7 @@ end function;
 
 function sum(X) return #X eq 0 select 0 else &+X; end function;
 
-function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, ComputeCutters:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, EigenvalueDegreeBound:=0, Detail:=false)
+function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=false, ComputeFields:=false, ComputeCutters:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, EigenvalueDegreeBound:=0, Detail:=false)
     st := Cputime();
     if ComputeFields then assert ComputeTraces; end if;
     if ComputeCutters then assert ComputeFields; end if;
@@ -127,8 +138,8 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
     if Detail then printf "took %o secs\n", Cputime()-t; end if;
     if #S eq 0 then
         if Detail then printf "The space %o:%o:%o is empty\n",N,k,o; end if;
-        s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-t, []);
-        if ComputeTraces then s cat:= ":[]:[]"; end if;
+        s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, []);
+        if ComputeTraces then s cat:= ":[]:[]:[]:[]"; end if;
         if ComputeFields then s cat:= ":[]"; end if;
         if ComputeCutters then s cat:= ":[]"; end if;
         if ComputeEigenvalues then s cat:= ":[]"; end if;
@@ -156,6 +167,13 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
         T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]];
     end if;
     if not &and [#t eq NumberOfCoefficients:t in T] then printf "Wrong number of traces for space %o:%o:%o, n=%o, NumberOfCoefficients=%o, T=%o\n",N,k,o, [#t:t in T], n, NumberOfCoefficients, T; assert false; end if;
+    if Detail then printf "Finding CM forms in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
+    cm := [a select b else 0 where a,b:=IsCM(f:Proof:=true):f in S];
+    if Detail then printf "took %o secs\n", Cputime()-t; printf "CM discriminants: %o\n",cm; end if;
+    if Detail then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
+    if #Keys(DCRepTable) eq 0 then DCRepTable:=DirichletCharacterRepTable(G); end if;
+    it := [cm[i] eq 0 select [DCRepTable[t[j]]:j in [2..#t]] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]];
+    if Detail then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n",it; end if;
     HF := [];
     if ComputeFields and DegreeBound eq 0 or Min(D) le DegreeBound then
         if Detail then printf "Computing Hecke field polys with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
@@ -189,30 +207,31 @@ function NewspaceData (G, k, o: ComputeTraces:=false, ComputeFields:=false, Comp
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
     end if;
     s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, D);
-    if ComputeTraces then s cat:= Sprintf(":%o:%o",T,AL); end if;
+    if ComputeTraces then s cat:= Sprintf(":%o:%o:%o:%o",T,cm,it,AL); end if;
     if ComputeFields then s cat:= Sprintf(":%o",HF); end if;
     if ComputeCutters then s cat:= Sprintf(":%o",P); end if;
-    if ComputeEigenvalues then s cat:= Sprintf(":%o",E); end if;
+    if ComputeEigenvalues then s cat:= Sprintf(":%o:%o:%o",E,cm,it); end if;
     return StripWhiteSpace(s);
 end function;
 
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for k*N <= B
-procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=100,DegBound:=20,EDegBound:=6)
+procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,EDegBound:=20)
     n := 0;
     fp := Open(filename,"w");
     for N:=1 to Floor(B/2) do
         if Loud then printf "Constructing CharacterGroup for modulus %o...", N; t:=Cputime(); end if;
-        G:=DirichletCharacterReps(N);
+        G := DirichletCharacterReps(N);
+        T := DirichletCharacterRepTable(G);
         if Loud then printf "took %o secs\n",Cputime()-t; end if;
         for k := 2 to Floor(Sqrt(B/N)) do
             for o in [1..#G] do
                 n +:= 1;
                 if ((n-jobid) mod jobs) eq 0 then
                     if DimensionsOnly then
-                        str := NewspaceData(G,k,o:Detail:=Loud);
+                        str := NewspaceData(G,k,o:DCRepTable:=T,Detail:=Loud);
                     else
                         if Loud then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o, eig-deg-bound %o\n", N,k,o, Coeffs, DegBound,EDegBound; end if;
-                        str := NewspaceData(G,k,o:ComputeTraces,ComputeFields,ComputeCutters,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,EigenvalueDegreeBound:=EDegBound,Detail:=Loud);
+                        str := NewspaceData(G,k,o:DCRepTable:=T,ComputeTraces,ComputeFields,ComputeCutters,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,EigenvalueDegreeBound:=EDegBound,Detail:=Loud);
                     end if;
                     if not Quiet then print str; end if;
                     Puts(fp,str);
