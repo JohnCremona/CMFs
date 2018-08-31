@@ -17,7 +17,8 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdata_xxx.m.txt is N:k:i:t:D:T:A:F:C:E where
+Format of mfdata_xxx.m.txt is N:k:i:t:D:T:A:F:C:E:cm:it
+where:
 
  1) N = level
  2) k = weight
@@ -34,6 +35,8 @@ Format of mfdata_xxx.m.txt is N:k:i:t:D:T:A:F:C:E where
       3) n is an integer that divides the index of the order spanned by b in the maximal order
       4) m is a boolean (0 or 1) indicating whether n is known to be maximal
       5) e is a list of eigenvalues specified in terms of the basis b (list of d integers for each a_n, where d=deg(f))
+11) cm = list of cm discriminants one for each subspace listed in D, 0 indicates no CM (all proven)
+12) it = list of lists of char orbits of inner twists (empty list means no inner twists) -- NOT RIGOROUS
 
 Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
 
