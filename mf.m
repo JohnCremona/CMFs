@@ -215,7 +215,7 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
     if ComputeTraces then s cat:= Sprintf(":%o:%o:%o:%o",T,cm,it,AL); end if;
     if ComputeFields then s cat:= Sprintf(":%o",HF); end if;
     if ComputeCutters then s cat:= Sprintf(":%o",P); end if;
-    if ComputeEigenvalues then s cat:= Sprintf(":%o:%o:%o",E,cm,it); end if;
+    if ComputeEigenvalues then s cat:= Sprintf(":%o",E); end if;
     return StripWhiteSpace(s);
 end function;
 
@@ -236,7 +236,7 @@ procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,Dimens
                         str := NewspaceData(G,k,o:DCRepTable:=T,Detail:=Loud);
                     else
                         if Loud then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o, eig-deg-bound %o\n", N,k,o, Coeffs, DegBound,EDegBound; end if;
-                        str := NewspaceData(G,k,o:DCRepTable:=T,ComputeTraces,ComputeFields,ComputeCutters,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,EigenvalueDegreeBound:=EDegBound,Detail:=Loud);
+                        str := NewspaceData(G,k,o:DCRepTable:=T,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,EigenvalueDegreeBound:=EDegBound,Detail:=Loud);
                     end if;
                     if not Quiet then print str; end if;
                     Puts(fp,str);
