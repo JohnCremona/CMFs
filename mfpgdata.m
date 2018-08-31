@@ -31,8 +31,8 @@ procedure FormatNewspaceData (infile, outfile: Loud:=false)
     t:=Cputime();
     infp := Open(infile,"r");
     outfp := Open(outfile,"w");
-    Puts(outfp,"id:label:level:weight:char_orbit:conrey_labels:char_conductor:cyc_degree:parity:sturm_bound:dim:hecke_orbit_dims:eis_dim:eis_new_dim:cusp_dim:mf_dim");
-    Puts(outfp,"bigint:text:integer:smallint:integer:jsonb:integer:integer:smallint:integer:integer:jsonb:integer:integer:integer:integer");
+    Puts(outfp,"id:label:level:weight:odd_weight:char_orbit:char_order:conrey_labels:char_conductor:cyc_degree:parity:sturm_bound:dim:hecke_orbit_dims:eis_dim:eis_new_dim:cusp_dim:mf_dim");
+    Puts(outfp,"bigint:text:integer:smallint:boolean:integer:integer:jsonb:integer:integer:smallint:integer:integer:jsonb:integer:integer:integer:integer");
     Puts(outfp,"");
     s := Gets(infp);
     id := 0; oldN := 0;
@@ -40,16 +40,16 @@ procedure FormatNewspaceData (infile, outfile: Loud:=false)
         id +:=1;
         r := <eval(a):a in Split(s,":")>;
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
-        label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
-        if N ne oldN then G:=DirichletCharacterReps(N); end if;
+        if N ne oldN then G:=DirichletCharacterReps(N); oldN := N; end if;
         chi := G[o];
+        label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
         M := ModularForms(chi,k);
         S := CuspidalSubspace(M);
         E := EisensteinSubspace(M);
         NE := NewSubspace(E);
         NS := NewSubspace(S);
         assert sum(dims) eq Dimension(NS);
-        str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",id,label,N,k,o,ConreyLabels(chi),Conductor(chi),
+        str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",id,label,N,k,IsOdd(k) select 1 else 0,o,Order(chi),ConreyLabels(chi),Conductor(chi),
                 DirichletCharacterFieldDegree(chi),IsOdd(chi) select -1 else 1,SturmBound(N,k),Dimension(NS),dims,Dimension(E),Dimension(NE),Dimension(S),Dimension(M)));
         str := SubstituteString(str,"<","[");  str:= SubstituteString(str,">","]");
         if Loud then print str; end if;
@@ -69,8 +69,8 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
     t:=Cputime();
     infp := Open(infile,"r");
     outfp := Open(outfile,"w");
-    Puts(outfp,"id:label:space_label:level:weight:char_orbit:hecke_orbit:hecke_orbit_code:dim:field_poly:is_polredabs:nf_label:hecke_ring_numerators:hecke_ring_denominators:hecke_ring_index:hecke_ring_index_proven:trace_hash:qexp_prec:embeddings:analytic_rank:is_cm:cm_disc:cm_hecke_char:cm_proved:has_inner_twist:is_twist_minimal:inner_twist:atkin_lehner_eigenvals:hecke_cutters:qexp_display:trace_display");
-    Puts(outfp,"bigint:text:text:integer:smallint:integer:integer:bigint:integer:jsonb:boolean:text:jsonb:jsonb:integer:boolean:bigint:smallint:jsonb:smallint:boolean:smallint:text:boolean:boolean:boolean:jsonb:jsonb:jsonb:text:jsonb");
+    Puts(outfp,"id:label:space_label:level:weight:odd_weight:char_orbit:char_order:hecke_orbit:hecke_orbit_code:dim:field_poly:is_polredabs:nf_label:hecke_ring_numerators:hecke_ring_denominators:hecke_ring_index:hecke_ring_index_proven:trace_hash:qexp_prec:embeddings:analytic_rank:is_cm:cm_disc:cm_hecke_char:cm_proved:has_inner_twist:is_twist_minimal:inner_twist:atkin_lehner_eigenvals:hecke_cutters:qexp_display:trace_display");
+    Puts(outfp,"bigint:text:text:integer:smallint:boolean:integer:integer:integer:bigint:integer:jsonb:boolean:text:jsonb:jsonb:integer:boolean:bigint:smallint:jsonb:smallint:boolean:smallint:text:boolean:smallint:boolean:jsonb:jsonb:jsonb:text:jsonb");
     Puts(outfp,"");
     s := Gets(infp);
     id := 0; oldN := 0;
@@ -78,6 +78,8 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
         r := <eval(a):a in Split(s,":")>;
         assert #r ge 10;
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
+        if N ne oldN then G:=DirichletCharacterReps(N); oldN := N; end if;
+        chi := G[o];
         space_label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
         m := #[d:d in dims|d eq 1];
         for n := 1 to #dims do
@@ -93,9 +95,13 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
             cm_disc := r[7][n] eq 0 select "\\N" else r[7][n];
             cm_hecke_char := "\\N";
             cm_proved := 1;
-            has_inner_twist := #r[8][n] gt 0 select 1 else 0;
+            if n le #r[8] then
+                has_inner_twist := #r[8][n] gt 0 select 1 else -1;
+                inner_twist := r[8][n];
+            else
+                has_inner_twist := 0;
+            end if;
             is_twist_minimal := "\\N";
-            inner_twist := r[8][n];
             if n le #r[10] then
                 field_poly := r[10][n];
                 if IsDefined(A,field_poly) then
@@ -153,8 +159,8 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
                 hecke_ring_index_proven := "\\N";
                 qexp_prec := "\\N";
             end if;
-            str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",
-                id,label,space_label,N,k,o,n-1,code,dims[n],field_poly,is_polredabs,nf_label,
+            str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",
+                id,label,space_label,N,k,IsOdd(k) select 1 else 0,o,Order(chi),n,code,dims[n],field_poly,is_polredabs,nf_label,
                 hecke_ring_numerators,hecke_ring_denominators,hecke_ring_index,hecke_ring_index_proven,trace_hash,qexp_prec,embeddings,
                 analytic_rank,is_cm,cm_disc,cm_hecke_char,cm_proved,has_inner_twist,is_twist_minimal,inner_twist,
                 atkin_lehner,hecke_cutters,qexp_display,trace_display));
@@ -184,6 +190,7 @@ procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
             code := HeckeOrbitCode(N,k,o,i);
             if i le #r[12] then
                 assert #r[6] ge #r[12];
+                //assert #r[12][i][5] eq 1000;
                 // TDOO: Verify traces!
                 for n := 1 to #r[12][i][5] do
                     id +:= 1;
@@ -196,6 +203,7 @@ procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
                 end for;
             else
                 if i le #r[6] then
+                    //assert #r[6][i] eq 1000;
                     for n := 1 to #r[6][i] do
                         id +:= 1;
                         trace_an := r[6][i][n];

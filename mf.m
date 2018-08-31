@@ -1,7 +1,6 @@
 Attach("polredabs.m");
 Attach("heigs.m");
-Attach("conrey.m");
-import "conrey.m" : ConreyTraces;
+load "conrey.m";
 
 // encode Hecke orbit as a 64-bit int
 function HeckeOrbitCode (N,k,i,n)
@@ -137,12 +136,11 @@ end function;
 
 function sum(X) return #X eq 0 select 0 else &+X; end function;
 
-function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=false, ComputeFields:=false, ComputeCutters:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, EigenvalueDegreeBound:=0, Detail:=false)
+function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=false, ComputeFields:=false, ComputeCutters:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, Detail:=false)
     st := Cputime();
     if ComputeEigenvalues then ComputeCutters := true; end if;
     if ComputeCutters then ComputeFields := true; end if;
     if ComputeFields then ComputeTraces := true; end if;
-    if EigenvalueDegreeBound gt DegreeBound then DegreeBound := EigenvalueDegreeBound; end if;
     chi := G[o];  N := Modulus(chi);
     if Detail then printf "Decomposing space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     S := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
@@ -164,7 +162,7 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
         assert sum(D) eq NewspaceDimension(chi,k);
         return StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, Sort(D)));
     end if;
-    n := Max(2*SturmBound(N,k),NumberOfCoefficients);
+    n := Max(SturmBound(N,k)+10,NumberOfCoefficients);
     if Detail then printf "Computing %o traces for space %o:%o:%o...", n, N,k,o; t:=Cputime(); end if;
     F := [*Eigenform(S[i],n+1):i in [1..#S]*];
     T := Sort([<[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a) where a:=Coefficient(F[i],j) :j in [1..n]],i>:i in [1..#F]]);
@@ -177,17 +175,12 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
     if NumberOfCoefficients gt 0 and not &and[#t eq NumberOfCoefficients : t in T] then
         T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]];
     end if;
-    if NumberOfCoefficients gt 0 then
-        if not &and [#v eq NumberOfCoefficients : v in T] then printf "Wrong number of traces for space %o:%o:%o, n=%o, NumberOfCoefficients=%o, [#v : v in T]=%o, T=%o\n",N,k,o, n, NumberOfCoefficients, [#v : v in T], T; assert false; end if;
-    else
-        assert #Set([#v : v in T]) eq 1;
-    end if;
     if Detail then printf "Finding CM forms in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
     cm := [a select b else 0 where a,b:=IsCM(f:Proof:=true):f in S];
     if Detail then printf "took %o secs\n", Cputime()-t; printf "CM discriminants: %o\n",cm; end if;
     if Detail then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
     if #Keys(DCRepTable) eq 0 then DCRepTable:=DirichletCharacterRepTable(G); end if;
-    it := [cm[i] eq 0 select [DCRepTable[t[j]]:j in [2..#t]] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]];
+    it := [cm[i] eq 0 select [DCRepTable[t[j]]:j in [2..#t]] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]|D[i] le DegreeBound];
     if Detail then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n",it; end if;
     HF := [];
     if ComputeFields and DegreeBound eq 0 or Min(D) le DegreeBound then
@@ -216,9 +209,9 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
     end if;
     E := [];
-    if ComputeEigenvalues and #[d:d in D|d gt 1 and d le EigenvalueDegreeBound] gt 0 then
-        if Detail then printf "Computing exact Hecke eigenvalues with degreebound %o for space %o:%o:%o...", EigenvalueDegreeBound,N,k,o; t:=Cputime(); end if;
-        E := [<f,b,n,m select 1 else 0,e> where f,b,n,m,e := ExactHeckeEigenvalues(S[i]): i in [1..#S]|D[i] gt 1 and D[i] le EigenvalueDegreeBound];
+    if ComputeEigenvalues and #[d:d in D|d gt 1 and d le DegreeBound] gt 0 then
+        if Detail then printf "Computing exact Hecke eigenvalues with degreebound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
+        E := [<f,b,n,m select 1 else 0,e> where f,b,n,m,e := ExactHeckeEigenvalues(S[i]:Tnbnd:=n): i in [1..#S]|D[i] gt 1 and D[i] le DegreeBound];
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
     end if;
     s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, D);
@@ -230,7 +223,7 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
 end function;
 
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for k*N <= B
-procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,EDegBound:=20)
+procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20)
     n := 0;
     fp := Open(filename,"w");
     for N:=1 to Floor(B/4) do
@@ -245,8 +238,8 @@ procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,Dimens
                     if DimensionsOnly then
                         str := NewspaceData(G,k,o:DCRepTable:=T,Detail:=Loud);
                     else
-                        if Loud then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o, eig-deg-bound %o\n", N,k,o, Coeffs, DegBound,EDegBound; end if;
-                        str := NewspaceData(G,k,o:DCRepTable:=T,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,EigenvalueDegreeBound:=EDegBound,Detail:=Loud);
+                        if Loud then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o\n", N,k,o, Coeffs, DegBound; end if;
+                        str := NewspaceData(G,k,o:DCRepTable:=T,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,Detail:=Loud);
                     end if;
                     if not Quiet then print str; end if;
                     Puts(fp,str);
