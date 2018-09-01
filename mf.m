@@ -1,8 +1,8 @@
 Attach("polredabs.m");
+Attach("conrey.m");
 Attach("heigs.m");
-load "conrey.m";
 
-// encode Hecke orbit as a 64-bit int
+// encode Hecke orbit as a 64-bit integer
 function HeckeOrbitCode (N,k,i,n)
     return N+2^24*k+2^36*(i-1)+2^52*(n-1);
 end function;
@@ -16,7 +16,7 @@ function SplitHeckeOrbitCode(c)
     return N,k,i,n;
 end function;
 
-// test whether two irreducible polys define the same field (much faster thatn IsIsomorphic)
+// test whether two irreducible polys define the same field (much faster than IsIsomorphic)
 function FieldPolysMatch (f,g)
     R<x> := PolynomialRing(Rationals());
     if Type(f) eq SeqEnum then f:=R!f; end if;
@@ -38,8 +38,7 @@ function RestrictChiCodomain (chi)
         m := 2; while Trace(K!Evaluate(x,m)) eq Trace(Evaluate(chi,m)) and m lt N do m +:= 1; end while;
         if m eq N then return x; end if;
     end for;
-    print "Unable to restric domain of Dirichlet character!";
-    assert false;
+    error "Unable to restric domain of Dirichlet character", chi;
 end function;
     
 function ChiTraces(chi) return [Trace(z):z in ValueList(chi)]; end function;
@@ -82,8 +81,7 @@ function ConreyCharacterRep (q, n)
     for i:=1 to #G do
         if v eq ChiTraces(G[i]) then return G[i]; end if;
     end for;
-    printf "Unable to match traces for Conrey character q=%o, n=%o\n", q, n;
-    assert false;
+    error Sprintf("Unable to match traces for Conrey character q=%o, n=%o\n", q, n);
 end function;
 
 function ConreyCharacterRepIndex (q, n)
@@ -92,8 +90,7 @@ function ConreyCharacterRepIndex (q, n)
     for i:=1 to #G do
         if v eq ChiTraces(G[i]) then return i; end if;
     end for;
-    printf "Unable to match traces for Conrey character q=%o, n=%o\n", q, n;
-    assert false;
+    error Sprintf("Unable to match traces for Conrey character q=%o, n=%o\n", q, n);
 end function;
 
 function DirichletCharacterFieldDegree (chi)
@@ -121,8 +118,7 @@ function CoefficientFieldPoly (f, d)
         if Degree(g) eq d then return g; end if;
         assert Degree(g) lt d;
     end for;
-    print "Unable to construct the coefficient field of the form", f;
-    assert false;
+    error "Unable to construct the coefficient field of modular form", f;
 end function;
 
 function Polredbestify (f)
@@ -209,9 +205,12 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
         if Detail then printf "Computing exact Hecke eigenvalues with degreebound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
         E := [<f,b,n,m select 1 else 0,e> where f,b,n,m,e := ExactHeckeEigenvalues(S[i]:Tnbnd:=n): i in [1..#S]|D[i] gt 1 and D[i] le DegreeBound];
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
+        if Detail then printf "Verifying that field polys computed by ExactHeckeEigenvalues match..."; t:=Cputime(); end if;
+        for i:= 1 to #E do assert FieldPolysMatch (HF[i],E[i][1]); HF[i] := E[i][1]; end for;
+        if Detail then printf "took %o secs\n", Cputime()-t; end if;
         if Detail then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
         if #Keys(DCRepTable) eq 0 then DCRepTable:=DirichletCharacterRepTable(G); end if;
-        it := [cm[i] eq 0 select [DCRepTable[t[j]]:j in [2..#t]] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]|D[i] le DegreeBound];
+        it := [cm[i] eq 0 select [DCRepTable[chi]:chi in t|Order(chi) gt 1] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]|D[i] le DegreeBound];
         if Detail then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n",it; end if;
     end if;
     s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, D);
@@ -227,7 +226,7 @@ procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,Dimens
     n := 0;
     fp := Open(filename,"w");
     for N:=1 to Floor(B/4) do
-        if Loud then printf "Constructing CharacterGroup for modulus %o...", N; t:=Cputime(); end if;
+        if Loud then printf "Constructing character group data for modulus %o...", N; t:=Cputime(); end if;
         G := DirichletCharacterReps(N);
         T := DirichletCharacterRepTable(G);
         if Loud then printf "took %o secs\n",Cputime()-t; end if;
