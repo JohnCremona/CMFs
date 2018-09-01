@@ -152,6 +152,7 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
     end if;
     d := EulerPhi(Order(chi));
     D := [d*Dimension(S[i]): i in [1..#S]];
+    if DegreeBound eq 0 then DegreeBound := Max(D); end if;
     if Detail then printf "dims = %o\n", D; end if;
     // if the dimensions are all distinct then we know that no conjugate spaces were returend by NewformDecomposition
     if not ComputeTraces and not ComputeFields and not ComputeCutters then
@@ -159,26 +160,25 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
         return StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, Sort(D)));
     end if;
     n := Max(SturmBound(N,k)+10,NumberOfCoefficients);
+    if NumberOfCoefficients eq 0 then NumberOfCoefficients := n; end if;
     if Detail then printf "Computing %o traces for space %o:%o:%o...", n, N,k,o; t:=Cputime(); end if;
     F := [*Eigenform(S[i],n+1):i in [1..#S]*];
     T := Sort([<[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a) where a:=Coefficient(F[i],j) :j in [1..n]],i>:i in [1..#F]]);
     D := [D[T[i][2]]: i in [1..#T]];  S := [S[T[i][2]]: i in [1..#T]];  F := [*F[T[i][2]]: i in [1.. #T]*];
     T := [T[i][1]:i in [1..#T]];
+    if NumberOfCoefficients ne n then T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]]; end if;
     if Detail then printf "took %o secs\n", Cputime()-t; printf "Lex sorted traces = %o\n",T; end if;
     if Detail and Order(chi) eq 1 then printf "Computing Atkin-Lehner signs for space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(S[i],p)),D[i])>:p in PrimeDivisors(N)]:i in [1..#S]] else [];
     if Detail and Order(chi) eq 1 then printf "took %o secs.\n", Cputime()-t; printf "Atkin-Lehner signs %o\n", AL; end if;
-    if NumberOfCoefficients gt 0 and not &and[#t eq NumberOfCoefficients : t in T] then
-        T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]];
-    end if;
     HF := [];
-    if ComputeFields and DegreeBound eq 0 or Min(D) le DegreeBound then
+    if ComputeFields and Min(D) le DegreeBound then
         if Detail then printf "Computing Hecke field polys with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
         HF := [Coefficients(Polredbestify(CoefficientFieldPoly(F[i],D[i]))):i in [1..#D]|DegreeBound eq 0 or D[i] le DegreeBound];
         if Detail then printf "took %o secs\n", Cputime()-t;  printf "Polredbestified Hecke field polys = %o\n", HF; end if;
     end if;
     // TODO: is it really enough to only go up to degree bound
-    P:=[[]:d in D|DegreeBound eq 0 or d le DegreeBound];   
+    P:=[[]:d in D|d le DegreeBound];   
     if ComputeCutters and #P gt 0 then
         if Detail then printf "Computing Hecke cutters with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
         p := 2;
@@ -206,7 +206,8 @@ function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=f
         E := [<f,b,n,m select 1 else 0,e> where f,b,n,m,e := ExactHeckeEigenvalues(S[i]:Tnbnd:=n): i in [1..#S]|D[i] gt 1 and D[i] le DegreeBound];
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
         if Detail then printf "Verifying that field polys computed by ExactHeckeEigenvalues match..."; t:=Cputime(); end if;
-        for i:= 1 to #E do assert FieldPolysMatch (HF[i],E[i][1]); HF[i] := E[i][1]; end for;
+        off := #[j:j in [1..#D]|D[j] eq 1];
+        for i:= 1 to #E do assert FieldPolysMatch (HF[off+i],E[i][1]); HF[off+i] := E[i][1]; end for;
         if Detail then printf "took %o secs\n", Cputime()-t; end if;
         if Detail then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
         if #Keys(DCRepTable) eq 0 then DCRepTable:=DirichletCharacterRepTable(G); end if;
