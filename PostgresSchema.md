@@ -61,6 +61,8 @@ hecke_ring_index_proven | bool | whether the index has been proven correct (comp
 trace_hash | bigint | appropriate linear combination of the a_p between 2^12 and 2^13
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 embeddings | jsonb | list of pairs (x,y), giving an ordering of the complex roots x+iy of the field poly that define the embedding enumeration (corresponding to the lexicographic ordering of chi, n in the L-function labels)
+char_values | jsonb | list of pairs [p, L] where p ranges over primes less than qexp_prec not dividing the level and L is a list of integers c so that chi(p) = e^{2 pi i c/d}, with d=char_order and chi ranging over the characters making up this Galois orbit.
+isogeny_class_label | text | the isogeny class label of the corresponding elliptic curve or modular abelian variety (could be null if not yet in the database)
 analytic_rank | smallint |
 is_cm | bool |
 cm_disc | smallint | The (negative) discriminant of the order by which we have CM (0 if no CM)
@@ -120,7 +122,7 @@ Note that the values in this table are stored as integers m so that the actual v
 Column | Type | Notes
 -------|------|------
 label | text | N.n where N is the modulus and n is the conrey label
-orbit_label | text | N.i where N is the modulus and i is the orbit_label
+orbit_label | text | N.i where N is the modulus and i is the orbit_index
 prim_label | text | the label of primitive character inducing this one
 order | smallint
 values | jsonb | list of the first twelve values on -1,1, then the next ten integers relatively prime to the modulus
