@@ -17,26 +17,25 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdata_xxx.m.txt is N:k:i:t:D:T:A:F:C:E:cm:it
-where:
+Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:it* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The 12 fields in each record are defined as follows:
 
- 1) N = level
- 2) k = weight
- 3) i = character orbit
- 4) t = time
- 5) D = dims [d1,d2,...] of Galois stable subspaces
- 6) T = traces [[trace(a_1),...trace(a_n)],...] one list of traces for each subspace listed in D
- 7) A = Atkin-Lehner signs (empty list if character is not trivial (0=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D
- 8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to degree-bound (currently 20)
- 9) C = Hecke cutters [[<p,charpoly>,...],...] list of minimal lists of charpolys of T_p sufficient to distinguish subspaces listed in D up to degree-bound (???)
-10) E = Hecke Eigenvalue data [<f,b,n,m,e>,...] list of tuples <f,b,n,c,e> of Hecke eigenvalue data for each subspace listed in D of dimension up to eigenvalue-degree-bound (currently 6) where:
-      1) f is a polredbestified field poly (should be the same as corresponding poly in F),
-      2) b defines a basis for the Hecke ring in terms of power basis for f (list of lists of rationals),
-      3) n is an integer that divides the index of the order spanned by b in the maximal order
-      4) m is a boolean (0 or 1) indicating whether n is known to be maximal
-      5) e is a list of eigenvalues specified in terms of the basis b (list of d integers for each a_n, where d=deg(f))
-11) cm = list of cm discriminants one for each subspace listed in D, 0 indicates no CM (all proven)
-12) it = list of lists of char orbits of inner twists (empty list means no inner twists) -- NOT RIGOROUS
+ 1) N = level, a positive integer
+ 2) k = weight, a positive integer (for .m.txt files, k > 1)
+ 3) i = char orbit of chi (Galois orbits of Dirichlet charcters chi are lex-sorted on trace vectors [tr(chi(n)) for n in [1..N]], taking traces from Q(chi) to Q; the first orbit index is 1, corresponding to the trivial character).
+ 4) t = time in secs to compute this line of data
+ 5) D = sorted list of dimensions [d1,d2,...] of Galois stable subspaces of S_k^{new}(N,chi), ordered by dimension
+ 6) T = lex-sorted list of trace vectors [[tr(a_1),...tr(a_n)],...] for Galois conjugacy classes of eigenforms f corresponding to the subspaces listed in D, traces are from the coefficient field of the form down to Q (note that lex-sorting trace vectors sorts subspaces by dimension because tr(a_1)=tr(1) is the degree of the coefficient field)
+ 7) A = Atkin-Lehner signs (empty list if chi is not the trivial character (i.e. i=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D.
+ 8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to the degree bound (currently 20); note that F[n] corresponds to the space D[n] but F may be shorter than D
+ 9) C = Hecke cutters [[<p,[g0,g1,...,1]>,...],...] list of minimal lists of coefficients of charpolys g(x) of T_p sufficient to distinguish all the subspaces listed in D up to the degree bound.
+10) E = Hecke Eigenvalue data [<g,b,n,m,e>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension up to the degree bound where:
+      1) f is a polredbestified field poly for the coefficient field (should be the same as the corresponding poly in F),
+      2) b is a basis for the Hecke ring R:=Z[a_n] in terms of the power basis of K:=Q[x]/(f(x)) (a list of lists of rationals),
+      3) n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K
+      4) m is a boolean (0 or 1) indicating whether or not we know that n is maximal, i.e. n = [Z(f):O_{Q(f)}]
+      5) e is a list of eigenvalues specified in terms of the basis b (list of deg(f) integers for each a_n)
+11) cm = list of cm discriminants, one for each subspace listed in D, 0 indicates non-CM forms (all proven)
+12) it = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (NOT RIGOROUS!)
 
 Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
 
