@@ -1,9 +1,87 @@
-// We identify Galois conjugacy classes or Dirichlet characters of modulus N
-// by ordinal in reverse lex ordering of traces of values on 1,2,3,..N
-function DirichletCharacterGaloisReps(N)
-  G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
-  T := Sort([<[Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
-  return Reverse([G[T[i][2]]:i in [1..#G]]);
+Attach("polredabs.m");
+Attach("conrey.m");
+Attach("heigs.m");
+
+// encode Hecke orbit as a 64-bit integer
+function HeckeOrbitCode (N,k,i,n)
+    return N+2^24*k+2^36*(i-1)+2^52*(n-1);
+end function;
+
+// extract Hecke orbit invariants from code
+function SplitHeckeOrbitCode(c)
+    N := c mod 2^24;  c := ExactQuotient(c-N,2^24);
+    k := c mod 2^12;  c := ExactQuotient(c-k,2^12);
+    i := (c mod 2^16)+1; c := ExactQuotient(c-(i-1),2^16);
+    n := c+1;
+    return N,k,i,n;
+end function;
+
+// test whether two irreducible polys define the same field (much faster than IsIsomorphic)
+function FieldPolysMatch (f,g)
+    R<x> := PolynomialRing(Rationals());
+    if Type(f) eq SeqEnum then f:=R!f; end if;
+    if Type(g) eq SeqEnum then g:=R!g; end if;
+    assert IsIrreducible(f) and IsIrreducible(g);
+    if Degree(f) ne Degree(g) then return false; end if;
+    RR<t>:=PolynomialRing(NumberField(f));
+    // if g has a root in Q[x]/(f) then Q[x]/(g) is contained in Q[x]/(f) and we must have equality because degrees match
+    return #Roots(RR!Coefficients(g)) gt 0;
+end function;
+
+function ChiTraces(chi) return [Trace(z):z in ValueList(chi)]; end function;
+
+// Returns Galois orbit reps sorted by order and then lex order on traces of values
+function DirichletCharacterReps (N)
+    G := GaloisConjugacyRepresentatives(FullDirichletGroup(N));
+    T := Sort([<[Order(G[i])] cat ChiTraces(G[i]),i>:i in [1..#G]]);
+    return [*MinimalBaseRingCharacter(G[T[i][2]]):i in [1..#G]*];
+end function;
+
+// This is expensive, only call it once per level
+function DirichletCharacterRepTable (G)
+    H := FullDirichletGroup(Modulus(G[1]));
+    A := AssociativeArray();
+    for i:=1 to #G do A[ChiTraces(G[i])]:=i; end for;
+    B := AssociativeArray();
+    for chi in Elements(H) do B[chi] := A[ChiTraces(MinimalBaseRingCharacter(chi))]; end for;
+    return B;
+end function;
+    
+function ConreyLabels (chi)
+    N := Modulus(chi);
+    v := ChiTraces(chi);
+    return [n:n in [1..N]|GCD(n,N) eq 1 and ConreyTraces(N,n) eq v];
+end function;
+
+function MinimalConreyLabel (chi)
+    n := Min(ConreyLabels(chi));
+    return n;
+end function;
+
+function DirichletCharacterRepToMinimalConreyLabel (N,i)
+    return MinimalConreyLabel (DirichletCharacterReps(N)[i]);
+end function;
+
+function ConreyCharacterRep (q, n)
+    G := DirichletCharacterReps(q);
+    v := ConreyTraces(q,n);
+    for i:=1 to #G do
+        if v eq ChiTraces(G[i]) then return G[i]; end if;
+    end for;
+    error Sprintf("Unable to match traces for Conrey character q=%o, n=%o\n", q, n);
+end function;
+
+function ConreyCharacterRepIndex (q, n)
+    G := DirichletCharacterReps(q);
+    v := ConreyTraces(q,n);
+    for i:=1 to #G do
+        if v eq ChiTraces(G[i]) then return i; end if;
+    end for;
+    error Sprintf("Unable to match traces for Conrey character q=%o, n=%o\n", q, n);
+end function;
+
+function DirichletCharacterFieldDegree (chi)
+    return EulerPhi(Order(chi));
 end function;
 
 function SturmBound (N, k)
@@ -14,129 +92,147 @@ function NewspaceDimension (chi, k)
     return Dimension(NewSubspace(CuspidalSubspace(ModularForms(chi,k))));
 end function;
 
-function NewspaceDecomposition (chi, k: ComputeForms:=false, NumberOfCoefficients:=0)
-    D := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
-    d := EulerPhi(Order(chi));
-    X := [Dimension(D[i]): i in [1..#D]];
-    // if the dimensions are all distinct then we know that no conjugate spaces were returend by NewformDecomposition
-    if not ComputeForms and #Set(X) eq #X then return Sort([d*x:x in X]); end if;
-    // Initially check for conjugate forms by comparing absolute traces up to the Sturm bound
-    // If we hit a trace match we will then check minpolys
-    n := Max(SturmBound(Modulus(chi),k),NumberOfCoefficients);
-    F := [*Eigenform(D[i],n):i in [1..#D]*];
-    T := [<[Integers()|a in Integers() select a else Integers()!AbsoluteTrace(a):a in Coefficients(F[i])],i>:i in [1..#D]];
-    A := AssociativeArray();
-    for r in T do
-        A[r[1]] := IsDefined(A,r[1]) select Append(A[r[1]],r[2]) else [r[2]];
-        // if we hit two eigenforms with the same traces, verify that they actually have the same minpolys as well
-        if #A[r[1]] gt 1 then
-            assert [AbsoluteMinimalPolynomial(a):a in Coefficients(F[r[2]])] eq [AbsoluteMinimalPolynomial(a):a in Coefficients(F[A[r[1]][1]])];
-        end if;
-    end for;
-    if ComputeForms then
-        X:= Sort([<d*&+[Dimension(D[i]):i in A[r]],A[r][1]>: r in Keys(A)]);
-        return [*<r[1],F[r[2]]>:r in X*];
-    end if;
-    return Sort([d*&+[Dimension(D[i]):i in A[r]] : r in Keys(A)]);
-end function;
-
-function CoefficientFieldPolynomial(f,n)
+function CoefficientFieldPoly (f, d)
     R<x>:=PolynomialRing(Rationals());
-    if n eq 1 then return x; end if;
+    if d eq 1 then return x; end if;
     a := Coefficients(f);
     assert a[1] eq 1;
+    z := 0;
     for i:=2 to #a do
-        g := AbsoluteMinimalPolynomial(a[i]);
-        if Degree(g) eq n then return g; end if;
-        assert Degree(g) lt n;
+        if a[i] in Integers() then continue; end if;
+        z +:= (i-1)*a[i];
+        g := AbsoluteMinimalPolynomial(z);
+        if Degree(g) eq d then return g; end if;
+        assert Degree(g) lt d;
     end for;
-    K := NumberField(AbsoluteMinimalPolynomial(a[2]));
-    for i:=3 to #a do
-        g := AbsoluteMinimalPolynomial(a[i]);
-        K := Compositum(K,NumberField(g));
-        if Degree(K) eq n then return DefiningPolynomial(K); end if;
-        assert Degree(K) lt n;
-    end for;
-    print "Unable to construct the coefficient field of the form", f;
-    assert false;
-end function;
-
-function CompareCoefficientVectors(a,b)
-    if #a ne #b then return #a-#b; end if;
-    if a lt b then return -1; end if;
-    if a gt b then return 1; end if;
-    return 0;
-end function;
-    
-function NewspaceCoefficientFields (chi, k, DegreeBound)
-    X := NewspaceDecomposition (chi, k: ComputeForms:=true, NumberOfCoefficients:=100);
-    Y := Sort([Coefficients(Polredbest(CoefficientFieldPolynomial(r[2],r[1]))):r in X|r[1] le DegreeBound],CompareCoefficientVectors);
-    return Y;
+    error "Unable to construct the coefficient field of modular form", f;
 end function;
 
 function sum(X) return #X eq 0 select 0 else &+X; end function;
 
+function NewspaceData (G, k, o: DCRepTable:=AssociativeArray(), ComputeTraces:=false, ComputeFields:=false, ComputeCutters:=false, ComputeEigenvalues:=false, NumberOfCoefficients:=0, DegreeBound:=0, Detail:=false)
+    st := Cputime();
+    if ComputeEigenvalues then ComputeCutters := true; end if;
+    if ComputeCutters then ComputeFields := true; end if;
+    if ComputeFields then ComputeTraces := true; end if;
+    chi := G[o];  N := Modulus(chi);
+    if Detail then printf "Decomposing space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
+    S := NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
+    if Detail then printf "took %o secs\n", Cputime()-t; end if;
+    if #S eq 0 then
+        if Detail then printf "The space %o:%o:%o is empty\n",N,k,o; end if;
+        s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, []);
+        if ComputeTraces then s cat:= ":[]:[]:[]:[]"; end if;
+        if ComputeFields then s cat:= ":[]"; end if;
+        if ComputeCutters then s cat:= ":[]"; end if;
+        if ComputeEigenvalues then s cat:= ":[]"; end if;
+        return StripWhiteSpace(s);
+    end if;
+    d := EulerPhi(Order(chi));
+    D := [d*Dimension(S[i]): i in [1..#S]];
+    if DegreeBound eq 0 then DegreeBound := Max(D); end if;
+    if Detail then printf "dims = %o\n", D; end if;
+    // if the dimensions are all distinct then we know that no conjugate spaces were returend by NewformDecomposition
+    if not ComputeTraces and not ComputeFields and not ComputeCutters then
+        assert sum(D) eq NewspaceDimension(chi,k);
+        return StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, Sort(D)));
+    end if;
+    n := Max(SturmBound(N,k)+10,NumberOfCoefficients);
+    if NumberOfCoefficients eq 0 then NumberOfCoefficients := n; end if;
+    if Detail then printf "Computing %o traces for space %o:%o:%o...", n, N,k,o; t:=Cputime(); end if;
+    F := [*Eigenform(S[i],n+1):i in [1..#S]*];
+    T := Sort([<[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a) where a:=Coefficient(F[i],j) :j in [1..n]],i>:i in [1..#F]]);
+    D := [D[T[i][2]]: i in [1..#T]];  S := [S[T[i][2]]: i in [1..#T]];  F := [*F[T[i][2]]: i in [1.. #T]*];
+    T := [T[i][1]:i in [1..#T]];
+    if NumberOfCoefficients ne n then T:=[[T[i][j]:j in [1..NumberOfCoefficients]]: i in [1..#T]]; end if;
+    if Detail then printf "took %o secs\n", Cputime()-t; printf "Lex sorted traces = %o\n",T; end if;
+    if Detail and Order(chi) eq 1 then printf "Computing Atkin-Lehner signs for space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
+    AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(S[i],p)),D[i])>:p in PrimeDivisors(N)]:i in [1..#S]] else [];
+    if Detail and Order(chi) eq 1 then printf "took %o secs.\n", Cputime()-t; printf "Atkin-Lehner signs %o\n", AL; end if;
+    HF := [];
+    if ComputeFields and Min(D) le DegreeBound then
+        if Detail then printf "Computing Hecke field polys with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
+        HF := [Coefficients(Polredbestify(CoefficientFieldPoly(F[i],D[i]))):i in [1..#D]|DegreeBound eq 0 or D[i] le DegreeBound];
+        if Detail then printf "took %o secs\n", Cputime()-t;  printf "Polredbestified Hecke field polys = %o\n", HF; end if;
+    end if;
+    // TODO: is it really enough to only go up to degree bound
+    P:=[[]:d in D|d le DegreeBound];   
+    if ComputeCutters and #P gt 0 then
+        if Detail then printf "Computing Hecke cutters with degree bound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
+        p := 2;
+        while true do
+            if N mod p ne 0 then
+                for i:=1 to #P do
+                    g := Norm(CharacteristicPolynomial(HeckeOperator(S[i],p)));
+                    A := Factorization(g);
+                    assert #A eq 1;
+                    g := A[1][1]^ExactQuotient(D[i],Degree(A[1][1]));
+                    Append(~P[i],<p,Coefficients(g)>);
+                end for;
+                if #Set(P) eq #P then break; end if;
+            end if;
+            p := NextPrime(p);
+        end while;
+        if Detail then printf "took %o secs\n", Cputime()-t; end if;
+    end if;
+    if Detail then printf "Finding CM forms in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
+    cm := [a select b else 0 where a,b:=IsCM(f:Proof:=true):f in S];
+    if Detail then printf "took %o secs\n", Cputime()-t; printf "CM discriminants: %o\n",cm; end if;
+    E := []; it:=[];
+    if ComputeEigenvalues and #[d:d in D|d gt 1 and d le DegreeBound] gt 0 then
+        if Detail then printf "Computing exact Hecke eigenvalues with degreebound %o for space %o:%o:%o...", DegreeBound,N,k,o; t:=Cputime(); end if;
+        E := [<f,b,n,m select 1 else 0,e> where f,b,n,m,e := ExactHeckeEigenvalues(S[i]:Tnbnd:=n): i in [1..#S]|D[i] gt 1 and D[i] le DegreeBound];
+        if Detail then printf "took %o secs\n", Cputime()-t; end if;
+        if Detail then printf "Verifying that field polys computed by ExactHeckeEigenvalues match..."; t:=Cputime(); end if;
+        off := #[j:j in [1..#D]|D[j] eq 1];
+        for i:= 1 to #E do
+            if HF[off+i] ne E[i][1] then
+                assert FieldPolysMatch (HF[off+i],E[i][1]);
+                printf "Replacing field poly %o with %o\n",HF[off+i],E[i][1];
+                HF[off+i] := E[i][1];
+            end if;
+        end for;
+        if Detail then printf "took %o secs\n", Cputime()-t; end if;
+        if Detail then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
+        if #Keys(DCRepTable) eq 0 then DCRepTable:=DirichletCharacterRepTable(G); end if;
+        it := [cm[i] eq 0 select [DCRepTable[chi]:chi in t|Order(chi) gt 1] where t:= InnerTwists(S[i]:Proof:=true) else [] :i in [1..#S]|D[i] le DegreeBound];
+        if Detail then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n",it; end if;
+    end if;
+    s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, D);
+    if ComputeTraces then s cat:= Sprintf(":%o:%o",T,AL); end if;
+    if ComputeFields then s cat:= Sprintf(":%o",HF); end if;
+    if ComputeCutters then s cat:= Sprintf(":%o",P); end if;
+    if ComputeEigenvalues then s cat:= Sprintf(":%o:%o:%o",E,cm,it); end if;
+    return StripWhiteSpace(s);
+end function;
+
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for k*N <= B
-procedure DecomposeSpaces(filename,B,jobs,jobid)
-    n := 0;
-    S := [Split(r,":"):r in Split(Read(filename),"\n")];
-    S := [<eval(a):a in r>:r in S];
-    A:=AssociativeArray();
-    for r in S do A[<r[1],r[2],r[3]>]:=r; end for;
+procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20)
+    st := Cputime();
+    n := 0; cnt:=0;
     fp := Open(filename,"w");
-    for N:=1 to Floor(B/2) do
-        G:=DirichletCharacterGaloisReps(N);
-        for k := 2 to Floor(B/N) do
-            for i in [1..#G] do
+    for N:=1 to Floor(B/4) do
+        if Loud then printf "Constructing character group data for modulus %o...", N; t:=Cputime(); end if;
+        G := DirichletCharacterReps(N);
+        T := DirichletCharacterRepTable(G);
+        if Loud then printf "took %o secs\n",Cputime()-t; end if;
+        for k := 2 to Floor(Sqrt(B/N)) do
+            for o in [1..#G] do
                 n +:= 1;
                 if ((n-jobid) mod jobs) eq 0 then
-                    if IsDefined(A,<N,k,i>) then
-                        t:=A[<N,k,i>][4];
-                        X:=A[<N,k,i>][5];
+                    if DimensionsOnly then
+                        str := NewspaceData(G,k,o:DCRepTable:=T,Detail:=Loud);
                     else
-                        start := Cputime();
-                        X:=NewspaceDecomposition(G[i],k);
-                        assert sum(X) eq NewspaceDimension(G[i],k);
-                        t := Cputime()-start;
+                        if Loud then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o\n", N,k,o, Coeffs, DegBound; end if;
+                        str := NewspaceData(G,k,o:DCRepTable:=T,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,Detail:=Loud);
                     end if;
-                    str:=StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o",N,k,i,t,X));
-                    print str;
+                    if not Quiet then print str; end if;
                     Puts(fp,str);
                     Flush(fp);
+                    cnt +:= 1;
                 end if;
             end for;
         end for;
     end for;
-end procedure;
-
-// Given file containing decompositions of S_k(N,chi)^new into Galois stable subspaces
-// compute polredbest field polys (you must Attach(pol"readabs.spec"); before calling
-procedure ComputeCoefficientFields(infile,outfile,D,jobs,jobid:B:=0)
-    n := 0;
-    S := [Split(r,":"):r in Split(Read(infile),"\n")];
-    S := [<eval(a):a in r>:r in S];
-    fp := Open(outfile,"w");
-    oldN := 0;
-    for r in S do
-        if #r[4] eq 0 or Min(r[4]) gt D then continue; end if;
-        if B gt 0 and r[1]*r[2] gt B then continue; end if;
-        n +:= 1;
-        if ((n-jobid) mod jobs) eq 0 then
-            start := Cputime();
-            N := r[1]; k:= r[2]; i:=r[3];
-            if Max([a:a in r[4]|a le D]) eq 1 then
-                // don't bother decomposing the space if all the coefficient fields we care about are equal to Q
-                F:=[[0,1]:a in r[4]|a eq 1];
-            else
-                if N ne oldN then G:=DirichletCharacterGaloisReps(N); oldN := N; end if;
-                F := NewspaceCoefficientFields(G[i], k, D);
-            end if;
-            t := Cputime()-start;
-            str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o",N,k,i,r[4],F));
-            print str, t;
-            Puts(fp,str);
-            Flush(fp);
-        end if;
-    end for;
-    print n;
+    printf "DecomposeSpaces(\"%o\",%o,%o,%o) succesfully generated %o records using %os of CPU time.\n", filename, B, jobs, jobid, cnt, Cputime()-st;
 end procedure;

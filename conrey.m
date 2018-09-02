@@ -1,4 +1,5 @@
-function ConreyCharacterValue(q,n,m)
+intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCycElt
+{ Compute chi_q(n,m), the value of the Dirichlet character with Conry label q.n at the integer m. }
     if q eq 1 then return 1; end if;
     if GCD(q,n) ne 1 or GCD(q,m) ne 1 then return 0; end if;
     if n mod q eq 1 or m mod q eq 1 then return 1; end if;
@@ -21,9 +22,10 @@ function ConreyCharacterValue(q,n,m)
         a := A[R!n]; b:=A[R!m];
         return RootOfUnity(8)^((1-a[1])*(1-b[1])) * RootOfUnity(2^(e-2))^(a[2]*b[2]);
     end if;
-end function;
-    
-function ConreyCharacterValues(q,n,M)
+end intrinsic;
+
+intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEnum[FldCycElt]
+{ Computes [chi_q(n,m):m in [1..M]], the list of values of the Dirichlet character with Conrey label q.n on the integers 1..M. }
     if q eq 1 then return [1:i in [1..M]]; end if;
     if GCD(q,n) ne 1 then return [0:i in [1..M]]; end if;
     if n mod q eq 1 then return [GCD(i,q) eq 1 select 1 else 0:i in [1..M]]; end if;
@@ -49,30 +51,22 @@ function ConreyCharacterValues(q,n,M)
         a := A[R!n];
         return [GCD(p,m) eq 1 select RootOfUnity(8)^((1-a[1])*(1-b[1])) * RootOfUnity(2^(e-2))^(a[2]*b[2]) where b:=A[R!m] else 0 : m in [1..M]];
     end if;
-end function;
-    
-function ConreyTraces(q,n)
-    F:=CyclotomicField(Exponent(MultiplicativeGroup(Integers(q))));
+end intrinsic;
+
+intrinsic ConreyTraces(q::RngIntElt,n::RngIntElt) -> SeqEnum[RngIntElt]
+{ Computes [tr(chi_q(n,m):m in [1..q]], the trace vector of the Dirichlet character with Conrey label q.n. }
+    G,pi:=MultiplicativeGroup(Integers(q));
+    F:=CyclotomicField(Order(Inverse(pi)(Integers(q)!n)));
     return [Trace(F!z):z in ConreyCharacterValues(q,n,q)];
-end function;
+end intrinsic;
 
-function DirichletCharacterGaloisReps(N)
-  G := [chi:chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N))];
-  T := Sort([<[Trace(u):u in ValueList(G[i])],i>:i in [1..#G]]);
-  return Reverse([G[T[i][2]]:i in [1..#G]]);
-end function;
+intrinsic ConreyLabel(chi::GrpDrchElt) -> RngIntElt, RngIntElt
+{ Painfully slow naive algorithm to compute the Conrey label of a Dirichlet character. }
+    q := Modulus(chi);
+    v := ValueList(chi);
+    for n := 1 to q do
+        if ConreyCharacterValues(q,n,q) eq v then return q,n; end if;
+    end for;
+    error Sprintf("Unable to compute Conrey label of character chi = %o of modulus %o; this should be impossible!", chi, q);
+end intrinsic;
 
-function ConreyLabelOrbits(N)
-    G := DirichletCharacterGaloisReps(N);
-    A := AssociativeArray();
-    for i:=1 to #G do A[[Trace(z):z in ValueList(G[i])]]:=i; end for;
-    O := [[]:i in [1..#G]];
-    for n:=1 to N-1 do if GCD(N,n) eq 1 then Append(~O[A[ConreyTraces(N,n)]], n); end if; end for;
-    return O;
-end function;
-
-function ConreyLabels(chi)
-    N := Modulus(chi);
-    v := [Trace(z):z in ValueList(chi)];
-    return [n:n in [1..N-1]|GCD(n,N) eq 1 and ConreyTraces(N,n) eq v];
-end function;
