@@ -34,7 +34,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:it* where B is an upper boun
       3) n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K
       4) m is a boolean (0 or 1) indicating whether or not we know that n is maximal, i.e. n = [Z(f):O_{Q(f)}]
       5) e is a list of eigenvalues specified in terms of the basis b (list of deg(f) integers for each a_n)
-11) cm = list of cm discriminants, one for each subspace listed in D, 0 indicates non-CM forms (rigorously proven)
+11) cm = list of cm discriminants, one for each subspace listed in D up to the degree bound, 0 indicates non-CM forms (rigorous)
 12) it = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (not rigorous!)
 
 Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
