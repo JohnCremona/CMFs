@@ -2,8 +2,6 @@ Attach("polredabs.m");
 Attach("conrey.m");
 Attach("heigs.m");
 
-import "conrey.m" : ConreyTraces;
-
 // encode Hecke orbit as a 64-bit integer
 function HeckeOrbitCode (N,k,i,n)
     return N+2^24*k+2^36*(i-1)+2^52*(n-1);
