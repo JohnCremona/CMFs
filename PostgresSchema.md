@@ -10,7 +10,7 @@ Column | Type | Notes
 label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
-odd_weight | bool | whether k is odd
+odd_weight | boolean | whether k is odd
 char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
 conrey_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_conductor | integer | Conductor of the Dirichlet character
@@ -46,7 +46,7 @@ label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
-odd_weight | bool | whether k is odd
+odd_weight | boolean | whether k is odd
 char_orbit | integer | (i) As above
 char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit | integer | char_orbit for the primitive version of this character
@@ -56,7 +56,7 @@ hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
 dim | integer | the dimension of this Hecke orbit
 field_poly | jsonb | list of integers giving defining polynomial for the Hecke field (standard Sage order of coefficients)
-is_polredabs | bool | whether the polynomial has been reduced by Pari's `polredabs`
+is_polredabs | boolean | whether the polynomial has been reduced by Pari's `polredabs`
 nf_label | text | LMFDB label for the corresponding number field (can be NULL)
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
@@ -68,13 +68,14 @@ embeddings | jsonb | list of pairs (x,y), giving an ordering of the complex root
 char_values | jsonb | list of pairs [p, L] where p ranges over primes less than qexp_prec not dividing the level and L is a list of integers c so that chi(p) = e^{2 pi i c/d}, with d=char_order and chi ranging over the characters making up this Galois orbit.
 isogeny_class_label | text | the isogeny class label of the corresponding elliptic curve or modular abelian variety (could be null if not yet in the database)
 analytic_rank | smallint |
-is_cm | bool |
+is_cm | smallint | whether there is cm.  1=yes, -1=no, 0=unknown
 cm_disc | smallint | The (negative) discriminant of the order by which we have CM (0 if no CM)
 cm_hecke_char | text | label for the Hecke character giving the CM
-cm_proved | bool | Whether the CM columns are proven correct
+cm_proved | boolean | whether the cm columns are provably correct
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
 is_twist_minimal | bool |
 inner_twist | jsonb | List of integers giving the char_orbit values for the nontrivial Dirichlet characters that give inner twists
+inner_twist_proved | boolean | whether the inner twist columns are provably correct
 atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
