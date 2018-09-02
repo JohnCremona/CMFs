@@ -60,26 +60,6 @@ Vf := Vfs[1];
 ExactHeckeEigenvalues(Vf);
 */
 
-function PolredbestifyWithRoot(f)
-  K0 := NumberField(f);
-  iota := hom<K0 -> K0 | K0.1>; // start with identity
-  cnt := 0;
-  Kfront := K0;
-  ffront := f;
-  while true and cnt lt 10 do
-    fbest, fbestroot := PolredbestWithRoot(ffront);
-    if fbest eq ffront then 
-      return ffront, Eltseq(iota(K0.1)), cnt;
-    end if;
-    cnt +:= 1;
-    Kbest := NumberField(fbest);
-    fbestroot := fbestroot cat [0 : i in [1..Degree(fbest)-#fbestroot]];
-    iota := iota*hom<Kfront -> Kbest | fbestroot>;
-    Kfront := Kbest;
-    ffront := fbest; 
-  end while;
-end function;
-
 // input is a Hecke irreducible space Vf;
 // output is:
 //    KbestSeq, a sequence [...,1] of integers giving the minimal polynomial of the Hecke field 
@@ -182,7 +162,7 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
   	Olat, mOlat := MinkowskiLattice(O);   // use default precision
   	_, E := LLL(Olat);  // E is the ZZ-change of basis to an LLL-reduced basis
   catch e
-    Olat, mOlat := MinkowskiLattice(O : Precision := Max(100,Round(Log(10,Discriminant(Kbest)))));
+    Olat, mOlat := MinkowskiLattice(O : Precision := Max(100,Round(Log(10,AbsoluteValue(Discriminant(Kbest))))));
   	_, E := LLL(Olat);
   end try;  	
   

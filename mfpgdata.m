@@ -88,70 +88,49 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
             code := HeckeOrbitCode(N,k,o,n);
             trace_display := [r[6][n][2],r[6][n][3],r[6][n][5],r[6][n][7]];
             if dims[n] eq 1 then qexp_display := qExpansionString(r[6][n],10); else qexp_display := "\\N"; end if;
-            atkin_lehner := #r[9] gt 0 select r[9][n] else "\\N";
+            atkin_lehner := #r[7] gt 0 select r[7][n] else "\\N";
             trace_hash := "\\N";
             analytic_rank := "\\N";
-            is_cm := r[7][n] ne 0 select 1 else 0;
-            cm_disc := r[7][n] eq 0 select "\\N" else r[7][n];
+            is_cm := r[11][n] ne 0 select 1 else 0;
+            cm_disc := r[11][n] eq 0 select "\\N" else r[11][n];
             cm_hecke_char := "\\N";
             cm_proved := 1;
-            if n le #r[8] then
-                has_inner_twist := #r[8][n] gt 0 select 1 else -1;
-                inner_twist := r[8][n];
+            if n le #r[12] then
+                has_inner_twist := #r[12][n] gt 0 select 1 else -1;
+                inner_twist := r[12][n];
             else
                 has_inner_twist := 0;
+                inner_twist := "\\N";
             end if;
             is_twist_minimal := "\\N";
-            if n le #r[10] then
-                field_poly := r[10][n];
+            embeddings := "\\N";
+            if n le #r[8] then
+                field_poly := r[8][n];
                 if IsDefined(A,field_poly) then
                     fr := A[field_poly];
                     field_poly := fr[1];
                     nf_label := fr[2] eq "None" select "\\N" else fr[2];
                     is_polredabs := 1;
                 else
-                    print field_poly;
+                    PrintFile("missing_hecke_fields.txt",field_poly);
                     is_polredabs := "\\N";
                     nf_label := "\\N";
                 end if;
-                embeddings := "\\N";
-                hecke_cutters := r[11][n];
             else
                 field_poly := "\\N";
                 is_polredabs := "\\N";
                 nf_label := "\\N";
-                embeddings := "\\N";
-                hecke_cutters := "\\N";
             end if;
-            if n le #r[11] then
-                hecke_cutters := r[11][n];
-            end if;
-            if n gt m and n-m le #r[12] then
+            hecke_cutters := n le #r[9] select r[9][n] else "\\N";
+            if n gt m and n-m le #r[10] then
                 nn := n-m;
-                hfield_poly := IsDefined(A,r[12][nn][1]) select A[r[12][nn][1]][1] else r[12][nn][1];
-                if field_poly ne hfield_poly then
-                    printf"field poly doesn't match Hecke eigenvalue poly for orbit %o, verifying iso...", label;
-                    if FieldPolysMatch(field_poly,hfield_poly) then print "good."; else
-                        print "Field poly mismatch!", field_poly, hfield_poly;
-                        assert false;
-                    end if;
-                    field_poly := r[12][nn][1];
-                    if IsDefined(A,field_poly) then
-                        fr := A[field_poly];
-                        if field_poly eq fr[1] then is_polredabs := "\\N"; end if;
-                        nf_label := fr[2] eq "None" select "\\N" else fr[2];
-                        is_polredabs := 1;
-                    else
-                        print field_poly;
-                        is_polredabs := "\\N";
-                        nf_label := "\\N";
-                    end if;
-                end if;
-                hecke_ring_denominators := [LCM([Denominator(x):x in r[12][nn][2][i]]):i in [1..#r[12][nn][2]]];
-                hecke_ring_numerators := [[hecke_ring_denominators[i]*x:x in r[12][nn][2][i]]:i in [1..#r[12][nn][2]]];
-                hecke_ring_index := r[12][nn][3]; 
-                hecke_ring_index_proven := r[12][nn][4];
-                qexp_prec := #r[12][nn][5]+2;
+                hfield_poly := IsDefined(A,r[10][nn][1]) select A[r[10][nn][1]][1] else r[10][nn][1];
+                assert field_poly eq hfield_poly;
+                hecke_ring_denominators := [LCM([Denominator(x):x in r[10][nn][2][i]]):i in [1..#r[10][nn][2]]];
+                hecke_ring_numerators := [[hecke_ring_denominators[i]*x:x in r[10][nn][2][i]]:i in [1..#r[10][nn][2]]];
+                hecke_ring_index := r[10][nn][3]; 
+                hecke_ring_index_proven := r[10][nn][4];
+                qexp_prec := #r[10][nn][5]+2;
             else
                 hecke_ring_denominators := "\\N";
                 hecke_ring_numerators := "\\N";
@@ -184,17 +163,16 @@ procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
     id := 0; oldN := 0;
     while not IsEof(s) do
         r := <eval(a):a in Split(s,":")>;
-        assert #r ge 12;
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
         for i := 1 to #dims do
             code := HeckeOrbitCode(N,k,o,i);
-            if i le #r[12] then
-                assert #r[6] ge #r[12];
-                //assert #r[12][i][5] eq 1000;
+            if i le #r[10] then
+                assert #r[6] ge #r[10];
+                assert #r[10][i][5] ge 1000;
                 // TDOO: Verify traces!
-                for n := 1 to #r[12][i][5] do
+                for n := 1 to 1000 do
                     id +:= 1;
-                    an := r[12][i][5][n];
+                    an := r[10][i][5][n];
                     trace_an := r[6][i][n];
                     str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o",id,code,n,an,trace_an));
                     str := SubstituteString(str,"<","[");  str := SubstituteString(str,">","]");
@@ -202,18 +180,16 @@ procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
                     Puts(outfp,str);
                 end for;
             else
-                if i le #r[6] then
-                    //assert #r[6][i] eq 1000;
-                    for n := 1 to #r[6][i] do
-                        id +:= 1;
-                        trace_an := r[6][i][n];
-                        an := dims[i] eq 1 select [trace_an] else "\\N";
-                        str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o",id,code,n,an,trace_an));
-                        str := SubstituteString(str,"<","[");  str := SubstituteString(str,">","]");
-                        if Loud then print str; end if;
-                        Puts(outfp,str);
-                    end for;
-                end if;
+                assert #r[6][i] eq 1000;
+                for n := 1 to 1000 do
+                    id +:= 1;
+                    trace_an := r[6][i][n];
+                    an := dims[i] eq 1 select [trace_an] else "\\N";
+                    str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o",id,code,n,an,trace_an));
+                    str := SubstituteString(str,"<","[");  str := SubstituteString(str,">","]");
+                    if Loud then print str; end if;
+                    Puts(outfp,str);
+                end for;
             end if;
         end for;
         s := Gets(infp);
