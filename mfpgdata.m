@@ -30,6 +30,14 @@ function SplitHeckeOrbitCode(c)
     return N,k,i,n;
 end function;
 
+function NewspaceLabel(N,k,i)
+    return Sprintf("%o.%o.%o",N,k,Base26Encode(i-1));
+end function;
+
+function NewformLabel(N,k,i,n)
+    return NewspaceLabel(N,k,i) cat Base26Encode(n-1);
+end function;
+
 function qExpansionString(a,prec)
     assert a[1] eq 1;
     s := "q";
@@ -55,15 +63,18 @@ procedure FormatNewspaceData (infile, outfile: Loud:=false)
     Puts(outfp,"bigint:text:integer:smallint:boolean:integer:integer:integer:smallint:jsonb:integer:integer:integer:integer:jsonb:integer:integer:integer:integer");
     Puts(outfp,"");
     s := Gets(infp);
-    id := 0; oldN := 0;
+    CharOrbitTable := AssociativeArray();
+    id := 0;
     while not IsEof(s) do
         id +:=1;
         r := <eval(a):a in Split(s,":")>;
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
-        if N ne oldN then G:=CharacterOrbitReps(N); oldN := N; end if;
-        chi := G[o];
-        prim_orbit := "\\N"; // TODO: implement and call PrimitiveCharacterOrbitIndex(chi);
-        label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
+        if not IsDefined(CharOrbitTable,N) then G,T := CharacterOrbitReps(N:RepTable); CharOrbitTable[N] := <G,T>; end if;
+        chi := CharOrbitTable[N][1][o];
+        M := Conductor(chi);
+        if not IsDefined(CharOrbitTable,M) then G,T := CharacterOrbitReps(M:RepTable); CharOrbitTable[M] := <G,T>; end if;
+        po := CharOrbitTable[M][2][AssociatedPrimitiveCharacter(chi)];
+        label := NewspaceLabel(N,k,o);
         sturm_bound := HeckeBound(ModularSymbols(chi,k)); // TODO: this is often larger than the sturm bound computed by Sage
         M := ModularForms(chi,k);
         S := CuspidalSubspace(M);
@@ -71,8 +82,8 @@ procedure FormatNewspaceData (infile, outfile: Loud:=false)
         NE := NewSubspace(E);
         NS := NewSubspace(S);
         assert sum(dims) eq Dimension(NS);
-        str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",id,label,N,k,IsOdd(k) select 1 else 0,o,Order(chi),CharacterFieldDegree(chi),Parity(chi),
-                ConreyLabels(chi),Conductor(chi),prim_orbit,sturm_bound,Dimension(NS),dims,Dimension(E),Dimension(NE),Dimension(S),Dimension(M)));
+        str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",id,label,N,k,IsOdd(k) select 1 else 0,o,Order(chi),CharacterFieldDegree(chi),Parity(chi),
+                ConreyLabels(chi),Conductor(chi),po,sturm_bound,Dimension(NS),dims,Dimension(E),Dimension(NE),Dimension(S),Dimension(M)));
         str := SubstituteString(str,"<","[");  str:= SubstituteString(str,">","]");
         if Loud then print str; end if;
         Puts(outfp,str);
@@ -96,7 +107,7 @@ procedure FormatNewformData (infile, outfile, fieldlabels: Loud:=false)
     labels cat:= ":prim_orbit:hecke_orbit:hecke_orbit_code:dim:field_poly:is_polredabs:nf_label:hecke_ring_numerators:hecke_ring_denominators:hecke_ring_index";
     types cat:= ":integer:integer:bigint:integer:jsonb:boolean:text:jsonb:jsonb:jsonb";
     labels cat:= ":hecke_ring_index_proven:trace_hash:qexp_prec:isogeny_class_label:analytic_rank:is_cm:cm_disc:cm_hecke_char:cm_proved:has_inner_twist";
-    types cat:= "::boolean:bigint:smallint:text:smallint:smallint:smallint:text:boolean:smallint";
+    types cat:= ":boolean:bigint:smallint:text:smallint:smallint:smallint:text:boolean:smallint";
     labels cat:= ":is_twist_minimal:inner_twist:inner_twist_proved:atkin_lehner_eigenvals:hecke_cutters:qexp_display:trace_display";
     types cat:= ":boolean:jsonb:boolean:jsonb:jsonb:text:jsonb";
     Puts(outfp,labels);  Puts(outfp,types); Puts(outfp,"");
@@ -150,8 +161,11 @@ procedure FormatNewformData (infile, outfile, fieldlabels: Loud:=false)
                     is_polredabs := "1";
                     if IsDefined(FieldLabels,field_poly) then
                         nf_label := FieldLabels[field_poly];
+                        assert nf_label eq "\\N" or #Split(nf_label,".") eq 4;
                     else
                         nf_label := "\\N";
+                    end if;
+                    if nf_label eq "\\N" then
                         PrintFile("unknown_fields.txt",field_poly);
                         unknown_cnt +:= 1;
                     end if;
@@ -242,9 +256,50 @@ procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
     end while;
     printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-t;
 end procedure;
+
+procedure CreateSubspaceData (outfile, B: Loud:=false)
+    t := Cputime();
+    outfp := Open(outfile,"w");
+    Puts(outfp,"id:label:level:weight:char_orbit:conrey_labels:dim:sub_label:sub_level:sub_char_orbit:sub_conrey_labels:sub_dim:sub_mult");
+    Puts(outfp,"bigint:text:integer:smallint:integer:jsonb:integer:text:integer:integer:jsonb:integer:integer");
+    Puts(outfp,"");
+    A := AssociativeArray();
+    id := 0;
+    for N in [1..Floor(B/4)] do
+        G,T := CharacterOrbitReps(N:RepTable);
+        L := [ConreyLabels(G[i]):i in [1..#G]];
+        A[N] := <G,L,T>;
+        for i:=1 to #G do
+            chi := G[i];
+            psi := AssociatedPrimitiveCharacter(chi);
+            C := Modulus(psi);
+            subs := [*<schi,#Divisors(ExactQuotient(N,M))> where schi:=FullDirichletGroup(M)!psi where M:= C*D : D in Divisors(ExactQuotient(N,C))*];
+            for k in [2..Floor(Sqrt(B/N))] do
+                dim := Dimension(CuspidalSubspace(ModularForms(chi,k)));
+                dims := [Dimension(NewSubspace(CuspidalSubspace(ModularForms(sub[1],k)))) : sub in subs];
+                assert &+[dims[n]*subs[n][2]: n in [1..#subs]] eq dim;
+                label := NewspaceLabel(N,k,i);
+                for n:=1 to #subs do
+                    if dims[n] eq 0 then continue; end if;
+                    id +:= 1;
+                    psi := subs[n][1];  M := Modulus(psi);
+                    j := A[M][3][psi];
+                    sub_label := NewspaceLabel(M,k,j);
+                    str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",
+                        id,label,N,k,i,L[i],dim,sub_label,M,j,A[M][2][j],dims[n],subs[n][2]));
+                    if Loud then print str; end if;
+                    Puts(outfp,str);
+                end for;
+            end for;
+        end for;
+    end for;
+    printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-t;
+end procedure;
+
                     
 procedure GeneratePostgresDatafiles (B:detail:=false)
     FormatNewspaceData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_newspaces_%o.txt",B):Loud:=detail);
+    CreateSubspaceData(Sprintf("mf_oldsubs_%o.txt",B),B:Loud:=detail);
     FormatNewformData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_newforms_%o.txt",B),"lmfdb_nf_labels.txt":Loud:=detail);
     FormatHeckeEigenvalueData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_hecke_nf_%o.txt",B):Loud:=detail);
 end procedure;
