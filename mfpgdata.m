@@ -81,13 +81,13 @@ procedure FormatNewspaceData (infile, outfile: Loud:=false)
     printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-t;
 end procedure;
 
-procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
-    t:=Cputime();
-    printf "Loading lmfdb_nf_labes.txt..."; t:=Cputime();
-    S:=Split(Read("lmfdb_nf_labels.txt"),"\n"); // forms is p
-    A:=AssociativeArray();
-    for s in S do r:=Split(s,":"); A[eval(r[1])]:= r[2]; end for;
-    printf "took %o secs.\n", Cputime()-t;
+procedure FormatNewformData (infile, outfile, fieldlabels: Loud:=false)
+    st:=Cputime();
+    printf "Loading LMFDB field labels from file %o...", fieldlabels; t:=Cputime();
+    S:=Split(Read(fieldlabels),"\n"); // forms is coeffs:label
+    FieldLabels:=AssociativeArray();
+    for s in S do r:=Split(s,":"); FieldLabels[eval(r[1])]:= r[2]; end for;
+    printf "loaded %o records in %o secs.\n", #Keys(FieldLabels), Cputime()-t;
     t:=Cputime();
     infp := Open(infile,"r");
     outfp := Open(outfile,"w");
@@ -100,8 +100,9 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
     labels cat:= ":is_twist_minimal:inner_twist:inner_twist_proved:atkin_lehner_eigenvals:hecke_cutters:qexp_display:trace_display";
     types cat:= ":boolean:jsonb:boolean:jsonb:jsonb:text:jsonb";
     Puts(outfp,labels);  Puts(outfp,types); Puts(outfp,"");
+    CharOrbitTable := AssociativeArray();
     s := Gets(infp);
-    id := 0; oldN := 0;
+    id := 0;  unknown_cnt := 0;  nopolredabs_cnt := 0;
     while not IsEof(s) do
         r := <eval(a):a in Split(s,":")>;
         assert #r ge 13;
@@ -109,9 +110,11 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
         if r[3] eq 1 then assert #r[5] eq #r[7]; end if;
         assert #r[8] eq #r[11] and #r[8] eq #r[12] and #r[8] eq #r[13];
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
-        if N ne oldN then G:=CharacterOrbitReps(N); oldN := N; end if;
-        chi := G[o];
-        prim_orbit := "\\N"; // TODO: implement and call PrimitiveCharacterOrbitIndex(chi);
+        if not IsDefined(CharOrbitTable,N) then G,T := CharacterOrbitReps(N:RepTable); CharOrbitTable[N] := <G,T>; end if;
+        chi := CharOrbitTable[N][1][o];
+        M := Conductor(chi);
+        if not IsDefined(CharOrbitTable,M) then G,T := CharacterOrbitReps(M:RepTable); CharOrbitTable[M] := <G,T>; end if;
+        po := CharOrbitTable[M][2][AssociatedPrimitiveCharacter(chi)];
         space_label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
         m := #[d:d in dims|d eq 1];
         for n := 1 to #dims do
@@ -127,7 +130,7 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
             if n le #r[11] then
                 is_cm := r[11][n] ne 0 select 1 else -1;
                 cm_disc := r[11][n] eq 0 select "\\N" else r[11][n];
-                cm_hecke_char := "\\N"; // TODO: figure out Hecke character label
+                cm_hecke_char := "\\N"; // TODO: determine Hecke character label
                 cm_proved := 1;
             else
                 is_cm := 0;  cm_disc := "\\N";  cm_hecke_char := "\\N";  cm_proved := "\\N";
@@ -145,16 +148,18 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
                 field_poly := r[8][n];
                 if r[13][n] eq 1 then
                     is_polredabs := "1";
-                    if IsDefined(A,field_poly) then
-                        nf_label := A[field_poly];
+                    if IsDefined(FieldLabels,field_poly) then
+                        nf_label := FieldLabels[field_poly];
                     else
                         nf_label := "\\N";
-                        PrintFile("unknown_polredabs_fields.txt",field_poly);
+                        PrintFile("unknown_fields.txt",field_poly);
+                        unknown_cnt +:= 1;
                     end if;
                 else
-                    polredabs := "0";
-                    PrintFile("non_polredabs_fields.txt",field_poly); 
                     nf_label := "\\N";
+                    is_polredabs := "0";
+                    PrintFile("nopolredabs_fields.txt",field_poly); 
+                    nopolredabs_cnt +:= 1;
                 end if;
             else
                 field_poly := "\\N";
@@ -178,8 +183,8 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
                 qexp_prec := "\\N";
             end if;
             str := StripWhiteSpace(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o",
-                id, label, space_label, N, k, IsOdd(k) select 1 else 0, o, Order(chi), CharacterFieldDegree(chi), Parity(chi), ConreyLabels(chi), Conductor(chi),
-                prim_orbit, n, code, dims[n], field_poly, is_polredabs, nf_label, hecke_ring_numerators, hecke_ring_denominators, hecke_ring_index,
+                id, label, space_label, N, k, IsOdd(k) select 1 else 0, o, Order(chi), CharacterFieldDegree(chi), Parity(chi), ConreyLabels(chi), M,
+                po, n, code, dims[n], field_poly, is_polredabs, nf_label, hecke_ring_numerators, hecke_ring_denominators, hecke_ring_index,
                 hecke_ring_index_proven, trace_hash, qexp_prec, isogeny_class_label, analytic_rank, is_cm, cm_disc, cm_hecke_char, cm_proved, has_inner_twist,
                 is_twist_minimal, inner_twist, inner_twist_proved, atkin_lehner, hecke_cutters, qexp_display, trace_display));
             str := SubstituteString(str,"<","[");  str := SubstituteString(str,">","]");
@@ -188,7 +193,9 @@ procedure FormatNewformData (infile, outfile, polredabsfile: Loud:=false)
         end for;
         s := Gets(infp);
     end while;
-    printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-t;
+    printf "Wrote %o records to %o in %o secs\n", id, outfile, Cputime()-st;
+    if unknown_cnt gt 0 then printf "Appended %o unknown polredabs field polys to unknown_fields.txt\n", unknown_cnt; end if;
+    if nopolredabs_cnt gt 0 then printf "Appended %o no polredabs field polys to nopolredabs_fields.txt\n", nopolredabs_cnt; end if;
 end procedure;
 
 procedure FormatHeckeEigenvalueData (infile, outfile: Loud:=false)
@@ -238,6 +245,6 @@ end procedure;
                     
 procedure GeneratePostgresDatafiles (B:detail:=false)
     FormatNewspaceData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_newspaces_%o.txt",B):Loud:=detail);
-    FormatNewformData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_newforms_%o.txt",B),"polredabs_full.txt":Loud:=detail);
+    FormatNewformData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_newforms_%o.txt",B),"lmfdb_nf_labels.txt":Loud:=detail);
     FormatHeckeEigenvalueData(Sprintf("mfdata_%o.txt",B),Sprintf("mf_hecke_nf_%o.txt",B):Loud:=detail);
 end procedure;

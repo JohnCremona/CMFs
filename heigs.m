@@ -62,15 +62,16 @@ ExactHeckeEigenvalues(Vf);
 // input is a Hecke irreducible space Vf;
 // output is:
 //    KbestSeq, a sequence [...,1] of integers giving a defining polynomial for the Hecke field
-//    HeckeRingZZBasisSeq, a sequence of sequences of integers whose entries are a
+//    HeckeRingZZBasisSeq, a sequence of sequences of rationals whose entries are a
 //         ZZ-basis for the Hecke ring, written in a power basis (specified by KbestSeq)
 //    Oind, a divisor of the index of the Hecke ring in the maximal order
 //    foundmax, a boolean saying if we can certify the index
 //    ZOE, a sequence of sequences of integers whose nth entry is the Hecke operator
 //        T_n written in the basis Oind.
 //    ispolredabs, a boolean indicating whether Kbestseq is the canonical poldredbest poly
+//    discOK, the discriminant of the Hecke field if known (0 if not)
 intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) -> 
-    SeqEnum[RngInt], SeqEnum[SeqEnum[RngInt]], RngIntElt, BoolElt, SeqEnum[SeqEnum[RngInt]], BoolElt
+    SeqEnum[RngInt], SeqEnum[SeqEnum[RngInt]], RngIntElt, BoolElt, SeqEnum[SeqEnum[RngInt]], BoolElt, RngIntElt
 { Exact Hecke eigenvalue data for the specified Hecke irreducible subspace Vf. }
   
     chi := DirichletCharacter(Vf);
@@ -131,22 +132,37 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
     OBasis := Basis(O);  
     assert #OBasis eq d*dchi;
 
+    discOK := 0;  foundmax := false;
     // Improve O as much as possible to get a divisor of the index
     Oma := O;  // Initialize "almost max" order to O
     discO := Discriminant(O);
-    ps, hard := TrialDivision(discO, 10^6);
-    for pdat in ps do  // make p-maximal
-        Oma := pMaximalOrder(Oma, pdat[1]);
-    end for;
-    hard := [ PerfectPowerBase(m) : m in hard];
-    notsohard := [ m : m in hard | m le 10^60 or IsProbablePrime(m) ];
-    for m in notsohard do
-        for p in PrimeDivisors(m) do  // make p-maximal
+    if ispolredabs then
+        for p in PrimeDivisors(discO) do
             Oma := pMaximalOrder(Oma, p);
         end for;
-    end for;
-    _, Oind := IsSquare(discO/Discriminant(Oma));
-    foundmax := #notsohard eq #hard;
+        discOK := Discriminant(Oma);
+        _, Oind := IsSquare(discO/discOK);
+        foundmax := true;
+    else
+        ps, hard := TrialDivision(discO, 10^7);
+        for pdat in ps do  // make p-maximal
+            Oma := pMaximalOrder(Oma, pdat[1]);
+        end for;
+        hard := [ PerfectPowerBase(m) : m in hard];
+        notsohard := [ m : m in hard | m le 10^80 or IsProbablePrime(m) ];
+        for m in notsohard do
+            for p in PrimeDivisors(m) do  // make p-maximal
+                Oma := pMaximalOrder(Oma, p);
+            end for;
+        end for;
+        if #notsohard eq #hard then
+            disckOK := Discriminant(Oma);
+            _, Oind := IsSquare(discO/discOK);
+            foundmax := true;
+        else
+            _, Oind := IsSquare(discO/Discriminant(Oma));
+        end if;
+    end if;
 
     PO := Matrix([Eltseq(Kbest!b) : b in OBasis]);
     // PO is the change of basis matrix from Magma's integral basis to the power basis
@@ -208,5 +224,5 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
     // Sequence of d*dchi elements giving an LLL-reduced basis for the Hecke ring
     HeckeRingZZBasisSeq := [Eltseq(Kbest!c) : c in OLLLBasis];   // bam
     assert HeckeRingZZBasisSeq[1] eq Eltseq(Kbest!1);
-    return KbestSeq, HeckeRingZZBasisSeq, Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)],  ispolredabs; 
+    return KbestSeq, HeckeRingZZBasisSeq, Integers()!Oind, foundmax, [[r[i]:i in [1..#HeckeRingZZBasisSeq]]:r in Rows(ZOE)], ispolredabs, discOK; 
 end intrinsic;

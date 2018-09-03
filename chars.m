@@ -41,6 +41,15 @@ intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false) -> List, Assoc
     end if;
 end intrinsic;
 
+intrinsic CharacterOrbit(chi::GrpDrchElt) -> RngIntElt
+{ The index of the orbit of the specified Dirichlet character in the list of orbit representatives returned by CharacterOrbitReps (this can also be determined using the RepTable parameter). }
+    G := CharacterOrbitReps(Modulus(chi));
+    m := Order(chi); v := [Trace(z):z in ValueList(MinimalBaseRingCharacter(chi))];
+    M := [i : i in [1..#G] | Order(G[i]) eq m and [Trace(z):z in ValueList(G[i])] eq v];
+    assert #M eq 1;
+    return M[1];
+end intrinsic;
+    
 intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCycElt
 { The value of the Dirichlet character with Conry label q.n at the integer m. }
     if q eq 1 then return 1; end if;
