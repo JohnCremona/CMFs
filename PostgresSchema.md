@@ -3,7 +3,7 @@ Spaces
 
 Table name: `mf_newspaces`.
 
-This table represents spaces `S_k^{new}(N, \chi)`.  We pick one representative `\chi` from each Galois orbit.
+This table represents (Galois orbits of) spaces of newfors`S_k^{new}(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
 
 Column | Type | Notes
 -------|------|------
@@ -28,13 +28,22 @@ hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits
 
 Table name: `mf_oldsubs`.
 
-This table represents embeddings of oldspaces into cusp spaces.
+This table represents embeddings of newspaces at level M into cusp spaces at level N (these will be old at level N except when M=N).
 
 Column | Type | Notes
 -------|------|------
-space_label | text | The label for the modular form space `S_k(N, \chi)`
-new_label | text | The label for the newspace `S_k^{new}(M, [\psi])` that embeds
-new_minimal_conrey | integer | the minimal Conrey index for the newspace (giving `\psi`)
+space_label | text | label (N.k.i) for the modular form space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
+level | integer | (N)
+weight | integer | (k) (this is the same for all embedded subspaces)
+char_orbit | integer | (i) index of `[\chi]` in sorted list of character orbits of modulus N
+conrey_labels | jsonb | list of conrey labels in char_orbit
+dim | integer | dimension of `S_k(N, [\psi])`
+sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
+sub_level | integer | (M)
+sub_char_orbit | integer | (j) index of `[\psi]` in sorted list of character orbits of modulus M
+sub_conrey_labels | integer | the minimal Conrey index for the newspace (giving `\psi`)
+sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
+sub_mult | integer | The number of isomorphic copies of `S_k^{new}(M, [\psi])` in `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
 
 Hecke orbits
 ============
