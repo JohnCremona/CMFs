@@ -32,7 +32,7 @@ This table represents embeddings of newspaces at level M into cusp spaces at lev
 
 Column | Type | Notes
 -------|------|------
-space_label | text | label (N.k.i) for the modular form space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
+label | text | label (N.k.i) for the modular form space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
 level | integer | (N)
 weight | integer | (k) (this is the same for all embedded subspaces)
 char_orbit | integer | (i) index of `[\chi]` in sorted list of character orbits of modulus N
