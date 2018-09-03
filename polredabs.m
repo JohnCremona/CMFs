@@ -26,10 +26,13 @@ intrinsic IsPolredabsCandidate (f::RngUPolElt) -> RngUPolElt
 { Returns true if the polynomial looks like Polredabs can easily handle it. }
     if Degree(f) gt 32 then return false; end if;
     n := PerfectPowerBase(Integers()!AbsoluteValue(Discriminant(f)));
-    if n le 10^60 then return true; end if;
-    _,s := TrialDivision(n,10^6);
-    if #s eq 0 then return true; end if;
-    return &and [m le 10^60 or IsProbablePrime(m) where m:=PerfectPowerBase(n) : n in s];
+    if n le 10^100 then return true; end if;
+    for e := 5 to 7 do
+        _,s := TrialDivision(n,10^e);
+        if #s eq 0 then return true; end if;
+        n := PerfectPowerBase(Max(s));
+    end for;
+    return n le 10^100 or IsProbablePrime(n);
 end intrinsic;
 
 intrinsic Polredbestify (f::RngUPolElt) -> RngUPolElt, BoolElt
