@@ -34,14 +34,14 @@ Column | Type | Notes
 -------|------|------
 label | text | label (N.k.i) for the modular form space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
 level | integer | (N)
-weight | integer | (k) (this is the same for all embedded subspaces)
+weight | smallint | (k) (this is the same for all embedded subspaces)
 char_orbit | integer | (i) index of `[\chi]` in sorted list of character orbits of modulus N
 conrey_labels | jsonb | list of conrey labels in char_orbit
 dim | integer | dimension of `S_k(N, [\psi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit | integer | (j) index of `[\psi]` in sorted list of character orbits of modulus M
-sub_conrey_labels | integer | the minimal Conrey index for the newspace (giving `\psi`)
+sub_conrey_labels | jsonb | the minimal Conrey index for the newspace (giving `\psi`)
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
 sub_mult | integer | The number of isomorphic copies of `S_k^{new}(M, [\psi])` in `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
 
