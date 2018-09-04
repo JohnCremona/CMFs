@@ -129,7 +129,7 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), ComputeTraces
 end function;
 
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for k*N <= B
-procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20)
+procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,TrivialCharOnly:=false)
     st := Cputime();
     n := 0; cnt:=0;
     fp := Open(filename,"w");
@@ -139,15 +139,16 @@ procedure DecomposeSpaces (filename,B,jobs,jobid:Quiet:=false,Loud:=false,Dimens
         if Loud then printf "took %o secs\n",Cputime()-t; end if;
         for k := 2 to Floor(Sqrt(B/N)) do
             for o in [1..#G] do
+                if o gt 1 and TrivialCharOnly then break; end if;
                 n +:= 1;
                 if ((n-jobid) mod jobs) eq 0 then
                     if DimensionsOnly then
-                        str := NewspaceData(G,k,o:OrbitRepTable:=T,Detail:=Loud);
+                        str := NewspaceData(G,k,o:OrbitRepTable:=T,Detail:=Loud select 1 else 0);
                     else
                         if Loud then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o\n", N,k,o, Coeffs, DegBound; end if;
                         str := NewspaceData(G,k,o:OrbitRepTable:=T,ComputeEigenvalues,NumberOfCoefficients:=Coeffs,DegreeBound:=DegBound,Detail:=Loud select 1 else 0);
                     end if;
-                    if not Quiet then print str; end if;
+                    //if not Quiet then print str; end if;
                     Puts(fp,str);
                     Flush(fp);
                     cnt +:= 1;
