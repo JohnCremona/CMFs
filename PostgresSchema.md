@@ -10,14 +10,16 @@ Column | Type | Notes
 label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
-odd_weight | boolean | whether k is odd
-char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
+odd_weight | bool | whether k is odd
+char_orbit_index | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
+char_orbit_label | integer | letter encoded version of (i)
+char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
-cyc_degree | integer | the degree of the (cyclotomic) character field
-parity | smallint | 1 or -1, depending on the parity of the character
-conrey_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit | integer | char_orbit for the primitive version of this character
+prim_orbit_index | integer | char_orbit for the primitive version of this character
+char_degree | integer | the degree of the (cyclotomic) character field
+char_parity | smallint | 1 or -1, depending on the parity of the character
+char_is_real | bool | whether the character
 sturm_bound | integer |
 dim | integer | Q-dimension of this newspace
 eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding `M_k(N, \chi)`
@@ -41,12 +43,12 @@ dim | integer | dimension of `S_k(N, [\psi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit | integer | (j) index of `[\psi]` in sorted list of character orbits of modulus M
-sub_conrey_labels | jsonb | the minimal Conrey index for the newspace (giving `\psi`)
+sub_conrey_labels | jsonb | list of Conrey labels for the subspace
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
 sub_mult | integer | The number of isomorphic copies of `S_k^{new}(M, [\psi])` in `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
 
-Hecke orbits
-============
+Newforms
+========
 
 Table name: `mf_newforms`
 
@@ -56,14 +58,16 @@ label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
-odd_weight | boolean | whether k is odd
-char_orbit | integer | (i) As above
-char_order | integer | the order of the character
-cyc_degree | integer | the degree of the (cyclotomic) character field
-parity | smallint | 1 or -1, depending on the parity of the character
-conrey_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
+odd_weight | bool | whether k is odd
+char_orbit_index | integer | (i) As above
+char_orbit_label | integer | letter encoded version of (i)
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit | integer | char_orbit for the primitive version of this character
+prim_orbit_index | integer | char_orbit for the primitive version of this character
+char_order | integer | the order of the character
+char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
+char_parity | smallint | 1 or -1, depending on the parity of the character
+char_is_real | bool | whether the character
+char_degree | integer | Degree of the (cyclotomic) character field
 hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
 dim | integer | the dimension of this Hecke orbit
@@ -124,6 +128,7 @@ orbit_label | text | (N.i)
 orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
 modulus | smallint
 conductor | smallint
+prim_orbit_index | smallint | Index for the primitive version of this conductor
 order | smallint
 parity | smallint
 galois_orbit | jsonb | sorted list of conrey_labels in the same galois orbit
