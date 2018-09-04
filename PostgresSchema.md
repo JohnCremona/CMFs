@@ -12,7 +12,7 @@ level | integer | (N)
 weight | smallint | (k)
 odd_weight | bool | whether k is odd
 char_orbit_index | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
-char_orbit_label | integer | letter encoded version of (i)
+char_orbit_label | text | letter encoded version of (i)
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
 char_conductor | integer | Conductor of the Dirichlet character
