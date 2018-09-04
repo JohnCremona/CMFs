@@ -35,29 +35,29 @@ This table represents embeddings of newspaces at level M into cusp spaces at lev
 
 Column | Type | Notes
 -------|------|------
-label | text | label (N.k.i) for the modular form space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
-level | integer | (N)
-weight | smallint | (k) (this is the same for all embedded subspaces)
-char_orbit | integer | (i) index of `[\chi]` in sorted list of character orbits of modulus N
-char_labels | jsonb | list of conrey labels in char_orbit
+label | text | label N.k.i for the cuspidal space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
+level | integer | level N of the cuspidal space `S_k(N, [\chi])`
+weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
+char_orbit | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
+char_labels | jsonb | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
 dim | integer | dimension of `S_k(N, [\psi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit | integer | (j) index of `[\psi]` in sorted list of character orbits of modulus M
-sub_char_labels | jsonb | list of Conrey labels for the subspace
+sub_char_labels | jsonb | list of Conrey indexes n of the characters M.n in the Galois orrbit indexed by j.
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
-sub_mult | integer | The number of isomorphic copies of `S_k^{new}(M, [\psi])` in `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
+sub_mult | integer | Multiplicity of`S_k^{new}(M, [\psi])` as a direct summand of `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
 
 Table name: `mf_gamma1_subspaces`.
 
 Column | Type | Notes
 -------|------|------
-level | integer
-weight | smallint
-dim | integer
-sub_level | integer
-sub_dim | integer
-sub_mult | integer
+level | integer | level N of the cuspidal space S_k(Gamma_1(N))
+weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
+dim | integer | dimension of S_k(Gamma_1(N))
+sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed in S^k(Gamma_1(N))
+sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
+sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
 
 Newforms
 ========
