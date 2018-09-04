@@ -17,7 +17,7 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:it* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The 12 fields in each record are defined as follows:
+Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:it:pra* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The 12 fields in each record are defined as follows:
 
  1) N = level, a positive integer
  2) k = weight, a positive integer (for .m.txt files, k > 1)
@@ -28,14 +28,15 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:it* where B is an upper boun
  7) A = Atkin-Lehner signs (empty list if chi is not the trivial character (i.e. i=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D.
  8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to the degree bound (currently 20); note that F[n] corresponds to the space D[n] but F may be shorter than D
  9) C = Hecke cutters [[<p,[g0,g1,...,1]>,...],...] list of minimal lists of coefficients of charpolys g(x) of T_p sufficient to distinguish all the subspaces listed in D up to the degree bound.
-10) E = Hecke Eigenvalue data [<g,b,n,m,e>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension up to the degree bound where:
+10) E = Hecke Eigenvalue data [<g,b,n,m,e>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
       1) f is a polredbestified field poly for the coefficient field (should be the same as the corresponding poly in F),
       2) b is a basis for the Hecke ring R:=Z[a_n] in terms of the power basis of K:=Q[x]/(f(x)) (a list of lists of rationals),
       3) n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K
       4) m is a boolean (0 or 1) indicating whether or not we know that n is maximal, i.e. n = [Z(f):O_{Q(f)}]
       5) e is a list of eigenvalues specified in terms of the basis b (list of deg(f) integers for each a_n)
-11) cm = list of cm discriminants, one for each subspace listed in D, 0 indicates non-CM forms (rigorously proven)
+11) cm = list of cm discriminants, one for each subspace listed in D up to the degree bound, 0 indicates non-CM forms (rigorous)
 12) it = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (not rigorous!)
+13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
 
 Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
 
