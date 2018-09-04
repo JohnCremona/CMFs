@@ -28,6 +28,7 @@ eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corres
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits
+num_forms | smallint | the length of hecke_orbit_dims
 
 Table name: `mf_subspaces`.
 
