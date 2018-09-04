@@ -19,7 +19,7 @@ char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit_index | integer | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | boolean | whether the character
+char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 sturm_bound | integer |
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
 dim | integer | Q-dimension of this newspace
