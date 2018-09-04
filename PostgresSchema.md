@@ -21,6 +21,7 @@ char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | bool | whether the character
 sturm_bound | integer |
+trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
 dim | integer | Q-dimension of this newspace
 eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding `M_k(N, \chi)`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
@@ -28,7 +29,7 @@ cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits
 
-Table name: `mf_oldsubs`.
+Table name: `mf_subspaces`.
 
 This table represents embeddings of newspaces at level M into cusp spaces at level N (these will be old at level N except when M=N).
 
@@ -46,6 +47,17 @@ sub_char_orbit | integer | (j) index of `[\psi]` in sorted list of character orb
 sub_conrey_labels | jsonb | list of Conrey labels for the subspace
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
 sub_mult | integer | The number of isomorphic copies of `S_k^{new}(M, [\psi])` in `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
+
+Table name: `mf_gamma1_subspaces`.
+
+Column | Type | Notes
+-------|------|------
+level | integer
+weight | smallint
+dim | integer
+sub_level | integer
+sub_dim | integer
+sub_mult | integer
 
 Newforms
 ========
