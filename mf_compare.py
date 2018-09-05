@@ -98,6 +98,9 @@ def read_dtp(fname):
     max_space = None
     nspaces = 0
     nspaces0 = 0 # exclude trvial spaces
+    norbits = 0
+    n20 = 0
+    alldims = []
     for L in open(fname).readlines():
         L=L.replace("\n","")
         fields = L.split(":")
@@ -122,9 +125,16 @@ def read_dtp(fname):
 
         data[key] = {'dims':dims, 'traces':traces, 'polys':polys, 'coeffs':coeffs}
         nspaces += 1
-        if polys:
+        norbits += len(dims)
+        n20 += sum(0<d<=20 for d in dims)
+        if dims:
             nspaces0 += 1
-    print("Read {} spaces of which {} are nontrivial.".format(nspaces, nspaces0))
+            alldims += dims
+    alldims=list(set(alldims))
+    alldims.sort()
+    print("Read {} spaces of which {} are nontrivial; {} Galois orbits.".format(nspaces, nspaces0, norbits))
+    print("{} orbits have dimension <=20".format(n20))
+    print("largest three dimsensions: {}".format(alldims[-3:]))
     print("Max time = {} for space {}".format(max_time, max_space))
     print("Average time (all spaces)      = {}".format(tot_time/nspaces))
     print("Average time (nonzero spaces)  = {}".format(tot_time0/nspaces0))
