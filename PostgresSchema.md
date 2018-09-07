@@ -73,7 +73,7 @@ level | integer | (N)
 weight | smallint | (k)
 odd_weight | boolean | whether k is odd
 char_orbit_index | integer | (i) As above
-char_orbit_label | integer | letter encoded version of (i)
+char_orbit_label | text | letter encoded version of (i)
 char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit_index | integer | char_orbit for the primitive version of this character
 char_order | integer | the order of the character
