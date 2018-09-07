@@ -23,8 +23,8 @@ char_is_real | boolean | whether the character takes only real values (trivial o
 sturm_bound | integer |
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
 dim | integer | Q-dimension of this newspace
-num_hecke_orbits | smallint | number of irreducible Galois stable subspaces
 hecke_orbit_dims | jsonb | Sorted list of dimensions of irreducible Galois stable subspaces
+num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
 eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding `M_k(N, \chi)`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
