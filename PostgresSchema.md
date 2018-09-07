@@ -71,7 +71,7 @@ label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
-odd_weight | bool | whether k is odd
+odd_weight | boolean | whether k is odd
 char_orbit_index | integer | (i) As above
 char_orbit_label | integer | letter encoded version of (i)
 char_conductor | integer | Conductor of the Dirichlet character
@@ -79,7 +79,7 @@ prim_orbit_index | integer | char_orbit for the primitive version of this charac
 char_order | integer | the order of the character
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | bool | whether the character
+char_is_real | boolean | whether the character
 char_degree | integer | Degree of the (cyclotomic) character field
 hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
