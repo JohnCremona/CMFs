@@ -5,7 +5,12 @@ intrinsic Parity (chi::GrpDrchElt) -> RngIntElt
     return Integers()!Evaluate(chi,-1);
 end intrinsic;
 
-intrinsic CharacterFieldDegree (chi::GrpDrchElt) -> RngIntElt
+intrinsic IsReal (chi::GrpDrchElt) -> Bool
+{ Whether the character takes only real values (trivial or quadratic) or not. }
+    return Order(chi) le 2;
+end intrinsic;
+
+intrinsic Degree (chi::GrpDrchElt) -> RngIntElt
 { The degree of the number field Q(chi). }
     return EulerPhi(Order(chi));
 end intrinsic;
