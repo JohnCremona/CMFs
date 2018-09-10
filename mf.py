@@ -2,7 +2,7 @@ from char import DirichletCharacterGaloisReps
 
 from dirichlet_conrey import DirichletCharacter_conrey as DC
 from sage.interfaces.gp import Gp
-from sage.all import ZZ,QQ, RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField
+from sage.all import ZZ,QQ, RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, primes
 import sys
 import time
 
@@ -141,25 +141,29 @@ def abstrace(x,deg):
         return x.trace().trace().sage()
 
 
-def Newforms(N, k, chi_number, dmax=20, nan=100, verbose=False):
+def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     # N and k are Sage ints but chi is a gp vector
     Chars = DirichletCharacterGaloisReps(N)
     if chi_number<1 or chi_number>len(Chars):
         print("Character number {} out of range for N={} (should be between 1 and {})".format(chi_number,N,len(Chars)))
         return []
-    gp = Gp(logfile="gp.log") # A new gp interface for each space
+    if Detail:
+        print("Decomposing space {}:{}:{}".format(N,k,chi_number))
+    gp = Gp() # A new gp interface for each space
     gp.default('parisizemax',64000000000)
     G = gp.znstar(N,1)
     chi_sage = Chars[chi_number-1]
     chi_gp = gp.znconreylog(G,DC.number(chi_sage))
     Snew = gp.mfinit([N,k,[G,chi_gp]],0)
     chi_order = DC.multiplicative_order(chi_sage)
-    if verbose: print("(N,k,c) = ({},{},{}), character order {}: gp char code = {}".format(N,k,chi_number,chi_order,chi_gp))
     newforms = gp.mfeigenbasis(Snew)
     nnf = len(newforms)
     if nnf==0:
+        if Detail:
+            print("The space {}:{}:{} is empty".format(N,k,chi_number))
         return []
-    if verbose: print("Number of newforms = {}".format(nnf))
+    if Detail:
+        print("The space {}:{}:{} has {} newforms".format(N,k,chi_number,nnf))
 
     # Setting the character field and polynomial
 
@@ -173,36 +177,40 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, verbose=False):
     chipoly = cyclotomic_polynomial(chi_order_2,'t')
     chi_degree = chipoly.degree()
     assert chi_degree==euler_phi(chi_order)==euler_phi(chi_order_2)
-    if verbose: print("chipoly = {}".format(chipoly))
+    if Detail>1:
+        print("chipoly = {}".format(chipoly))
 
     Qchi = NumberField(chipoly,'z')
-    if verbose: print("Q(chi) = {}".format(Qchi))
+    if Detail>1:
+        print("Q(chi) = {}".format(Qchi))
 
     # Setting the polynomials.  These are polynomials in y with coefficients either integers or polmods with modulus chipoly
 
     Qchi_y = PolynomialRing(Qchi,'y')
-    if verbose: print("Q(chi)[y] = {}".format(Qchi_y))
-    pols = gp.mfsplit(Snew) # ,flag=1)
-    #if verbose: print("Before conversion, pols = {}".format(pols[2]))
+    if Detail>1:
+        print("Q(chi)[y] = {}".format(Qchi_y))
+    pols = gp.mfsplit(Snew)
     pols = [gp2sage_ypoly(f, Qchi_y) for f in pols[2]]
-    if verbose: print("pols = {}".format(pols))
-
-    # Setting the dimensions list (absolute degrees)
-
     dims = [chi_degree*f.degree() for f in pols]
+    if dmax==0:
+        dmax = max(dims)
     nnf0 = len([d for d in dims if d<=dmax])
-    if verbose:
+
+    if Detail:
         print("dims = {}, so {} newforms have dimensions <={}".format(dims,nnf0,dmax))
+        if Detail>1:
+            print("pols = {}".format(pols))
 
     #Setting the Hecke fields as relative extensions of Qchi and as absolute fields:
 
     Hecke_fields_relative  = [Qchi.extension(f,'b') for f in pols[:nnf0]]
     abs_polys = [F.absolute_polynomial() for F in Hecke_fields_relative]
-    if verbose: print("absolute pols = {}".format(abs_polys))
+    if Detail>1:
+        print("absolute pols = {}".format(abs_polys))
     Hecke_fields_absolute = [F.absolute_field('a') for F in Hecke_fields_relative]
     isoms = [F.structure()[1] for F in Hecke_fields_absolute]
 
-    # if verbose:
+    # if Detail:
     #     print("Relative  Hecke fields: {}".format(Hecke_fields_relative))
     #     print("Absolute Hecke fields: {}".format(Hecke_fields_absolute))
 
@@ -210,26 +218,79 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, verbose=False):
 
     coeffs = gp.mfcoefs(Snew,nan)
     ans = [coeffs*gp.mftobasis(Snew,nf) for nf in newforms]
+    if Detail>2: print("ans = {}".format(ans))
     # Alternative method for traces:
     traces = [[abstrace(a,d) for a in ansi] for ansi,d in zip(ans,dims)]
-    if verbose: print("traces = {}".format(traces))
+    if Detail>2: print("traces = {}".format(traces))
 
-    if verbose: print("about to convert ans...")
+    if Detail>1: print("about to convert ans...")
     ans = [gp2sage_anfelt_list(ansi, iso) for ansi, iso in zip(ans[:nnf0], isoms)]
-    if verbose: print("finished")
+    if Detail>1: print("finished")
+    if Detail>2: print("ans = {}".format(ans))
 
-    # do not omit a_0 so indexing is natural
-
-    #if verbose: print("ans2 = {}".format(ans2))
+    # We do not omit a_0 so far
+    if Detail:
+        print("Computing Hecke orders...")
+    ancs = [[] for _ in range(nnf0)]
+    bases = [[] for _ in range(nnf0)]
+    for i in range(nnf0):
+        if Detail:
+            print("#{}:".format(i+1))
+        F = Hecke_fields_absolute[i]
+        ansi = ans[i]
+        if dims[i]==1:
+            if Detail: print("Hecke field is Q, skipping")
+            ancs[i] = [[an] for an in ansi[1:]]
+            bases[i] = [[1]]
+        else:
+            Fgen = F.gen()
+            Ogens = [Fgen]
+            O = O0 = F.order(Ogens)
+            D = ZZ(O0.discriminant())
+            if Detail:
+                print("Hecke field (degree {}) equation order has discriminant {}".format(dims[i],D))
+            maxp = 3
+            Ogens += [ansi[2],ansi[3]]
+            O = F.order(Ogens)
+            D = ZZ(O.discriminant())
+            for p in primes(5,nan):
+                if D.is_squarefree():
+                    break
+                ap = ansi[p]
+                if ap in O:
+                    continue
+                maxp = p
+                Ogens += [ap]
+                print("adding a_{} to order generators".format(p))
+                O = F.order(Ogens)
+                D = ZZ(O.discriminant())
+                if Detail:
+                    print("Order now has discriminant {}".format(D))
+            if Detail>-1:
+                print("Using a_p for p up to {}, order discriminant = {}".format(maxp,D))
+            ind = O0.index_in(O)
+            bases[i] = [b.list() for b in O.basis()]
+            if Detail:
+                print("Z-basis: {}".format(bases[i]))
+            ancs[i] = [O.coordinates(an).list() for an in ansi[1:]]
+            if Detail>1:
+                print("Hecke order has discriminant {}, contains equation order with index {}\nIntegral basis: {}".format(D, ind, O.basis()))
+                print("order basis matrix: {}".format(bases[i]))
+                if Detail>2:
+                    print("Coefficient vectors of ans: {}".format(ancs[i]))
+            if not all(all(anc in ZZ for anc in an) for an in ancs[i]):
+                print("*****************************************")
+                print("Not all coefficients are integral!")
+                print("*****************************************")
 
     # Compute AL-eigenvalues if character is trivial:
     if chi_order==1:
-        Qlist = [p**e for p,e in ZZ(N).factor()]
-        ALs = [gp.mfatkineigenvalues(Snew,Q).sage() for Q in Qlist]
-        if verbose: print("ALs: {}".format(ALs))
+        Qlist = [(p,p**e) for p,e in ZZ(N).factor()]
+        ALs = [gp.mfatkineigenvalues(Snew,Q[1]).sage() for Q in Qlist]
+        if Detail: print("ALs: {}".format(ALs))
         # "transpose" this list of lists:
-        ALeigs = [[[Q,ALs[i][j][0]] for i,Q in enumerate(Qlist)] for j in range(nnf)]
-        if verbose: print("ALeigs: {}".format(ALeigs))
+        ALeigs = [[[Q[0],ALs[i][j][0]] for i,Q in enumerate(Qlist)] for j in range(nnf)]
+        if Detail: print("ALeigs: {}".format(ALeigs))
     else:
         ALeigs = [[] for _ in range(nnf)]
 
@@ -239,11 +300,48 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, verbose=False):
          'poly': pols[i] if i<nnf0 else None,
          'abs_poly': abs_polys[i] if i<nnf0 else None,
          'traces': traces[i],
+         'basis': bases[i] if i<nnf0 else None,
          'ans': ans[i] if i<nnf0 else None,
-         'ALeigs': ALeigs[i]}   for i in range(nnf)]
+         'ancs': ancs[i] if i<nnf0 else None,
+         'ALeigs': ALeigs[i],
+        }   for i in range(nnf)]
+
     if nnf>1:
         all_nf.sort(key=lambda f: f['traces'])
     return all_nf
+
+def str_nosp(x):
+    return str(x).replace(" ","").replace("'","")
+
+def data_to_string(N,k,o,t,newforms):
+    r""" Given the newforms data for space (N,k,o) as produced by
+    Newforms() in time t, creates an output string in the correct format
+    """
+    dims = str_nosp([f['dim'] for f in newforms])
+    traces = [f['traces'][1:] for f in newforms]
+    traces = str_nosp(traces)
+    ALeigs = [f['ALeigs'] for f in newforms]
+    if o>1:
+        ALeigs = '[]'
+    else:
+        ALeigs = [["<{},{}>".format(b[0],b[1]) for b in a] for a in ALeigs]
+        ALeigs = str_nosp(ALeigs)
+    polys = [f['abs_poly'] for f in newforms]
+    polys = [f.list() for f in polys if f] # excluded the "None"s
+    polys = str_nosp(polys)
+    cutters = cm = it = pra = ""
+
+    def eig_data(f):
+        pol = str(f['abs_poly'].list())
+        bas = str(f['basis'])
+        n ='0' # temporary
+        m ='0'
+        e = str(f['ancs'])
+        return "<" + ",".join([pol, bas, n, m, e]) + ">"
+
+    eigs = str_nosp([eig_data(f) for f in newforms])
+
+    return ":".join([str(N), str(k), str(o), "{:0.3f}".format(t), dims, traces, ALeigs, polys, cutters, eigs, cm, it, pra])
 
 def DecomposeSpaces(filename, Nk2bound, dmax, nan=100, njobs=1, jobno=0):
 # Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
@@ -259,23 +357,14 @@ def DecomposeSpaces(filename, Nk2bound, dmax, nan=100, njobs=1, jobno=0):
                 break
             screen.write(" [k={}] ".format(k))
             for i in range(len(Chars)):
+                screen.write(" ({}) ".format(i+1))
                 t0=time.time()
-                data = Newforms(N,k,i+1,dmax,nan)
-                dims = [dat['dim'] for dat in data]
-                traces = [dat['traces'][1:] for dat in data]
-                traces = str(traces).replace(" ","")
-                ALeigs = [dat['ALeigs'] for dat in data]
-                ALeigs = [["<{},{}>".format(b[0],b[1]) for b in a] for a in ALeigs]
-                ALeigs = str(ALeigs).replace(" ","").replace("'","")
-                polys = [dat['abs_poly'] for dat in data]
-                polys = [f.list() for f in polys if f] # excluded the "None"s
-                polys = str(polys).replace(" ","")
-                ans = [dat['ans'] for dat in data]
-                ans = [[an.list() if dimi>1 else [an] for an in ansi[1:]] for ansi,dimi in zip(ans,dims) if ansi] # excluded the "None"s
-                ans = str(ans).replace(" ","")
+                newforms = Newforms(N,k,i+1,dmax,nan)
                 t0=time.time()-t0
+                line = data_to_string(N,k,i+1,t0,newforms) + "\n"
                 if out:
-                    out.write("{N}:{k}:{i}:{t:0.3f}:{D}:{T}:{A}:{F}::{E}:::\n".format(
-                        N=N,k=k,i=i+1,t=t0,D=dims,T=traces,A=ALeigs,F=polys,E=ans))
+                    out.write(line)
+                else:
+                    screen.write('\n')
+                    screen.write(line)
         screen.write('\n')
-
