@@ -329,7 +329,7 @@ def data_to_string(N,k,o,t,newforms):
     polys = [f['abs_poly'] for f in newforms]
     polys = [f.list() for f in polys if f] # excluded the "None"s
     polys = str_nosp(polys)
-    cutters = cm = it = pra = ""
+    cutters = cm = it = pra = "[]"
 
     def eig_data(f):
         pol = str(f['abs_poly'].list())
@@ -339,7 +339,7 @@ def data_to_string(N,k,o,t,newforms):
         e = str(f['ancs'])
         return "<" + ",".join([pol, bas, n, m, e]) + ">"
 
-    eigs = str_nosp([eig_data(f) for f in newforms])
+    eigs = str_nosp([eig_data(f) for f in newforms if f['abs_poly']])
 
     return ":".join([str(N), str(k), str(o), "{:0.3f}".format(t), dims, traces, ALeigs, polys, cutters, eigs, cm, it, pra])
 
