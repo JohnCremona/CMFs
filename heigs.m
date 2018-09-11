@@ -156,7 +156,7 @@ intrinsic ExactHeckeEigenvalues(Vf::ModSym : Tnbnd := 0) ->
             end for;
         end for;
         if #notsohard eq #hard then
-            disckOK := Discriminant(Oma);
+            discOK := Discriminant(Oma);
             _, Oind := IsSquare(discO/discOK);
             foundmax := true;
         else
