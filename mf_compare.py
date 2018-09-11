@@ -49,22 +49,22 @@ def decode_eigdata(s):
     # now each part is a single intlist, ratlistlist, int, int, intlistlist with no "<"...">"
     def decode_one(part):
         pol, rest = part[1:-2].split("],[[")
-        print("pol part is {}".format(pol))
+        #print("pol part is {}".format(pol))
         pol = [ZZ(c) for c in pol.split(",")]
-        print("pol = {}".format(pol))
+        #print("pol = {}".format(pol))
         bas, rest = rest.split("]],")
-        print("bas part is {}".format(bas))
+        #print("bas part is {}".format(bas))
         bas = [[QQ(str(c)) for c in b.split(",")] for b in bas.split("],[")]
-        print("bas = {}".format(bas))
-        print("Now rest is = {}".format(rest))
+        #print("bas = {}".format(bas))
+        #print("Now rest is = {}".format(rest))
         mn, rest = rest.split(",[[")
-        print("mn part is {}".format(mn))
+        #print("mn part is {}".format(mn))
         m,n = [ZZ(c) for c in mn.split(",")]
-        print("m,n ={}".format(m,n))
-        print("Now rest is = {}".format(rest))
+        #print("m,n ={}".format(m,n))
+        #print("Now rest is = {}".format(rest))
         ans = rest.split("],[")
         ans = [[ZZ(c) for c in an.split(",")] for an in ans]
-        print("ans = {}".format(ans))
+        #print("ans = {}".format(ans))
         return {'poly':pol, 'basis':bas, 'n':n, 'm':m, 'ans':ans}
 
     return [decode_one(part) for part in parts]
@@ -142,12 +142,29 @@ def polredabs(pol):
     x = pol.parent().variable_name()
     return sagepol(pari(pol).polredabs(),x)
 
-def compare_eigdata(ed1, ed2, debug=0):
+def polredbest(pol):
+    x = pol.parent().variable_name()
+    return sagepol(pari(pol).polredbest(),x)
+
+def polredbest_stable(pol):
+    x = pol.parent().variable_name()
+    f = pari(pol)
+    oldf = None
+    while f!=oldf:
+        oldf, f = f, f.polredbest()
+    return sagepol(f,x)
+
+def compare_eigdata(k, ed1, ed2, debug=0):
+    if debug: print("Comparing eigdata for space {}".format(k))
     if debug>1: print("Comparing eigdata\n1: {}\n2: {}".format(ed1,ed2))
     Qx = PolynomialRing(QQ,'x')
-    F1 = NumberField(Qx(ed1['poly']),'a1')
-    F2 = NumberField(Qx(ed2['poly']),'a2')
+    pol1 = Qx(ed1['poly'])
+    pol2 = Qx(ed2['poly'])
+    F1 = NumberField(pol1,'a1')
+    F2 = F1 if pol1==pol2 else NumberField(pol2,'a2')
     if not F1.is_isomorphic(F2):
+        print("poly 1 is {}".format(ed1['poly']))
+        print("poly 2 is {}".format(ed2['poly']))
         return False, 'fields not isomorphic'
     if debug:
         print("Field 1 = {}".format(F1))
@@ -158,9 +175,9 @@ def compare_eigdata(ed1, ed2, debug=0):
         print("Basis matrix 1: {}".format(ed1['basis']))
         print("Basis matrix 2: {}".format(ed2['basis']))
     d = F1.degree()
-    b1 = [[ed1['basis'][i][j] for j in range(d)] for i in range(d)]
-    #basis1 = [F1(co) for co in ed1['basis']]
-    basis1 = [F1(co) for co in b1]
+    #b1 = [[ed1['basis'][i][j] for j in range(d)] for i in range(d)]
+    #basis1 = [F1(co) for co in b1]
+    basis1 = [F1(co) for co in ed1['basis']]
     basis2 = [F2(co) for co in ed2['basis']]
     if debug:
         print("Basis 1 = {}".format(basis1))
@@ -173,6 +190,8 @@ def compare_eigdata(ed1, ed2, debug=0):
 
     # now see if there's an isomorphism F1 --> F2 mapping one list to the other:
     for iso in isos:
+        if debug:
+            print("Trying isomorphism {}".format(iso))
         if all(iso(an1)==an2 for an1,an2 in zip(ans1,ans2)):
             return True, 'match'
     return False, "isomorphic fields but an do not match up"
@@ -203,7 +222,7 @@ def compare_data(d1,d2, keylist=['dims', 'traces', 'polys','ALs', 'eigdata'], ve
                         print("{} differ for {}: \nfirst #= {}, \nsecond #={}".format(key,k,[len(t) for t in t1],[len(t) for t in t2]))
                     elif key=='eigdata':
                         for f1,f2 in zip(t1,t2):
-                            ok, reason = compare_eigdata(f1,f2)
+                            ok, reason = compare_eigdata(k,f1,f2)
                             if not ok:
                                 print("an do not match for (N,k,o)={}: {}".format(k, reason))
                     else:

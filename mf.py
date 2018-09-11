@@ -1,4 +1,5 @@
 from char import DirichletCharacterGaloisReps
+from mf_compare import polredbest, polredbest_stable, polredabs
 
 from dirichlet_conrey import DirichletCharacter_conrey as DC
 from sage.interfaces.gp import Gp
@@ -131,11 +132,15 @@ def abstrace(x,deg):
     # most of whose coefficients are t_POLMODs.  In this case we need to
     # multiply by the appropriate degree, so have to pass the degree as a
     # parameter.
+    #print("abstrace({}) in degree {}".format(x,deg))
     if deg==1:
+        #print("---returns(1) {}".format(x.sage()))
         return x.sage()
     if x in QQ: # miraculously this works for a GpElement
+        #print("---returns(2) {}".format(deg*QQ(x)))
         return deg*QQ(x)
     try:
+        #print("---returns(3) {}".format(x.trace().sage()))
         return x.trace().sage()
     except NameError:
         return x.trace().trace().sage()
@@ -220,7 +225,10 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     ans = [coeffs*gp.mftobasis(Snew,nf) for nf in newforms]
     if Detail>2: print("ans = {}".format(ans))
     # Alternative method for traces:
-    traces = [[abstrace(a,d) for a in ansi] for ansi,d in zip(ans,dims)]
+    traces = [[abstrace(a,d) for a in ansi][1:] for ansi,d in zip(ans,dims)]
+    # fix up trace(a_1)
+    for i,tr in enumerate(traces):
+        tr[0]=dims[i]
     if Detail>2: print("traces = {}".format(traces))
 
     if Detail>1: print("about to convert ans...")
@@ -228,7 +236,17 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     if Detail>1: print("finished")
     if Detail>2: print("ans = {}".format(ans))
 
-    # We do not omit a_0 so far
+    # apply polredbest_stable to these polys:
+    best_polys = [polredbest_stable(f) for f in abs_polys]
+    if Detail>1:
+        print("polredbest pols = {}".format(best_polys))
+    Hecke_fields = [NumberField(f,'a') for f in best_polys]
+    isoms2 = [F1.embeddings(F2)[0] for F1,F2 in zip(Hecke_fields_absolute, Hecke_fields)]
+
+    # adjust all the ans: NB we do not omit a_0 so far for convenience so a_p has index p
+    ans = [[iso(an) for an in ansi] for ansi,iso in zip(ans,isoms2)]
+    if Detail>2: print("best ans = {}".format(ans))
+
     if Detail:
         print("Computing Hecke orders...")
     ancs = [[] for _ in range(nnf0)]
@@ -236,32 +254,32 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     for i in range(nnf0):
         if Detail:
             print("#{}:".format(i+1))
-        F = Hecke_fields_absolute[i]
+        F = Hecke_fields[i]
         ansi = ans[i]
         if dims[i]==1:
             if Detail: print("Hecke field is Q, skipping")
             ancs[i] = [[an] for an in ansi[1:]]
             bases[i] = [[1]]
         else:
+            z = F(isoms2[i](isoms[i](Qchi.gen())))
             Fgen = F.gen()
-            Ogens = [Fgen]
+            Ogens = [z,Fgen]
             O = O0 = F.order(Ogens)
+            #O = O0 = F.maximal_order()
             D = ZZ(O0.discriminant())
             if Detail:
-                print("Hecke field (degree {}) equation order has discriminant {}".format(dims[i],D))
-            maxp = 3
-            Ogens += [ansi[2],ansi[3]]
-            O = F.order(Ogens)
-            D = ZZ(O.discriminant())
-            for p in primes(5,nan):
+                print("Hecke field (degree {}) equation order has discriminant {} = {}".format(dims[i],D,D.factor(proof=False)))
+            maxp = 1
+            for p in primes(2,nan):
                 if D.is_squarefree():
                     break
                 ap = ansi[p]
                 if ap in O:
                     continue
+                print("a_{} ={} has coordinates {}".format(p,ap,O.coordinates(ap)))
                 maxp = p
                 Ogens += [ap]
-                print("adding a_{} to order generators".format(p))
+                print("adding a_{} ={} to order generators".format(p,ap))
                 O = F.order(Ogens)
                 D = ZZ(O.discriminant())
                 if Detail:
@@ -270,9 +288,24 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
                 print("Using a_p for p up to {}, order discriminant = {}".format(maxp,D))
             ind = O0.index_in(O)
             bases[i] = [b.list() for b in O.basis()]
-            if Detail:
-                print("Z-basis: {}".format(bases[i]))
             ancs[i] = [O.coordinates(an).list() for an in ansi[1:]]
+            # Check that the coordinates and basis are consistent with the original an's:
+            for c,b in zip(bases[i],O.basis()):
+                assert b==F(c)
+            for j in range(nan):
+                an = ans[i][j+1]
+                bn = sum(c*b for c,b in zip(ancs[i][j],O.basis()))
+                if an!=bn:
+                    print("**** inconsistent representations of a_{}: value = {} but coordinates give {}".format(j+1,an,bn))
+                elif j==1:
+                    print("a_2 = {}".format(an))
+                    print("coordinates: {}".format(ancs[i][j]))
+                    print("basis: {}".format(O.basis()))
+                    print("combination of basis = {}".format(bn))
+                    print("basis matrix = {}".format(bases[i]))
+                    newbasis = [F(co) for co in bases[i]]
+                    print("basis from its matrix: {}".format(newbasis))
+                    assert O.basis()==newbasis
             if Detail>1:
                 print("Hecke order has discriminant {}, contains equation order with index {}\nIntegral basis: {}".format(D, ind, O.basis()))
                 print("order basis matrix: {}".format(bases[i]))
@@ -299,6 +332,7 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
          'chipoly': chipoly,
          'poly': pols[i] if i<nnf0 else None,
          'abs_poly': abs_polys[i] if i<nnf0 else None,
+         'best_poly': best_polys[i] if i<nnf0 else None,
          'traces': traces[i],
          'basis': bases[i] if i<nnf0 else None,
          'ans': ans[i] if i<nnf0 else None,
@@ -318,7 +352,7 @@ def data_to_string(N,k,o,t,newforms):
     Newforms() in time t, creates an output string in the correct format
     """
     dims = str_nosp([f['dim'] for f in newforms])
-    traces = [f['traces'][1:] for f in newforms]
+    traces = [f['traces'] for f in newforms]
     traces = str_nosp(traces)
     ALeigs = [f['ALeigs'] for f in newforms]
     if o>1:
@@ -326,20 +360,20 @@ def data_to_string(N,k,o,t,newforms):
     else:
         ALeigs = [["<{},{}>".format(b[0],b[1]) for b in a] for a in ALeigs]
         ALeigs = str_nosp(ALeigs)
-    polys = [f['abs_poly'] for f in newforms]
+    polys = [f['best_poly'] for f in newforms]
     polys = [f.list() for f in polys if f] # excluded the "None"s
     polys = str_nosp(polys)
     cutters = cm = it = pra = "[]"
 
     def eig_data(f):
-        pol = str(f['abs_poly'].list())
+        pol = str(f['best_poly'].list())
         bas = str(f['basis'])
         n ='0' # temporary
         m ='0'
         e = str(f['ancs'])
         return "<" + ",".join([pol, bas, n, m, e]) + ">"
 
-    eigs = str_nosp([eig_data(f) for f in newforms if f['abs_poly']])
+    eigs = str_nosp([eig_data(f) for f in newforms if f['best_poly'] and f['dim']>1])
 
     return ":".join([str(N), str(k), str(o), "{:0.3f}".format(t), dims, traces, ALeigs, polys, cutters, eigs, cm, it, pra])
 
@@ -353,11 +387,12 @@ def DecomposeSpaces(filename, Nk2bound, dmax, nan=100, njobs=1, jobno=0):
         Chars = DirichletCharacterGaloisReps(N)
         kmax = int((RR(Nk2bound)/N).sqrt())
         for k in range(2, kmax+1):
-            if(N+k)%njobs!=jobno:
-                break
+            if (N+k)%njobs!=jobno:
+                #screen.write("Skipping (N,k)=({},{}) since (N+k)%{}={}, not {}".format(N,k,njobs,(N+k)%njobs,jobno))
+                continue
             screen.write(" [k={}] ".format(k))
             for i in range(len(Chars)):
-                screen.write(" ({}) ".format(i+1))
+                screen.write(" (o={}) ".format(i+1))
                 t0=time.time()
                 newforms = Newforms(N,k,i+1,dmax,nan)
                 t0=time.time()-t0
@@ -368,3 +403,5 @@ def DecomposeSpaces(filename, Nk2bound, dmax, nan=100, njobs=1, jobno=0):
                     screen.write('\n')
                     screen.write(line)
         screen.write('\n')
+    if out:
+        out.close()
