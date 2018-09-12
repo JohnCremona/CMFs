@@ -10,25 +10,25 @@ Column | Type | Notes
 label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
-odd_weight | bool | whether k is odd
-char_orbit_index | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
-char_orbit_label | integer | letter encoded version of (i)
+odd_weight | boolean | whether k is odd
+char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
+char_orbit_label | text | letter encoded version of (i)
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit_index | integer | char_orbit for the primitive version of this character
+prim_orbit | integer | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | bool | whether the character
+char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 sturm_bound | integer |
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
 dim | integer | Q-dimension of this newspace
+num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
+hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits (irreducible Galois stable subspaces)
 eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding `M_k(N, \chi)`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
-hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits
-num_forms | smallint | the length of hecke_orbit_dims
 
 Table name: `mf_subspaces`.
 
@@ -36,29 +36,29 @@ This table represents embeddings of newspaces at level M into cusp spaces at lev
 
 Column | Type | Notes
 -------|------|------
-label | text | label (N.k.i) for the modular form space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
-level | integer | (N)
-weight | smallint | (k) (this is the same for all embedded subspaces)
-char_orbit_index | integer | (i) index of `[\chi]` in sorted list of character orbits of modulus N
-char_labels | jsonb | list of conrey labels in char_orbit
+label | text | label N.k.i for the cuspidal space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
+level | integer | level N of the cuspidal space `S_k(N, [\chi])`
+weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
+char_orbit_index | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
+char_labels | jsonb | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
 dim | integer | dimension of `S_k(N, [\psi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit_index | integer | (j) index of `[\psi]` in sorted list of character orbits of modulus M
-sub_char_labels | jsonb | list of Conrey labels for the subspace
+sub_char_labels | jsonb | list of Conrey indexes n of the characters M.n in the Galois orrbit indexed by j.
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
-sub_mult | integer | The number of isomorphic copies of `S_k^{new}(M, [\psi])` in `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
+sub_mult | integer | Multiplicity of`S_k^{new}(M, [\psi])` as a direct summand of `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
 
 Table name: `mf_gamma1_subspaces`.
 
 Column | Type | Notes
 -------|------|------
-level | integer
-weight | smallint
-dim | integer
-sub_level | integer
-sub_dim | integer
-sub_mult | integer
+level | integer | level N of the cuspidal space S_k(Gamma_1(N))
+weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
+dim | integer | dimension of S_k(Gamma_1(N))
+sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed in S^k(Gamma_1(N))
+sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
+sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
 
 Newforms
 ========
@@ -71,7 +71,7 @@ label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
-odd_weight | bool | whether k is odd
+odd_weight | boolean | whether k is odd
 char_orbit_index | integer | (i) As above
 char_orbit_label | text | letter encoded version of (i)
 char_conductor | integer | Conductor of the Dirichlet character
@@ -79,7 +79,7 @@ prim_orbit_index | integer | char_orbit for the primitive version of this charac
 char_order | integer | the order of the character
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | bool | whether the character
+char_is_real | boolean | whether the character
 char_degree | integer | Degree of the (cyclotomic) character field
 hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
@@ -93,11 +93,10 @@ hecke_ring_index | jsonb | (a divisor of) the index of the order generated by th
 hecke_ring_index_proven | boolean | whether the index has been proven correct (computing the maximal order may not be possible)
 trace_hash | bigint | appropriate linear combination of the a_p between 2^12 and 2^13
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
-*embeddings* | jsonb | list of pairs (x,y), giving an ordering of the complex roots x+iy of the field poly that define the embedding enumeration (corresponding to the lexicographic ordering of chi, n in the L-function labels) **not present, this should be in separate different table or put in mf_hecke_cc**
 isogeny_class_label | text | the isogeny class label of the corresponding elliptic curve or modular abelian variety (could be null if not yet in the database)
 analytic_rank | smallint |
 is_cm | smallint | whether there is cm.  1=yes, -1=no, 0=unknown
-cm_disc | smallint | The (negative) discriminant of the order by which we have CM (0 if no CM)
+cm_disc | smallint | The (negative) discriminant of the order by which we have CM (1 if no CM, 0 if CM status is not known)
 cm_hecke_char | text | label for the Hecke character giving the CM
 cm_proved | boolean | whether the cm columns are provably correct
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
@@ -108,6 +107,13 @@ atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, th
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
 trace_display | jsonb | list of the first four a_n traces for display on search page results
+
+Table name: `mf_newform_portraits`
+
+Column | Type | Notes
+-------|------|------
+label | text | label (N.k.i.x) of the newform
+portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
 Hecke eigenvalues
 =================
@@ -151,7 +157,7 @@ parity | smallint
 galois_orbit | jsonb | sorted list of conrey_labels in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
-cyc_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
+char_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
 
 Table name: `char_dir_values`
 

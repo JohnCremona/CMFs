@@ -116,7 +116,7 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), ComputeTraces
         cm := [a select b else 0 where a,b:=IsCM(S[i]:Proof:=true):i in [1..#S]|D[i] le DegreeBound];
         if Detail gt 0 then printf "took %o secs\n", Cputime()-t; printf "CM discriminants: %o\n", sprint(cm); end if;
         if Detail gt 0 then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
-        if #Keys(OrbitRepTable) eq 0 then _,OrbitRepTable := CharacterOrbitReps (N); end if;
+        if #Keys(OrbitRepTable) eq 0 then _,OrbitRepTable := CharacterOrbitReps (N:RepTable:=true); end if;
         it := [cm[i] eq 0 select [OrbitRepTable[chi]:chi in t|Order(chi) gt 1] where t:= InnerTwists(S[i]) else [] :i in [1..#S]|D[i] le DegreeBound];
         if Detail gt 0 then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n", sprint(it); end if;
     end if;
