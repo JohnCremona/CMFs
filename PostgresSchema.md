@@ -108,6 +108,13 @@ hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers
 qexp_display | text | latexed string for display on search page results
 trace_display | jsonb | list of the first four a_n traces for display on search page results
 
+Table name: `mf_newform_portraits`
+
+Column | Type | Notes
+-------|------|------
+label | text | label (N.k.i.x) of the newform
+portrait | jsonb | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
+
 Hecke eigenvalues
 =================
 
