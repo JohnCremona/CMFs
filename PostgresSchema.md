@@ -39,13 +39,13 @@ Column | Type | Notes
 label | text | label (N.k.i) for the modular form space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
 level | integer | (N)
 weight | smallint | (k) (this is the same for all embedded subspaces)
-char_orbit | integer | (i) index of `[\chi]` in sorted list of character orbits of modulus N
-conrey_labels | jsonb | list of conrey labels in char_orbit
+char_orbit_index | integer | (i) index of `[\chi]` in sorted list of character orbits of modulus N
+char_labels | jsonb | list of conrey labels in char_orbit
 dim | integer | dimension of `S_k(N, [\psi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
-sub_char_orbit | integer | (j) index of `[\psi]` in sorted list of character orbits of modulus M
-sub_conrey_labels | jsonb | list of Conrey labels for the subspace
+sub_char_orbit_index | integer | (j) index of `[\psi]` in sorted list of character orbits of modulus M
+sub_char_labels | jsonb | list of Conrey labels for the subspace
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
 sub_mult | integer | The number of isomorphic copies of `S_k^{new}(M, [\psi])` in `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
 
@@ -73,7 +73,7 @@ level | integer | (N)
 weight | smallint | (k)
 odd_weight | bool | whether k is odd
 char_orbit_index | integer | (i) As above
-char_orbit_label | integer | letter encoded version of (i)
+char_orbit_label | text | letter encoded version of (i)
 char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit_index | integer | char_orbit for the primitive version of this character
 char_order | integer | the order of the character
@@ -127,7 +127,8 @@ Column | Type | Notes
 -------|------|------
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
-embedding_index | integer | enumeration of which embedding (shows up in L-function link), corresponding to the embeddings list in the orbit table
+conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
+embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
 embedding_root_real | real | real part of the root corresponding to this embedding
 embedding_root_imag | real | imaginary part of the root corresponding to this embedding
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
