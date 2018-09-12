@@ -113,7 +113,7 @@ Table name: `mf_newform_portraits`
 Column | Type | Notes
 -------|------|------
 label | text | label (N.k.i.x) of the newform
-portrait | jsonb | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
+portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
 Hecke eigenvalues
 =================
