@@ -96,7 +96,7 @@ qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 isogeny_class_label | text | the isogeny class label of the corresponding elliptic curve or modular abelian variety (could be null if not yet in the database)
 analytic_rank | smallint |
 is_cm | smallint | whether there is cm.  1=yes, -1=no, 0=unknown
-cm_disc | smallint | The (negative) discriminant of the order by which we have CM (0 if no CM)
+cm_disc | smallint | The (negative) discriminant of the order by which we have CM (1 if no CM, 0 if CM status is not known)
 cm_hecke_char | text | label for the Hecke character giving the CM
 cm_proved | boolean | whether the cm columns are provably correct
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
@@ -107,6 +107,13 @@ atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, th
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
 trace_display | jsonb | list of the first four a_n traces for display on search page results
+
+Table name: `mf_newform_portraits`
+
+Column | Type | Notes
+-------|------|------
+label | text | label (N.k.i.x) of the newform
+portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
 Hecke eigenvalues
 =================
@@ -126,7 +133,8 @@ Column | Type | Notes
 -------|------|------
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
-embedding_index | integer | enumeration of which embedding (shows up in L-function link), corresponding to the embeddings list in the orbit table
+conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
+embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
 embedding_root_real | real | real part of the root corresponding to this embedding
 embedding_root_imag | real | imaginary part of the root corresponding to this embedding
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
@@ -149,7 +157,7 @@ parity | smallint
 galois_orbit | jsonb | sorted list of conrey_labels in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
-cyc_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
+char_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
 
 Table name: `char_dir_values`
 
