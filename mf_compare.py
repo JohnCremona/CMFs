@@ -155,6 +155,7 @@ def polredbest_stable(pol):
     return sagepol(f,x)
 
 def compare_eigdata(k, ed1, ed2, debug=0):
+    #if k==(25,2,5): debug=1
     if debug: print("Comparing eigdata for space {}".format(k))
     if debug>1: print("Comparing eigdata\n1: {}\n2: {}".format(ed1,ed2))
     Qx = PolynomialRing(QQ,'x')
@@ -174,7 +175,7 @@ def compare_eigdata(k, ed1, ed2, debug=0):
         print("isomorphisms F1 --> F2: {}".format(isos))
         print("Basis matrix 1: {}".format(ed1['basis']))
         print("Basis matrix 2: {}".format(ed2['basis']))
-    d = F1.degree()
+    #d = F1.degree()
     #b1 = [[ed1['basis'][i][j] for j in range(d)] for i in range(d)]
     #basis1 = [F1(co) for co in b1]
     basis1 = [F1(co) for co in ed1['basis']]
@@ -222,7 +223,7 @@ def compare_data(d1,d2, keylist=['dims', 'traces', 'polys','ALs', 'eigdata'], ve
                         print("{} differ for {}: \nfirst #= {}, \nsecond #={}".format(key,k,[len(t) for t in t1],[len(t) for t in t2]))
                     elif key=='eigdata':
                         for f1,f2 in zip(t1,t2):
-                            ok, reason = compare_eigdata(k,f1,f2)
+                            ok, reason = compare_eigdata(k,f1,f2,verbose)
                             if not ok:
                                 print("an do not match for (N,k,o)={}: {}".format(k, reason))
                     else:
