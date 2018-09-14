@@ -29,6 +29,16 @@ eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding 
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
+AL_dims | jsonb | For spaces with trivial character, this is a list of lists of pairs [AL_eigs,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, and n is the total dimension of the subspace of newforms that lie in the intersection of the corresponding eigenspaces.
+
+Table name: `mf_newspace_portraits`
+
+Column | Type | Notes
+-------|------|------
+label | text | label (N.k.i) of the newspace
+portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
+
+
 
 Table name: `mf_subspaces`.
 
