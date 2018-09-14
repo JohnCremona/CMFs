@@ -6,6 +6,184 @@ import struct
 from dirichlet_conrey import *
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
 from sage.all import prime_range, pi
+from sage.databases.cremona import cremona_letter_code, class_to_int
+
+to_compute = 2000 #coeffs/traces that we compute
+to_store = 1000  # that we store
+####################
+# postgres stuff
+###################
+
+
+default_type = 'CMF'
+
+def constant_lf(level, weight, degree):
+    assert degree % 2 == 0
+    output =  {
+        'primitive' : 't', # True
+        'conductor' : level**(degree//2),
+        'load_key' : 'CMFs-workshop',
+        'motivic_weight': weight - 1,
+        'types': str([default_type]).replace("'","\""),
+        'symmetry_type': '\N',
+        'group' : 'GL2',
+        'degree' : degree,
+        'st_group' : '\N',
+        'selfdual': '\N',
+        'analytic_normalization': float(weight - 1)/2,
+        'precision': '\N',
+        'algebraic': 't',
+        'coeff_info': '\N',
+        'credit' : '\N',
+        'values': '\N', # no special values at the moment
+        'gamma_factors': [[], [0]*(degree//2)],
+        'coefficient_field': '\N', # the label of the Hecke field, we set as \N as start
+        'dirichlet_coefficients' : '\N' # we already store a2 .. a10
+        }
+    for i in range(2,11):
+        output['A' + str(i)] = '\N'
+
+    return output
+
+schema_lf = [
+        'load_key', # 'CMFs'
+        'origin', # ModularForm/GL2/Q/holomorphic/N/k/chi/a/n
+        'primitive', # True
+        'conductor', # N
+        'central_character', # N.chi
+        'self_dual',  # boolean, Bober tells me
+        'motivic_weight', # k - 1
+        'conjugate', # Bober tells me
+        'types', # ['MF']
+        'Lhash', # first zero: str(<first zero of L_0> * 2^100).round())
+        'symmetry_type', # 'unitary' or 'orthogonal' or 'symplectic'  FIXME: delete?
+        'group', # GL2
+        'degree', # 2
+        'st_group', # unkown for the moment
+        'plot_delta', # numeric,
+        'selfdual', # to be removed
+        'analytic_normalization', # (k - 1)/2<D-f>
+        'euler_factors', # as polys
+        'z1', #first zero
+        'z2', #2nd zero
+        'z3', #3rd zero
+        'precision', # this is only used for mass forms, might mean the precision of the eigenvalue in that case
+        'accuracy', # bit accuracy (after the decimal point) of the nontrivial zeros
+        'order_of_vanishing', # int
+        'bad_lfactors', # Null for the moment
+        'sign_arg', # muti valued denoting the angle
+        'plot_values', # list of doubles
+        'algebraic', # True
+        'coeff_info', # ???? ,
+        'leading_term', # WARNING is text
+        'root_number', # WARNING text
+        'positive_zeros', #list of doubles
+        'credit', # empty string
+        'gamma_factors', # jsonb,
+        'values', # special values, format???
+        'dirichlet_coefficients', # the ap traces as algebraic numbers
+        'coefficient_field', # the label of the Hecke field
+        ]
+for i in range(2,11):
+    schema_lf.append('A'+ str(i))
+    schema_lf.append('a' + str(i))
+
+
+    schema_lf_dict = dict([ (key, i) for i, key in enumerate(schema_lf)])
+
+schema_lf_types = {u'A10': u'numeric',
+     u'A2': u'numeric',
+     u'A3': u'numeric',
+     u'A4': u'numeric',
+     u'A5': u'numeric',
+     u'A6': u'numeric',
+     u'A7': u'numeric',
+     u'A8': u'numeric',
+     u'A9': u'numeric',
+     u'Lhash': u'text',
+     u'a10': u'jsonb',
+     u'a2': u'jsonb',
+     u'a3': u'jsonb',
+     u'a4': u'jsonb',
+     u'a5': u'jsonb',
+     u'a6': u'jsonb',
+     u'a7': u'jsonb',
+     u'a8': u'jsonb',
+     u'a9': u'jsonb',
+     u'accuracy': u'smallint',
+     u'algebraic': u'boolean',
+     u'analytic_normalization': u'numeric',
+     u'bad_lfactors': u'jsonb',
+     u'central_character': u'text',
+     u'coeff_info': u'jsonb',
+     u'coefficient_field': u'text',
+     u'conductor': u'bigint',
+     u'conjugate': u'text',
+     u'credit': u'text',
+     u'degree': u'smallint',
+     u'dirichlet_coefficients': u'jsonb',
+     u'euler_factors': u'jsonb',
+     u'gamma_factors': u'jsonb',
+     u'group': u'text',
+     u'id': u'bigint',
+     u'leading_term': u'text',
+     u'load_key': u'text',
+     u'motivic_weight': u'smallint',
+     u'order_of_vanishing': u'smallint',
+     u'origin': u'text',
+     u'plot_delta': u'numeric',
+     u'plot_values': u'jsonb',
+     u'positive_zeros': u'jsonb',
+     u'precision': u'smallint',
+     u'primitive': u'boolean',
+     u'root_number': u'text',
+     u'self_dual': u'boolean',
+     u'selfdual': u'boolean',
+     u'sign_arg': u'numeric',
+     u'st_group': u'text',
+     u'symmetry_type': u'text',
+     u'types': u'jsonb',
+     u'values': u'jsonb',
+     u'z1': u'numeric',
+     u'z2': u'numeric',
+     u'z3': u'numeric'}
+
+schema_lf_types.pop('id')
+
+for key in schema_lf_types.keys():
+    assert key in schema_lf
+for key in schema_lf:
+    assert key in schema_lf_types, '%s not in schema_lf_types' % key
+
+
+
+schema_instances = ['url', 'Lhash', 'type']
+
+schema_instances_types = {u'Lhash': u'text', u'id': u'bigint', u'type': u'text', u'url': u'text'}
+schema_instances_types.pop('id')
+
+
+######################
+# End of postgres stuff
+########################
+
+
+# sqrt hack for ComplexBallField
+def sqrt_hack(foo):
+    if not foo.real().contains_zero() and foo.real().mid() < 0:
+        return foo.parent().0*(-foo).sqrt()
+    else:
+        return foo.sqrt()
+
+def arg_hack(foo):
+    if not foo.real().contains_zero() and foo.real().mid() < 0:
+        return (-foo).arg() + foo.parent().pi().real()
+    else:
+        return foo.arg()
+
+# other globals
+CCC = ComplexBallField(2000)
+RRR = RealIntervalField(2000)
 
 def CBFlistcmp(L1, L2):
     for (z1, z2) in zip(L1, L2):
@@ -69,6 +247,139 @@ def read_orbit(orbitblob):
     A = struct.unpack_from('i'*(len(orbitblob)/4r), orbitblob)
     return [ (A[2*i], A[2*i+1]) for i in range(len(A)/2r) ]
 
+def CDF_to_pair(x):
+    a = CDF(x)
+    return [float(a.real()), float(a.imag())]
+
+def reciprocal_roots(coeff):
+    if len(coeff) == 3:
+        a, b ,c = coeff;
+        sqrtdisc = sqrt_hack(b**2 - 4*a*c)
+        alpha1 = (-b + sqrtdisc)/(2*a)
+        alpha2 = (-b - sqrtdisc)/(2*a)
+        return [alpha1, alpha2]
+    elif len(coeff) == 2:
+        a, b = coeff
+        return [-b/a]
+
+def from_power_sums(ps):
+    assert ps[0] is None
+    es = [None] * len(ps)
+    es[0] = 1
+    es[1] = ps[1]
+    for k in range(2, len(ps)):
+        es[k] = sum( (-1)^(i -1) * es[k-i] * ps[i] for i in range(1, k + 1))/k
+    es = [(-1)^i * elt for i, elt in enumerate(es)]
+    return es
+
+
+
+
+def rational_euler_factors(traces, euler_factors_cc, level, weight):
+    dirichlet = [1]*11
+    euler_factors = []
+    bad_lfactors = []
+    halfdegree = len(euler_factors_cc)
+    PS = PowerSeriesRing(ZZ, "X")
+    CCCx = PolynomialRing(CCC, "x")
+    x = CCCx.gen()
+    for p_index, p in enumerate(primes_first_n(30)):
+        #try to guess the rest by multiplying them
+        roots = []
+        for lf in euler_factors_cc:
+            roots += reciprocal_roots(lf[p_index])
+        root_powers = [None] * (halfdegree + 1)
+        for j in range(1,halfdegree + 1):
+            try:
+                root_powers[j] = RRR(sum( map(lambda z: (z^j).real(), roots) )).unique_integer()
+            except ValueError:
+                root_powers = root_powers[:j]
+                break
+        partial_efzz = from_power_sums(root_powers)
+        efzz = partial_efzz + [None]*(halfdegree +1 - len(partial_efzz))
+        if len(traces) > p:
+            efzz[1] = -traces[p - 1]
+
+        # to check that from_power_sums is correct
+        ef = prod([CCCx(lf[p_index]) for lf in euler_factors_cc])
+        for j, elt in enumerate(ef.list()[:len(partial_efzz)]):
+            try:
+                efj = RRR(elt.real()).unique_integer()
+            except ValueError:
+                break;
+            assert efj == efzz[j]
+
+
+        if level % p != 0:
+            sign = RRR(ef.list()[-1].real()).unique_integer()/p^((halfdegree)*(weight - 1))
+            assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
+            efzz2 = [None] * halfdegree
+            for i, elt in enumerate(reversed(efzz[:-1])):
+                if elt is None:
+                    efzz2[i] = None
+                else:
+                    efzz2[i] = sign*p^((i+1)*(weight - 1)) * elt
+            efzz += efzz2
+        else:
+            bad_lfactors.append([p, efzz])
+
+            euler_factors.append(efzz)
+        if p < 11:
+            if p == 2:
+                foo = (1/PS(efzz[:4])).padded_list(4)
+                for i in range(1, 4):
+                    dirichlet[p**i] = foo[i]
+            elif p == 3:
+                foo = (1/PS(efzz[:3])).padded_list(4)
+                for i in range(1, 3):
+                    dirichlet[p**i] = foo[i]
+            else:
+                dirichlet[p] = -efzz[1]
+
+        extend_multiplicatively(dirichlet)
+
+
+
+    return euler_factors, bad_lfactors, dirichlet
+
+def angles_euler_factors(coeffs, level, weight, chi):
+    """
+    - ``coeffs`` -- a list of Dirichlet coefficients, as elements of CCC
+    - ``level`` -- the level N
+    - ``weight`` -- the weight k
+    - ``chi`` -- the index of the Dirichlet character in the Conrey labeling
+    returns a triple: (angles, euler_factos, bad_euler_factors)
+    """
+    G = DirichletGroup_conrey(level, CCC)
+    char = DirichletCharacter_conrey(G, chi)
+    euler = []
+    bad_euler = []
+    angles = []
+    for p in prime_range(to_store):
+        b = -coeffs[p]
+        c = 1
+        if p.divides(level):
+            bad_euler.append([p, [c, b]])
+            euler.append([c,b])
+            if len(coeffs) > p**2:
+                # compare as floats
+                assert (coeffs[p**2] -b**2).abs().mid() < 1e-30, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  b**2= %s\n(a_p2**2 -  b**2).abs() = %s\nb**2 = %s\na_p2 = %s\ncoeffs[:p**2 + 1] = %s\n" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2), coeffs[p**2] -b**2, (coeffs[p**2] -b**2).abs().mid(), b**2,  coeffs[p**2],coeffs[:p**2+1],)
+        else:
+            charval = CCC(2*char.logvalue(p)).exppii()
+            if charval.contains_exact(1):
+                charval = 1
+            elif charval.contains_exact(-1):
+                charval = -1
+            a = (p**(weight-1))*charval
+            euler.append([c,b,a])
+            alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*a)
+            theta = arg_hack(alpha) / (2*CCC.pi().real())
+            angles.append([p, float(theta.mid())])
+            if len(coeffs) > p**2:
+                assert  (coeffs[p**2] -(b**2 -a)).abs().mid() < 1e-30
+    an_f = map(CDF_to_pair, coeffs[:to_store + 1])
+    return an_f, angles, euler, bad_euler
+
 def do(level, weight):
     print "N = %s, k = %s" % (level, weight)
     base_path = "/scratch/home/bober"
@@ -88,11 +399,12 @@ def do(level, weight):
         print '{} not found'.format(Ldbinfile)
         notfound = True
 
+    dim = dimension_new_cusp_forms(Gamma1(level), weight)
     if notfound:
-        assert CuspForms(weight, level).dimension() == 0
+        assert  dim == 0, "dim = %s" % dim
         return 1
 
-    to_store = 1000
+
 
     #level_list = set()
     #level_weight_list = []
@@ -113,15 +425,14 @@ def do(level, weight):
     for k, orbit in enumerate(orbits):
         for chi in orbit:
             # we are starting at 1
-            orbit_labels[chi] = k+ 1
+            orbit_labels[chi] = k + 1
     if level == 1:
         orbit_labels[1] = 1
 
     degree_lists = {}
     traces_lists = {}
 
-    CCC = ComplexBallField(2000)
-    RRR = RealIntervalField(2000)
+
     db = sqlite3.connect(polyinfile)
     db.row_factory = sqlite3.Row
     '''
@@ -163,9 +474,9 @@ def do(level, weight):
         exponent = result['exponent']
         prec = result['prec']
         #print prec, exponent
-        _coeffs = [CCC(0)] * (to_store + 1)
+        _coeffs = [CCC(0)] * (to_compute + 1)
         #for k in range(35): # number of prime powers < 100
-        for pp in prime_powers(to_store):
+        for pp in prime_powers(to_compute):
             z, bytes_read = read_gmp_int(coeffblob, offset)
             #print z
             offset = offset + bytes_read
@@ -192,8 +503,18 @@ def do(level, weight):
         if chibar > chi:
             coeffs[(chibar, j)] = [z.conjugate() for z in _coeffs]
 
-    assert len(coeffs) == CuspForms(weight, level).dimension()
-    return 0
+    assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
+
+
+    bad_euler_factors = {}
+    euler_factors = {}
+    angles = {}
+    coeffs_f = {}
+
+    for key, coeff in coeffs.iteritems():
+        chi, j = key
+        coeffs_f[key], angles[key], euler_factors[key], bad_euler_factors[key] = angles_euler_factors(coeff, level, weight, chi)
+
     #mforbits = {}
 
     for result in db.execute('SELECT level, weight, chi, whatevernumber, labelnumber, degree, mforbit from heckepolys;'):
@@ -221,7 +542,7 @@ def do(level, weight):
         elif (chi*chi) % level == 1:
             is_quadratic = True
 
-        traces_bound = 101
+        traces_bound = to_compute + 1
         traces = [RRR(0)] * traces_bound
         for chi, j in mforbit:
             #if inverse_mod(chi, level) < chi:
@@ -233,6 +554,7 @@ def do(level, weight):
 
         traces = [z.unique_integer() for z in traces]
         traces_lists[(level, weight, original_chi)].append((traces[1:], mforbit))
+        #print original_chi, mforbit
     Ldb = sqlite3.connect(os.path.join(Ldbinfile))
     Ldb.row_factory = sqlite3.Row
 
@@ -287,17 +609,13 @@ def do(level, weight):
             print chi2, j, zeros[(chi2, j)]
     '''
 
-    def convertbase26(j):
-        if j == 0:
-            return 'a'
-        else:
-            return "".join([chr(ord('a') + i) for i in reversed(ZZ(j).digits(base=26))])
     def convert_label(label_str):
         N, k, chi, a, n =  map(int, label_str.split("."))
-        a = convertbase26(a)
+        a = cremona_letter_code(a)
         return a, n
 
     labels = {}
+    original_pair = {}
     conjugates = {}
     selfduals = {}
     hecke_orbit_code = {}
@@ -337,12 +655,13 @@ def do(level, weight):
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
                     sa, sn = convert_label(label)
-                    assert convertbase26(mforbitlabel) == sa
+                    assert cremona_letter_code(mforbitlabel) == sa
                     assert sn == k + 1
                     hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
-                    all_the_labels[(chi,j)] = ((level, weight, convertbase26(orbit_labels[chi] - 1), sa), (level, weight, chi, sa, sn))
+                    all_the_labels[(chi,j)] = ((level, weight, cremona_letter_code(orbit_labels[chi] - 1), sa), (level, weight, chi, sa, sn))
                     converted_label = (chi, sa, sn)
                     labels[(chi, j)] = converted_label
+                    original_pair[converted_label] = (chi,j)
                     selfduals[converted_label] = selfdual
                     ca, cn = convert_label(conjugate)
                     conjugates[converted_label] = (chi, ca, cn)
@@ -352,192 +671,14 @@ def do(level, weight):
 
 
 
-    def satake(coeffs, level, weight, chi):
-        """
-        - ``coeffs`` -- a list of Dirichlet coefficients, as elements of CCC
-        - ``level`` -- the level N
-        - ``weight`` -- the weight k
-        - ``chi`` -- the index of the Dirichlet character in the Conrey labeling
-        """
-        G = DirichletGroup_conrey(level, CCC)
-        char = DirichletCharacter_conrey(G, chi)
-        satakes = []
-        for p in prime_range(1000):
-            if p.divides(level):
-                continue
-            charval = CCC(2*char.logvalue(p)).exppii()
-            b = coeffs[p]
-            c = p**(weight-1)*charval
-            alpha = (-b + (b**2 - 4*c).sqrt())/2
-            theta = alpha.arg() / CCC(2*pi)
-            satakes.append([p, float(theta.mid())])
-        return satakes
-
-
-
-
-    ####################
-    # postgres stuff
-    ###################
-
-
-    default_type = 'CMF'
-
-    def constant_lf(degree):
-        assert degree % 2 == 0
-        return {
-            'primitive' : 't', # True
-            'conductor' : level,
-            'load_key' : 'CMFs-workshop',
-            'motivic_weight': weight - 1,
-            'types': str([default_type]).replace("'","\""),
-            'symmetry_type': '\N',
-            'group' : 'GL2',
-            'degree' : degree,
-            'st_group' : '\N',
-            'selfdual': '\N',
-            'analytic_normalization': float(weight - 1)/2,
-            'euler_factors': '\N',
-            'precision': '\N',
-            'bad_lfactors': '\N',
-            'algebraic': 't',
-            'coeff_info': '\N',
-            'credit' : '\N',
-            'values': '\N', # no special values at the moment
-            'gamma_factors': [[], [0]*(degree/2)],
-            'coefficient_field': '\N', # the label of the Hecke field, we set as \N as start
-            'dirichlet_coefficients' : '\N' # we already store a2 .. a10
-            }
-
-
-
-
-    schema_lf = [
-            'load_key', # 'CMFs'
-            'origin', # ModularForm/GL2/Q/holomorphic/N/k/chi/a/n
-            'primitive', # True
-            'conductor', # N
-            'central_character', # N.chi
-            'self_dual',  # boolean, Bober tells me
-            'motivic_weight', # k - 1
-            'conjugate', # Bober tells me
-            'types', # ['MF']
-            'Lhash', # first zero: str(<first zero of L_0> * 2^100).round())
-            'symmetry_type', # 'unitary' or 'orthogonal' or 'symplectic'  FIXME: delete?
-            'group', # GL2
-            'degree', # 2
-            'st_group', # unkown for the moment
-            'plot_delta', # numeric,
-            'selfdual', # to be removed
-            'analytic_normalization', # (k - 1)/2<D-f>
-            'euler_factors', # Null in this case
-            'z1', #first zero
-            'z2', #2nd zero
-            'z3', #3rd zero
-            'precision', # this is only used for mass forms, might mean the precision of the eigenvalue in that case
-            'accuracy', # bit accuracy (after the decimal point) of the nontrivial zeros
-            'order_of_vanishing', # int
-            'bad_lfactors', # Null for the moment
-            'sign_arg', # muti valued denoting the angle
-            'plot_values', # list of doubles
-            'algebraic', # True
-            'coeff_info', # ???? ,
-            'leading_term', # WARNING is text
-            'root_number', # WARNING text
-            'positive_zeros', #list of doubles
-            'credit', # empty string
-            'gamma_factors', # jsonb,
-            'values', # special values, format???
-            'dirichlet_coefficients', # the ap traces as algebraic numbers
-            'coefficient_field', # the label of the Hecke field
-            ]
-    for i in range(2,11):
-        constant_lf['A' + str(i)] = '\N'
-        schema_lf.append('A'+ str(i))
-        schema_lf.append('a' + str(i))
-
-    schema_lf_dict = dict([ (key, i) for i, key in enumerate(schema_lf)])
-
-    schema_lf_types = {u'A10': u'numeric',
-     u'A2': u'numeric',
-     u'A3': u'numeric',
-     u'A4': u'numeric',
-     u'A5': u'numeric',
-     u'A6': u'numeric',
-     u'A7': u'numeric',
-     u'A8': u'numeric',
-     u'A9': u'numeric',
-     u'Lhash': u'text',
-     u'a10': u'jsonb',
-     u'a2': u'jsonb',
-     u'a3': u'jsonb',
-     u'a4': u'jsonb',
-     u'a5': u'jsonb',
-     u'a6': u'jsonb',
-     u'a7': u'jsonb',
-     u'a8': u'jsonb',
-     u'a9': u'jsonb',
-     u'accuracy': u'smallint',
-     u'algebraic': u'boolean',
-     u'analytic_normalization': u'numeric',
-     u'bad_lfactors': u'jsonb',
-     u'central_character': u'text',
-     u'coeff_info': u'jsonb',
-     u'coefficient_field': u'text',
-     u'conductor': u'bigint',
-     u'conjugate': u'text',
-     u'credit': u'text',
-     u'degree': u'smallint',
-     u'dirichlet_coefficients': u'jsonb',
-     u'euler_factors': u'jsonb',
-     u'gamma_factors': u'jsonb',
-     u'group': u'text',
-     u'id': u'bigint',
-     u'leading_term': u'text',
-     u'load_key': u'text',
-     u'motivic_weight': u'smallint',
-     u'order_of_vanishing': u'smallint',
-     u'origin': u'text',
-     u'plot_delta': u'numeric',
-     u'plot_values': u'jsonb',
-     u'positive_zeros': u'jsonb',
-     u'precision': u'smallint',
-     u'primitive': u'boolean',
-     u'root_number': u'text',
-     u'self_dual': u'boolean',
-     u'selfdual': u'boolean',
-     u'sign_arg': u'numeric',
-     u'st_group': u'text',
-     u'symmetry_type': u'text',
-     u'types': u'jsonb',
-     u'values': u'jsonb',
-     u'z1': u'numeric',
-     u'z2': u'numeric',
-     u'z3': u'numeric'}
-
-    schema_lf_types.pop('id')
-
-
-
-    for key in schema_lf_types.keys():
-        assert key in schema_lf
-    for key in schema_lf:
-        assert key in schema_lf_types, '%s not in schema_lf_types' % key
-
-    schema_instances = ['url', 'Lhash', 'type']
-
-    schema_instances_types = {u'Lhash': u'text', u'id': u'bigint', u'type': u'text', u'url': u'text'}
-    schema_instances_types.pop('id')
-
-
     def origin(chi, a, n):
         return "ModularForm/GL2/Q/holomorphic/%d/%d/%d/%s/%d" % (level, weight, chi, a, n)
 
+    def rational_origin(chi, a):
+        return "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, cremona_letter_code(orbit_labels[chi] - 1), a)
+
     def label(chi,j):
         return labels[(chi,j)]
-
-
-
 
 
     def self_dual(chi, a, n):
@@ -549,7 +690,7 @@ def do(level, weight):
     rows = {}
 
     def populate_complex_row(Ldbrow):
-        row = dict(constant_lf(2))
+        row = dict(constant_lf(level, weight, 2))
         chi = int(Ldbrow['chi'])
         j = int(Ldbrow['j'])
         _, a, n = label(chi,j)
@@ -571,21 +712,28 @@ def do(level, weight):
             row['z' + str(i + 1)] = RealNumber(str(zeros_as_int[i]) + ".")/2**prec
 
         row['plot_delta'] = Ldbrow['valuesdelta']
-        row['plot_values'] = [elt.real_part() for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
+        row['plot_values'] = [CDF(elt).real_part() for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
 
 
 
         row['leading_term'] = '\N'
         row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
         #row['dirichlet_coefficients'] = [None] * 10
+        #print label(chi,j)
         for i, ai in enumerate(coeffs[(chi, j)][2:12]):
             ai = CDF(ai)
             ai_jsonb = [ai.real_part(), ai.imag_part()]
             if i + 2 <= 10:
                 row['a' + str(i+2)] = ai_jsonb
+                # print 'a' + str(i+2), ai_jsonb
             #row['dirichlet_coefficients'][i] = ai_jsonb
 
 
+        row['coefficient_field'] = 'CDF'
+
+        # only 30
+        row['euler_factors'] = map( lambda x : map(CDF_to_pair, x), euler_factors[(chi, j)][:30])
+        row['bad_lfactors'] = map( lambda x: [x[0], map(CDF_to_pair, x[1])], bad_euler_factors[(chi, j)])
 
         for key in schema_lf:
             assert key in row, "%s not in row = %s" % (key, row)
@@ -606,16 +754,107 @@ def do(level, weight):
             row[schema_lf_dict['conjugate']] = Lhashes[conjugates[key]]
 
     rational_rows = {}
-    def popoulate_rational_rows():
+    def populate_rational_rows():
+        CCCx = PolynomialRing(CCC, "x")
+        order_of_vanishing = schema_lf_dict['order_of_vanishing']
+        accuracy = schema_lf_dict['accuracy']
+        positive_zeros = schema_lf_dict['positive_zeros']
+        sign_arg = schema_lf_dict['sign_arg']
+        Lhash = schema_lf_dict['Lhash']
+        plot_delta = schema_lf_dict['plot_delta']
+        plot_values = schema_lf_dict['plot_values']
         # reverse euler factors from the table for  p^d < 1000
         rational_keys = {}
         for chi, a, n in rows.keys():
-            if a not in rational_keys:
-                rational_keys[a] = []
-            rational_keys[a].append(  (chi, a, n) )
+            orbit_label = orbit_labels[chi]
+            if (orbit_label, a) not in rational_keys:
+                rational_keys[(orbit_label, a)] = []
+            rational_keys[(orbit_label, a)].append(  (chi, a, n) )
 
-        for a, triples in rational_keys.iteritems():
-            row = dict(constant_lf(2*len(triples)))
+
+        for (orbit_label, a), triples in rational_keys.iteritems():
+            pairs = [ original_pair[elt] for elt in triples ]
+            #print a, pairs, triples
+            chi = triples[0][0]
+            degree = 2*len(triples)
+            row = constant_lf(level, weight, degree)
+            row['self_dual'] = 't'
+            row['conjugate'] = '\N'
+            row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in triples])
+            row['accuracy'] = min([rows[elt][accuracy] for elt in triples])
+            row['positive_zeros'] = []
+            for elt in triples:
+                row['positive_zeros'].extend(rows[elt][positive_zeros])
+            zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in triples], key = lambda x : x[1])
+            row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
+            row['origin'] = rational_origin(chi, a)
+            # print row['origin']
+            row['central_character'] = "%s.1" % (level,)
+            row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
+            while row['sign_arg'] > 1:
+                row['sign_arg'] -= 1
+            zeros_zi = []
+            for i in range(0,3):
+                for elt in triples:
+                    zeros_zi.append(rows[elt][schema_lf_dict['z' + str(i + 1)]])
+            zeros_zi.sort()
+            for i in range(0,3):
+                row['z' + str(i + 1)] = zeros_zi[i]
+
+            deltas = [rows[elt][plot_delta] for elt in triples]
+            assert len(set(deltas)) == 1, "the deltas = %s aren't all the same, write a patch" % (deltas,)
+            row['plot_delta'] = deltas[0]
+            min_len = min([ len(rows[elt][plot_values]) for elt in triples])
+            row['plot_values'] = [ prod([rows[elt][plot_values][i] for elt in triples]) for i in range(min_len)]
+            row['leading_term'] = '\N'
+            row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
+            row['coefficient_field'] = '1.1.1.1'
+
+            for chi, _, _ in triples:
+                if (level, weight, chi) in traces_lists:
+                    for elt in  traces_lists[(level, weight, chi)]:
+                        if set(elt[1]) <= set(pairs):
+                            traces = elt[0]
+                            break
+                    else:
+                        print pairs
+                        print traces_lists[(level, weight, chi)]
+                        assert False
+                    break
+            else:
+                print pairs
+                print traces_lists
+                assert False
+
+
+
+            euler_factors_cc = [euler_factors[elt] for elt in pairs]
+            row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(traces, euler_factors_cc, level,weight)
+
+            # fill in ai
+            for i, ai in enumerate(dirichlet):
+                if i > 1:
+                    row['a' + str(i)] = dirichlet[i]
+                    #print 'a' + str(i), dirichlet[i]
+
+
+            for key in schema_lf:
+                assert key in row, "%s not in row = %s" % (key, row.keys())
+            for key in row.keys():
+                assert key in schema_lf, "%s unexpected"  % key
+            assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
+
+            #rewrite row as a list
+            rows[(chi, a, n)] = [row[key] for key in schema_lf]
+
+
+
+
+
+
+
+
+
 
 
 
@@ -636,8 +875,8 @@ def do(level, weight):
 
 
     def write_header_hecke_file(filename):
-        columns = ['an', 'angles', 'embedding', 'hecke_orbit_code']
-        types = ['jsonb', 'jsonb', 'integer', 'bigint']
+        columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_root_real', 'embedding_root_imag', 'an', 'angles']
+        types = ['bigint', 'text', 'integer', 'integer', 'real', 'real', 'jsonb', 'jsonb']
         if not os.path.exists(filename):
             with open(filename, "w") as FILE:
                 FILE.write("\t".join(columns) + "\n")
@@ -651,13 +890,18 @@ def do(level, weight):
         for key, label in labels.iteritems():
             # key = (chi,j)
             # label = (chi, a, n)
-            an = coeffs[key]
-            an_f = [[float(a.real()),float(a.imag())] for a in map(CDF,an)]
-            hecke_cc[key] = [an_f,
-                           satake(an,level,weight,key[0]),
-                           label[2],
-                           hecke_orbit_code[key]]
-        return hecke_cc
+            lfuntion_label = ".".join( map(str, [level, weight] + list(label)))
+            hecke_cc[key] = [
+                    hecke_orbit_code[key],
+                    lfuntion_label, # N.k.c.x.n
+                    label[0], # conrey_label
+                    label[2], # embedding_index
+                    '\N', # embedding_root_real
+                    '\N', # embedding_root_imag
+                    coeffs_f[key],
+                    angles[key]
+                    ]
+            return hecke_cc
 
     def write_hecke_cc(hecke_filename):
         write_header_hecke_file(hecke_filename)
@@ -690,7 +934,7 @@ def do(level, weight):
 
     populate_complex_rows()
     populate_conjugates()
-    popoulate_rational_rows()
+    populate_rational_rows()
     export_complex_rows('/scratch/importing/CMF_Lfunctions.txt','/scratch/importing/CMF_instances.txt')
     write_hecke_cc('/scratch/importing/CMF_hecke_cc.txt')
     print "done, N = %s, k = %s" % (level, weight)
@@ -698,7 +942,22 @@ def do(level, weight):
 
 for N in range(1, 4000):
     for k in range(2, 4000):
-        if N*(k**2) <= 4000:
-            do(N,k)
-            print
+        if  N*(k**2) <= 4000:
+            if N >= 100 and k > 4:
+                print "skipping N = %d k = %d" % (N , k)
+            else:
+                do(N,k)
+                print
             sys.stdout.flush()
+
+
+
+# Things to be set after uploading data:
+# Lfunctions:
+# - Coefficient field ?
+# mf_hecke_cc
+# - embedding_root_real
+# - embedding_root_imag
+# mf_newforms:
+# - analytic rank from one of the Lfunctions
+
