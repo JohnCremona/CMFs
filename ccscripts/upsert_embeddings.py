@@ -44,7 +44,7 @@ for rowcc in db.mf_hecke_cc.search(
             s = 0
             for j, elt in enumerate(q):
                 if elt != 0:
-                    s += (elt - an_cc[j]).abs()/elt.abs()
+                    s += (elt - an_cc[j]).abs()/(an_cc[j]).abs()
                 if s > 1e5:
                     break
             qexp_diff[i] = s
