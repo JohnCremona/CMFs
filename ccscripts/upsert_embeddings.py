@@ -42,16 +42,17 @@ for rowcc in db.mf_hecke_cc.search(
         qexp = [convert_eigenvals_to_qexp(elt, an_nf) for elt in betas_embedded]
         min_len = min(len(rowcc['an']), len(qexp[0]))
         an_cc = vector(CCC, map(lambda x: CCC(x[0], x[1]), rowcc['an'][:min_len]))
-        qexp_diff = [ (vector(CCC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
+        #qexp_diff = [ (vector(CCC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
+        # normalized, to avoid the unstability comming from large weight
+        qexp_diff = [ vector([(elt- an_cc[i])/elt.abs() for i, elt in enumerate(q) if elt != 0]).norm()   for j,q in enumerate(qexp)]
 
         qexp_diff_sorted = sorted(qexp_diff)
         min_diff = qexp_diff_sorted[0]
-        print "min_diff = %.2e" % min_diff
+        print "min_diff = %.2e \t min_diff/2nd = %.2e" % (min_diff, min_diff/qexp_diff_sorted[1])
 
-        #assuring that is something close to zero
-        assert min_diff < 1e-5, "qexp_diff = %s" % qexp_diff
-        #assuring that no other value is close to it
-        assert qexp_diff_sorted[1]*1e-5 > min_diff
+        #assuring that is something close to zero, and that no other value is close to it
+        assert min_diff < 1e-6
+        assert min_diff/qexp_diff_sorted[1] < 1e-15
 
         for i, elt in enumerate(qexp_diff):
             if elt == min_diff:
