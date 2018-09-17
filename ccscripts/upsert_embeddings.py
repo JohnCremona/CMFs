@@ -1,6 +1,7 @@
 from sage.all import vector, CC, PolynomialRing, ZZ, NumberField
-import os
+import os, sys
 os.chdir('/home/edgarcosta/lmfdb/')
+sys.path.append('/home/edgarcosta/lmfdb/')
 from  lmfdb.db_backend import db
 ZZx = PolynomialRing(ZZ, "x")
 def convert_eigenvals_to_qexp(basis, eigenvals):
@@ -40,16 +41,18 @@ for rowcc in db.mf_hecke_cc.search(
         min_len = min(len(an_cc), len(qexp[0]))
         an_cc = vector(CC, an_cc[:min_len])
         qexp_diff = [ (vector(CC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
-        min_diff = min(qexp_diff)
+        qexp_diff_sorted = sorted(qexp_diff)
+        min_diff = qexp_diff_sorted[0]
 
         #assuring that is something close to zero
-        assert min_diff < 1e-6
+        assert min_diff < 1e-5, "qexp_diff = %s" % qexp_diff
+        #assuring that no other value is close to it
+        assert qexp_diff_sorted[1]*1e-5 > min_diff
+
         for i, elt in enumerate(qexp_diff):
             if elt == min_diff:
                 row_embeddings['embedding_root_imag'] = embeddings[i](HF.gen()).real()
                 row_embeddings['embedding_root_real'] = embeddings[i](HF.gen()).imag()
-            else:
-                #assuring that no other value is close to it
-                assert elt*1e-6 > min_diff
+		break
     assert len(row_embeddings) == 2
     db.mf_hecke_cc.upsert({'id': rowcc['id']}, row_embeddings)
