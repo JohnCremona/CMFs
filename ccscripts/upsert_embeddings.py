@@ -47,7 +47,7 @@ for rowcc in db.mf_hecke_cc.search(
                     s += (elt - an_cc[j]).abs()/elt.abs()
                 if s > 1e5:
                     break
-            qexp_diff[j] = s
+            qexp_diff[i] = s
 
         qexp_diff_sorted = sorted(qexp_diff)
         print qexp_diff_sorted
