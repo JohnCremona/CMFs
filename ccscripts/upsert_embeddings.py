@@ -55,6 +55,6 @@ for rowcc in db.mf_hecke_cc.search(
             if elt == min_diff:
                 row_embeddings['embedding_root_imag'] = embeddings[i](HF.gen()).real()
                 row_embeddings['embedding_root_real'] = embeddings[i](HF.gen()).imag()
-		break
+                break
     assert len(row_embeddings) == 2
     db.mf_hecke_cc.upsert({'id': rowcc['id']}, row_embeddings)
