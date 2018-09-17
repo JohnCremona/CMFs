@@ -849,7 +849,7 @@ def do(level, weight):
             assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
 
             #rewrite row as a list
-            rows[(chi, a, n)] = [row[key] for key in schema_lf]
+            rows[(orbit_label, a)] = [row[key] for key in schema_lf]
 
 
 
