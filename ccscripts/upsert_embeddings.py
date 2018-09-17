@@ -34,20 +34,13 @@ for rowcc in db.mf_hecke_cc.search(
         betas = [HF(elt)/denominators[i] for i, elt in enumerate(numerators)]
 
         row_hecke_nf = db.mf_hecke_nf.lucky({'hecke_orbit_code':hecke_orbit_code})
-        embeddings = HF.complex_embeddings()
+        embeddings = HF.complex_embeddings(prec=2000)
         an_nf = list(db.mf_hecke_nf.search({'hecke_orbit_code':hecke_orbit_code}, ['n','an'], sort=['n']))
         betas_embedded = [map(elt, betas) for elt in embeddings]
         qexp = [convert_eigenvals_to_qexp(elt, an_nf) for elt in betas_embedded]
         min_len = min(len(an_cc), len(qexp[0]))
-        qexp_diff = [None] * len(qexp)
-        for i, q in enumerate(qexp[:min_len]):
-            s = 0
-            for j, elt in enumerate(q):
-                if elt != 0:
-                    s += (elt - an_cc[j]).abs()/(an_cc[j]).abs()
-                if s > 1e5:
-                    break
-            qexp_diff[i] = s
+        an_cc = vector(CC, an_cc[:min_len])
+        qexp_diff = [ (vector(CC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
 
         qexp_diff_sorted = sorted(qexp_diff)
         print qexp_diff_sorted
