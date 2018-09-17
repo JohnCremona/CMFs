@@ -311,7 +311,8 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
 
 
         if level % p != 0:
-            sign = RRR(ef.list()[-1].real()).unique_integer()/p^((halfdegree)*(weight - 1))
+            #FIXME
+            sign = RRR(ef.list()[-1].real()/p^((halfdegree)*(weight - 1))).unique_integer()
             assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
             efzz2 = [None] * halfdegree
             for i, elt in enumerate(reversed(efzz[:-1])):
@@ -361,9 +362,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
         if p.divides(level):
             bad_euler.append([p, [c, b]])
             euler.append([c,b])
-            if len(coeffs) > p**2:
-                # compare as floats
-                assert (coeffs[p**2] -b**2).abs().mid() < 1e-30, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  b**2= %s\n(a_p2**2 -  b**2).abs() = %s\nb**2 = %s\na_p2 = %s\ncoeffs[:p**2 + 1] = %s\n" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2), coeffs[p**2] -b**2, (coeffs[p**2] -b**2).abs().mid(), b**2,  coeffs[p**2],coeffs[:p**2+1],)
+            a = 0
         else:
             charval = CCC(2*char.logvalue(p)).exppii()
             if charval.contains_exact(1):
@@ -375,8 +374,8 @@ def angles_euler_factors(coeffs, level, weight, chi):
             alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*a)
             theta = arg_hack(alpha) / (2*CCC.pi().real())
             angles.append([p, float(theta.mid())])
-            if len(coeffs) > p**2:
-                assert  (coeffs[p**2] -(b**2 -a)).abs().mid() < 1e-30
+        if len(coeffs) > p**2:
+            assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
     an_f = map(CDF_to_pair, coeffs[:to_store + 1])
     return an_f, angles, euler, bad_euler
 
@@ -552,7 +551,12 @@ def do(level, weight):
                 #if not is_trivial and not is_quadratic:
                 #    traces[k] += RRR(z.real())
 
-        traces = [z.unique_integer() for z in traces]
+        for i, z in enumerate(traces):
+            try:
+                traces[i] = z.unique_integer()
+            except ValueError:
+                traces = traces[:i]
+                break;
         traces_lists[(level, weight, original_chi)].append((traces[1:], mforbit))
         #print original_chi, mforbit
     Ldb = sqlite3.connect(os.path.join(Ldbinfile))
@@ -901,7 +905,7 @@ def do(level, weight):
                     coeffs_f[key],
                     angles[key]
                     ]
-            return hecke_cc
+        return hecke_cc
 
     def write_hecke_cc(hecke_filename):
         write_header_hecke_file(hecke_filename)
@@ -937,18 +941,44 @@ def do(level, weight):
     populate_rational_rows()
     export_complex_rows('/scratch/importing/CMF_Lfunctions.txt','/scratch/importing/CMF_instances.txt')
     write_hecke_cc('/scratch/importing/CMF_hecke_cc.txt')
-    print "done, N = %s, k = %s" % (level, weight)
     return 0
 
-for N in range(1, 4000):
-    for k in range(2, 4000):
-        if  N*(k**2) <= 4000:
-            if N >= 100 and k > 4:
-                print "skipping N = %d k = %d" % (N , k)
-            else:
-                do(N,k)
-                print
-            sys.stdout.flush()
+import sys, time
+if len(sys.argv) == 2:
+    try:
+        bound = int(sys.argv[1])
+        if bound % 100 != 0:
+            raise ValueError
+    except ValueError:
+        print "%s is not a valid argument" % (sys.argv[1],)
+        exit(1)
+
+    print "Processing N*k^2 <= %d" % (bound,)
+    todo = []
+    for N in range(1, bound):
+        for k in range(2, bound):
+            if  N*(k**2) <= bound:
+                if N >= 100 and k > 4:
+                    print "skipping N = %d k = %d" % (N , k)
+                else:
+                    todo.append((N, k))
+    todo.sort(key= lambda x: x[0]*x[1]**2)
+    star_time = time.time()
+    for i, (N, k) in enumerate(todo):
+        do_time = time.time()
+        do(N,k)
+        print "done, N = %s, k = %s" % (N, k)
+        now = time.time()
+        print "Progress: %.2f %%" % (100.*i/len(todo))
+        print "Timing: %.2f\nTotal: %.2f\n\n" % (now - do_time, now- star_time)
+        sys.stdout.flush()
+
+
+
+elif len(sys.argv) == 3:
+    N = int(sys.argv[1])
+    k = int(sys.argv[2])
+    do(N, k)
 
 
 
