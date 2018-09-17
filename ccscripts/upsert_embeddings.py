@@ -39,7 +39,7 @@ for rowcc in db.mf_hecke_cc.search(
         betas_embedded = [map(elt, betas) for elt in embeddings]
         qexp = [convert_eigenvals_to_qexp(elt, an_nf) for elt in betas_embedded]
         min_len = min(len(an_cc), len(qexp[0]))
-        qexp_diff = []
+        qexp_diff = [None] * len(qexp)
         for i, q in enumerate(qexp[:min_len]):
             s = 0
             for j, elt in enumerate(q):
