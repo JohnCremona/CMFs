@@ -1,4 +1,4 @@
-from sage.all import  CC, PolynomialRing, ZZ, NumberField
+from sage.all import  vector, PolynomialRing, ZZ, NumberField
 import os, sys
 os.chdir('/home/edgarcosta/lmfdb/')
 sys.path.append('/home/edgarcosta/lmfdb/')
