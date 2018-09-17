@@ -43,8 +43,8 @@ for rowcc in db.mf_hecke_cc.search(
         qexp_diff = [ (vector(CCC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
 
         qexp_diff_sorted = sorted(qexp_diff)
-        print qexp_diff_sorted
         min_diff = qexp_diff_sorted[0]
+        print "min_diff = %.2e" % min_diff
 
         #assuring that is something close to zero
         assert min_diff < 1e-5, "qexp_diff = %s" % qexp_diff
