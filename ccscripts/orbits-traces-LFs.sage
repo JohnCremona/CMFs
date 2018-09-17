@@ -947,11 +947,9 @@ import sys, time
 if len(sys.argv) == 2:
     try:
         bound = int(sys.argv[1])
-        if bound % 100 != 0:
-            raise ValueError
     except ValueError:
         print "%s is not a valid argument" % (sys.argv[1],)
-        exit(1)
+        raise
 
     print "Processing N*k^2 <= %d" % (bound,)
     todo = []
