@@ -25,6 +25,8 @@ for rowcc in db.mf_hecke_cc.search(
     if newform['dim'] == 1:
         row_embeddings['embedding_root_imag'] = 0
         row_embeddings['embedding_root_real'] = 0
+    elif newform.get('field_poly', None) is None:
+        continue
     else:
         print rowcc['lfunction_label']
         HF = NumberField(ZZx(newform['field_poly']), "v")
