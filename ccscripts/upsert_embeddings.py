@@ -1,8 +1,7 @@
 from sage.all import vector, CC, PolynomialRing, ZZ, NumberField
 import os
 os.chdir('/home/edgarcosta/lmfdb/')
-import  lmfdb.db_backend
-db = lmfdb.db_backend.db
+from  lmfdb.db_backend import db
 ZZx = PolynomialRing(ZZ, "x")
 def convert_eigenvals_to_qexp(basis, eigenvals):
     qexp = [0]
