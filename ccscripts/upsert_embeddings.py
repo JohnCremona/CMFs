@@ -27,7 +27,6 @@ for rowcc in db.mf_hecke_cc.search(
         row_embeddings['embedding_root_real'] = 0
     else:
         print rowcc['lfunction_label']
-        an_cc = map(lambda x: CC(x[0], x[1]), rowcc.pop('an'))
         HF = NumberField(ZZx(newform['field_poly']), "v")
         numerators =  newform['hecke_ring_numerators']
         denominators = newform['hecke_ring_denominators']
@@ -37,10 +36,11 @@ for rowcc in db.mf_hecke_cc.search(
         embeddings = HF.complex_embeddings(prec=2000)
         an_nf = list(db.mf_hecke_nf.search({'hecke_orbit_code':hecke_orbit_code}, ['n','an'], sort=['n']))
         betas_embedded = [map(elt, betas) for elt in embeddings]
+        CCC = betas_embedded[0][0].parent()
         qexp = [convert_eigenvals_to_qexp(elt, an_nf) for elt in betas_embedded]
-        min_len = min(len(an_cc), len(qexp[0]))
-        an_cc = vector(CC, an_cc[:min_len])
-        qexp_diff = [ (vector(CC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
+        min_len = min(len(rowcc['an']), len(qexp[0]))
+        an_cc = vector(CCC, map(lambda x: CCC(x[0], x[1]), rowcc['an'][:min_len]))
+        qexp_diff = [ (vector(CCC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
 
         qexp_diff_sorted = sorted(qexp_diff)
         print qexp_diff_sorted
