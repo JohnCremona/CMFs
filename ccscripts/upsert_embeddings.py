@@ -1,4 +1,4 @@
-from sage.all import vector, CC, PolynomialRing, ZZ, NumberField
+from sage.all import  CC, PolynomialRing, ZZ, NumberField
 import os, sys
 os.chdir('/home/edgarcosta/lmfdb/')
 sys.path.append('/home/edgarcosta/lmfdb/')
@@ -39,9 +39,18 @@ for rowcc in db.mf_hecke_cc.search(
         betas_embedded = [map(elt, betas) for elt in embeddings]
         qexp = [convert_eigenvals_to_qexp(elt, an_nf) for elt in betas_embedded]
         min_len = min(len(an_cc), len(qexp[0]))
-        an_cc = vector(CC, an_cc[:min_len])
-        qexp_diff = [ (vector(CC, elt[:min_len]) - an_cc).norm() for elt in qexp ]
+        qexp_diff = []
+        for i, q in enumerate(qexp[:min_len]):
+            s = 0
+            for j, elt in q:
+                if q != 0:
+                    s += (q - an_cc[j]).abs()/q.abs()
+                if s > 1e5:
+                    break
+            qexp_diff[j] = s
+
         qexp_diff_sorted = sorted(qexp_diff)
+        print qexp_diff_sorted
         min_diff = qexp_diff_sorted[0]
 
         #assuring that is something close to zero
