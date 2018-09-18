@@ -17,9 +17,13 @@ def convert_eigenvals_to_qexp(basis, eigenvals):
     return qexp
 
 
-@parallel(ncpus = 40)
 def upsert_embedding(id_number):
-    rowcc = db.mf_hecke_cc.lucky({'id':id_number}, projection=['an', 'hecke_orbit_code','id','lfunction_label'])
+    rowcc = db.mf_hecke_cc.lucky({'id':id_number}, projection=['an', 'hecke_orbit_code','id','lfunction_label''embedding_root_imag','embedding_root_real'])
+    if rowcc is None:
+        return
+    if rowcc.get("embedding_root_imag", None) is not None:
+        if rowcc.get("embedding_root_real", None) is not None:
+            return
     row_embeddings =  {}
     hecke_orbit_code = rowcc['hecke_orbit_code']
     newform = db.mf_newforms.lucky({'hecke_orbit_code':hecke_orbit_code})
@@ -27,7 +31,7 @@ def upsert_embedding(id_number):
         row_embeddings['embedding_root_imag'] = 0
         row_embeddings['embedding_root_real'] = 0
     elif newform.get('field_poly', None) is None:
-	return
+	    return
     else:
         print rowcc['lfunction_label']
         HF = NumberField(ZZx(newform['field_poly']), "v")
@@ -64,4 +68,11 @@ def upsert_embedding(id_number):
     db.mf_hecke_cc.upsert({'id': rowcc['id']}, row_embeddings)
 
 
-ola = list(upsert_embedding(list(db.mf_hecke_cc.search({'embedding_root_real':None}, projection='id'))))
+import sys
+if len(sys.argv) == 3:
+    bound = db.mf_hecke_cc.max_id()
+    k = int(sys.argv[1])
+    start = int(sys.argv[2])
+    ids = list(range(start, bound + 1, k))
+    for i in ids:
+        upsert_embedding(i)
