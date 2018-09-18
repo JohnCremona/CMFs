@@ -950,7 +950,7 @@ def do(level, weight):
 
 import sys, time
 
-def do(Nk2):
+def do_Nk2(Nk2):
     todo = []
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
@@ -977,7 +977,7 @@ if len(sys.argv) == 2:
     except ValueError:
         print "%s is not a valid argument" % (sys.argv[1],)
         raise
-    do(Nk2)
+    do_Nk2(Nk2)
 
 elif len(sys.argv) == 3:
     N = int(sys.argv[1])
