@@ -866,14 +866,14 @@ def do(level, weight):
     def write_header(lfunctions_filename, instances_filename):
         str_parsing_lf = '\t'.join(['%s'] * len(schema_lf)) + '\n'
         str_parsing_instances = '\t'.join(['%s'] * len(schema_instances)) + '\n'
-        if not os.path.exists(lfunctions_filename):
-            with open(lfunctions_filename,"w") as F:
+        #if not os.path.exists(lfunctions_filename):
+        with open(lfunctions_filename,"w") as F:
                 F.write(str_parsing_lf % tuple(schema_lf))
                 F.write(str_parsing_lf % tuple([schema_lf_types[key] for key in schema_lf]))
                 F.write("\n")
 
-        if not os.path.exists(instances_filename):
-            with open(instances_filename, "w") as F:
+        #if not os.path.exists(instances_filename):
+        with open(instances_filename, "w") as F:
                 F.write(str_parsing_instances % tuple(schema_instances))
                 F.write(str_parsing_instances % tuple([schema_instances_types[key] for key in schema_instances]))
                 F.write("\n")
@@ -941,9 +941,9 @@ def do(level, weight):
     populate_conjugates()
     populate_rational_rows()
 
-    lfun_filename = '/scratch/importing/CMF_Lfunctions_%d.txt' % (level*weight**2)
-    instances_filename = '/scratch/importing/CMF_instances_%d.txt' % (level*weight**2)
-    hecke_filename = '/scratch/importing/CMF_hecke_cc_%d.txt' % (level*weight**2)
+    lfun_filename = '/scratch/importing/CMF/CMF_Lfunctions_%d.txt' % (level*weight**2)
+    instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (level*weight**2)
+    hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (level*weight**2)
     export_complex_rows(lfun_filename, instances_filename)
     write_hecke_cc(hecke_filename)
     return 0
