@@ -18,7 +18,7 @@ def convert_eigenvals_to_qexp(basis, eigenvals):
 
 
 def upsert_embedding(id_number):
-    rowcc = db.mf_hecke_cc.lucky({'id':id_number}, projection=['an', 'hecke_orbit_code','id','lfunction_label''embedding_root_imag','embedding_root_real'])
+    rowcc = db.mf_hecke_cc.lucky({'id':id_number}, projection=['an', 'hecke_orbit_code','id','lfunction_label', 'embedding_root_imag','embedding_root_real'])
     if rowcc is None:
         return
     if rowcc.get("embedding_root_imag", None) is not None:
@@ -73,6 +73,7 @@ if len(sys.argv) == 3:
     bound = db.mf_hecke_cc.max_id()
     k = int(sys.argv[1])
     start = int(sys.argv[2])
+    assert k < start
     ids = list(range(start, bound + 1, k))
     for i in ids:
         upsert_embedding(i)
