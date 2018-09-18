@@ -284,7 +284,15 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
     PS = PowerSeriesRing(ZZ, "X")
     CCCx = PolynomialRing(CCC, "x")
     x = CCCx.gen()
-    for p_index, p in enumerate(primes_first_n(30)):
+    todo = list(enumerate(primes_first_n(30))
+        for p in sorted(level.prime_divisors()):
+        p_index = prime_pi(p) - 1
+        if p_index >= 30:
+            todo.append((p_index, p))
+    for p_index, p in todo:
+        if p_index > len(euler_factors_cc[0]):
+            assert level % p
+
         #try to guess the rest by multiplying them
         roots = []
         for lf in euler_factors_cc:
@@ -312,7 +320,6 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
 
 
         if level % p != 0:
-            #FIXME
             sign = RRR(ef.list()[-1].real()/p^((halfdegree)*(weight - 1))).unique_integer()
             assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
             efzz2 = [None] * halfdegree
@@ -322,10 +329,11 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
                 else:
                     efzz2[i] = sign*p^((i+1)*(weight - 1)) * elt
             efzz += efzz2
+            euler_factors.append(efzz)
         else:
             bad_lfactors.append([p, efzz])
-
-            euler_factors.append(efzz)
+            if p_index < 30:
+                euler_factors.append(efzz)
         if p < 11:
             if p == 2:
                 foo = (1/PS(efzz[:4])).padded_list(4)
@@ -341,6 +349,12 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         extend_multiplicatively(dirichlet)
 
 
+    
+
+            
+
+
+    assert len(euler_factors) == 30
 
     return euler_factors, bad_lfactors, dirichlet
 
