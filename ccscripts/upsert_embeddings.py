@@ -73,7 +73,7 @@ if len(sys.argv) == 3:
     bound = db.mf_hecke_cc.max_id()
     k = int(sys.argv[1])
     start = int(sys.argv[2])
-    assert k < start
+    assert k > start
     ids = list(range(start, bound + 1, k))
     for i in ids:
         upsert_embedding(i)
