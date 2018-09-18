@@ -1,4 +1,4 @@
-from sage.all import  vector, PolynomialRing, ZZ, NumberField
+from sage.all import  vector, PolynomialRing, ZZ, NumberField, parallel
 import os, sys
 os.chdir('/home/edgarcosta/lmfdb/')
 sys.path.append('/home/edgarcosta/lmfdb/')
@@ -16,9 +16,9 @@ def convert_eigenvals_to_qexp(basis, eigenvals):
             raise ValueError("Missing eigenvalue")
     return qexp
 
-for rowcc in db.mf_hecke_cc.search(
-    {'embedding_root_real':None},
-    projection=['an', 'hecke_orbit_code','id','lfunction_label']):
+
+@parallel(ncpus = 40)
+def upsert_embedding(rowcc):
     row_embeddings =  {}
     hecke_orbit_code = rowcc['hecke_orbit_code']
     newform = db.mf_newforms.lucky({'hecke_orbit_code':hecke_orbit_code})
@@ -61,3 +61,6 @@ for rowcc in db.mf_hecke_cc.search(
                 break
     assert len(row_embeddings) == 2
     db.mf_hecke_cc.upsert({'id': rowcc['id']}, row_embeddings)
+
+
+upsert_embedding(db.mf_hecke_cc.search({'embedding_root_real':None}, projection=['an', 'hecke_orbit_code','id','lfunction_label']))
