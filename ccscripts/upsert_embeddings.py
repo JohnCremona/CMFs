@@ -64,4 +64,4 @@ def upsert_embedding(id_number):
     db.mf_hecke_cc.upsert({'id': rowcc['id']}, row_embeddings)
 
 
-ola = list(upsert_embedding(list(db.mf_hecke_cc.search({'embedding_root_real':None}, projection=['id']))))
+ola = list(upsert_embedding(list(db.mf_hecke_cc.search({'embedding_root_real':None}, projection='id'))))
