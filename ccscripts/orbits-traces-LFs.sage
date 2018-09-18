@@ -882,8 +882,8 @@ def do(level, weight):
     def write_header_hecke_file(filename):
         columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_root_real', 'embedding_root_imag', 'an', 'angles']
         types = ['bigint', 'text', 'integer', 'integer', 'real', 'real', 'jsonb', 'jsonb']
-        if not os.path.exists(filename):
-            with open(filename, "w") as FILE:
+        #if not os.path.exists(filename):
+        with open(filename, "w") as FILE:
                 FILE.write("\t".join(columns) + "\n")
                 FILE.write("\t".join(types) + "\n")
                 FILE.write("\n")
