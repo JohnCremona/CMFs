@@ -10,6 +10,7 @@ from sage.databases.cremona import cremona_letter_code, class_to_int
 
 to_compute = 2000 #coeffs/traces that we compute
 to_store = 1000  # that we store
+
 ####################
 # postgres stuff
 ###################
@@ -716,7 +717,7 @@ def do(level, weight):
             row['z' + str(i + 1)] = RealNumber(str(zeros_as_int[i]) + ".")/2**prec
 
         row['plot_delta'] = Ldbrow['valuesdelta']
-        row['plot_values'] = [CDF(elt).real_part() for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
+        row['plot_values'] = [RDF(CDF(elt).real_part()) for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
 
 
 
@@ -939,29 +940,26 @@ def do(level, weight):
     populate_complex_rows()
     populate_conjugates()
     populate_rational_rows()
-    export_complex_rows('/scratch/importing/CMF_Lfunctions.txt','/scratch/importing/CMF_instances.txt')
-    write_hecke_cc('/scratch/importing/CMF_hecke_cc.txt')
+
+    lfun_filename = '/scratch/importing/CMF_Lfunctions_%d.txt' % (level*weight**2)
+    instances_filename = '/scratch/importing/CMF_instances_%d.txt' % (level*weight**2)
+    hecke_filename = '/scratch/importing/CMF_hecke_cc_%d.txt' % (level*weight**2)
+    export_complex_rows(lfun_filename, instances_filename)
+    write_hecke_cc(hecke_filename)
     return 0
 
 import sys, time
-if len(sys.argv) == 2:
-    try:
-        bound = int(sys.argv[1])
-    except ValueError:
-        print "%s is not a valid argument" % (sys.argv[1],)
-        raise
 
-    print "Processing N*k^2 <= %d" % (bound,)
+def do(Nk2):
     todo = []
-    for N in range(1, bound):
-        for k in range(2, bound):
-            if  N*(k**2) <= bound:
-                if N >= 100 and k > 4:
-                    print "skipping N = %d k = %d" % (N , k)
-                else:
-                    todo.append((N, k))
-    todo.sort(key= lambda x: x[0]*x[1]**2)
-    star_time = time.time()
+    for N in ZZ(Nk2).divisors():
+        k = sqrt(Nk2/N)
+        if k in ZZ:
+            if N >= 100 and k > 4:
+                print "skipping N = %d k = %d" % (N , k)
+            else:
+                todo.append((N, k))
+
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
         do(N,k)
@@ -972,6 +970,14 @@ if len(sys.argv) == 2:
         sys.stdout.flush()
 
 
+
+if len(sys.argv) == 2:
+    try:
+        Nk2 = int(sys.argv[1])
+    except ValueError:
+        print "%s is not a valid argument" % (sys.argv[1],)
+        raise
+    do(Nk2)
 
 elif len(sys.argv) == 3:
     N = int(sys.argv[1])
