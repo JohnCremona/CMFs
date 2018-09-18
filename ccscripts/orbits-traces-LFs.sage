@@ -967,7 +967,7 @@ def do_Nk2(Nk2):
         print "done, N = %s, k = %s" % (N, k)
         now = time.time()
         print "Progress: %.2f %%" % (100.*i/len(todo))
-        print "Timing: %.2f\nTotal: %.2f\n\n" % (now - do_time, now- star_time)
+        print "Timing: %.2f\nTotal: %.2f\n\n" % (now - do_time, now- start_time)
         sys.stdout.flush()
 
 
