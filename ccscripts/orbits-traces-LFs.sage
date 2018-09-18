@@ -954,7 +954,7 @@ def do_Nk2(Nk2):
     todo = []
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
-        if k in ZZ:
+        if k in ZZ and k > 1:
             if N >= 100 and k > 4:
                 print "skipping N = %d k = %d" % (N , k)
             else:
