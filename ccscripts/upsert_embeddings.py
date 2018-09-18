@@ -19,7 +19,7 @@ def convert_eigenvals_to_qexp(basis, eigenvals):
 
 @parallel(ncpus = 40)
 def upsert_embedding(id_number):
-    rowcc = db.mf_hecke_cc.lucky({'id':id_number})
+    rowcc = db.mf_hecke_cc.lucky({'id':id_number}, projection=['an', 'hecke_orbit_code','id','lfunction_label'])
     row_embeddings =  {}
     hecke_orbit_code = rowcc['hecke_orbit_code']
     newform = db.mf_newforms.lucky({'hecke_orbit_code':hecke_orbit_code})
