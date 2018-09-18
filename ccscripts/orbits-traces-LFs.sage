@@ -948,8 +948,8 @@ def do(level, weight):
     write_hecke_cc(hecke_filename)
     return 0
 
-import sys, time
 
+import sys, time
 def do_Nk2(Nk2):
     todo = []
     for N in ZZ(Nk2).divisors():
@@ -960,6 +960,7 @@ def do_Nk2(Nk2):
             else:
                 todo.append((N, k))
 
+    start_time = time.time()
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
         do(N,k)
