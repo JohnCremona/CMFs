@@ -400,7 +400,35 @@ def angles_euler_factors(coeffs, level, weight, chi):
     an_f = map(CDF_to_pair, coeffs[:to_store + 1])
     return an_f, angles, euler, bad_euler
 
-def do(level, weight):
+
+def write_header(lfunctions_filename, instances_filename, overwrite = False):
+
+    str_parsing_lf = '\t'.join(['%s'] * len(schema_lf)) + '\n'
+    str_parsing_instances = '\t'.join(['%s'] * len(schema_instances)) + '\n'
+    if not os.path.exists(lfunctions_filename) or overwrite:
+        with open(lfunctions_filename,"w") as F:
+            F.write(str_parsing_lf % tuple(schema_lf))
+            F.write(str_parsing_lf % tuple([schema_lf_types[key] for key in schema_lf]))
+            F.write("\n")
+
+    if not os.path.exists(instances_filename):
+        with open(instances_filename, "w") as F:
+            F.write(str_parsing_instances % tuple(schema_instances))
+            F.write(str_parsing_instances % tuple([schema_instances_types[key] for key in schema_instances]))
+            F.write("\n")
+
+
+def write_header_hecke_file(filename, overwrite = False):
+    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_root_real', 'embedding_root_imag', 'an', 'angles']
+    types = ['bigint', 'text', 'integer', 'integer', 'real', 'real', 'jsonb', 'jsonb']
+    if not os.path.exists(filename) or overwrite:
+        with open(filename, "w") as FILE:
+            FILE.write("\t".join(columns) + "\n")
+            FILE.write("\t".join(types) + "\n")
+            FILE.write("\n")
+
+
+def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None):
     print "N = %s, k = %s" % (level, weight)
     base_path = "/scratch/home/bober"
     polyinfile = os.path.join(base_path, 'polydb/{}.{}.polydb'.format(level, weight))
@@ -886,30 +914,7 @@ def do(level, weight):
 
 
 
-    def write_header(lfunctions_filename, instances_filename):
-        str_parsing_lf = '\t'.join(['%s'] * len(schema_lf)) + '\n'
-        str_parsing_instances = '\t'.join(['%s'] * len(schema_instances)) + '\n'
-        #if not os.path.exists(lfunctions_filename):
-        with open(lfunctions_filename,"w") as F:
-                F.write(str_parsing_lf % tuple(schema_lf))
-                F.write(str_parsing_lf % tuple([schema_lf_types[key] for key in schema_lf]))
-                F.write("\n")
 
-        #if not os.path.exists(instances_filename):
-        with open(instances_filename, "w") as F:
-                F.write(str_parsing_instances % tuple(schema_instances))
-                F.write(str_parsing_instances % tuple([schema_instances_types[key] for key in schema_instances]))
-                F.write("\n")
-
-
-    def write_header_hecke_file(filename):
-        columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_root_real', 'embedding_root_imag', 'an', 'angles']
-        types = ['bigint', 'text', 'integer', 'integer', 'real', 'real', 'jsonb', 'jsonb']
-        #if not os.path.exists(filename):
-        with open(filename, "w") as FILE:
-                FILE.write("\t".join(columns) + "\n")
-                FILE.write("\t".join(types) + "\n")
-                FILE.write("\n")
 
     def get_hecke_cc():
         # if field_poly exists then compute the corresponding embedding of the root
@@ -963,10 +968,12 @@ def do(level, weight):
     populate_complex_rows()
     populate_conjugates()
     populate_rational_rows()
-
-    lfun_filename = '/scratch/importing/CMF/CMF_Lfunctions_%d.txt' % (level*weight**2)
-    instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (level*weight**2)
-    hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (level*weight**2)
+    if lfun_filename is None:
+        lfun_filename = '/scratch/importing/CMF/CMF_Lfunctions_%d.txt' % (level*weight**2)
+    if instances_filename is None:
+        instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (level*weight**2)
+    if hecke_filename is None:
+        hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (level*weight**2)
     export_complex_rows(lfun_filename, instances_filename)
     write_hecke_cc(hecke_filename)
     return 0
@@ -983,10 +990,15 @@ def do_Nk2(Nk2):
             else:
                 todo.append((N, k))
 
+    lfun_filename = '/scratch/importing/CMF/CMF_Lfunctions_%d.txt' % (Nk2)
+    instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (Nk2)
+    hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (Nk2)
+    write_header(lfun_filename, instances_filename, overwrite = True)
+    write_header(hecke_filename, overwrite = True)
     start_time = time.time()
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
-        do(N,k)
+        do(N,k, lfun_filename, instances_filename, hecke_filename)
         print "done, N = %s, k = %s" % (N, k)
         now = time.time()
         print "Progress: %.2f %%" % (100.*i/len(todo))
