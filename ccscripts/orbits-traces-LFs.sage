@@ -770,7 +770,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
         row['leading_term'] = '\N'
-        row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
+        if row['self_dual']:
+            row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+        else:
+            row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
         #row['dirichlet_coefficients'] = [None] * 10
         #print label(chi,j)
         for i, ai in enumerate(coeffs[(chi, j)][2:12]):
@@ -842,7 +845,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
             row['origin'] = rational_origin(chi, a)
             # print row['origin']
-            row['central_character'] = "%s.1" % (level,)
+            modN = Integers(level)
+            chisum = prod([modN(rows[elt]['central_character'].split(".")[-1]) for elt in in triples])
+            row['central_character'] = "%s.%s" % (level, chisum)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 1:
                 row['sign_arg'] -= 1
@@ -860,7 +865,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             min_len = min([ len(rows[elt][plot_values]) for elt in triples])
             row['plot_values'] = [ RDF(prod([rows[elt][plot_values][i] for elt in triples])) for i in range(min_len)]
             row['leading_term'] = '\N'
-            row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
+            row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
             row['coefficient_field'] = '1.1.1.1'
 
             for chi, _, _ in triples:
@@ -902,6 +907,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
             #rewrite row as a list
             rational_rows[(orbit_label, a)] = [row[key] for key in schema_lf]
+        #FIXME
+        #if len(triples) == 1:
+        #    rows.pop(triples[0])
 
 
 
