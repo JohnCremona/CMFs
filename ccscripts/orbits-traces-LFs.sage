@@ -308,10 +308,10 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
                 root_powers = root_powers[:j]
                 break
         partial_efzz = from_power_sums(root_powers)
-        efzz = partial_efzz + [None]*(halfdegree +1 - len(partial_efzz))
+        efzz = map(int, partial_efzz) + [None]*(halfdegree +1 - len(partial_efzz))
         if len(traces) > p:
             if efzz[1] is None:
-                efzz[1] = -traces[p - 1]
+                efzz[1] = int(-traces[p - 1])
             else:
                 assert efzz[1] == -traces[p - 1]
 
@@ -333,7 +333,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
                 if elt is None:
                     efzz2[i] = None
                 else:
-                    efzz2[i] = sign*p^((i+1)*(weight - 1)) * elt
+                    efzz2[i] = int(sign*p^((i+1)*(weight - 1)) * elt)
             efzz += efzz2
             euler_factors.append(efzz)
         else:
