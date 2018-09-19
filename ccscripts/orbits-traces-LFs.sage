@@ -740,8 +740,13 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
     Lhashes = {}
-    rows = {}
+    instances = {}
+    # the function below assumes this order
+    assert schema_instances == ['url', 'Lhash', 'type']
+    def tuple_instance(row):
+        return (row['origin'], row['Lhash'], default_type)
 
+    rows = {}
     def populate_complex_row(Ldbrow):
         row = dict(constant_lf(level, weight, 2))
         chi = int(Ldbrow['chi'])
@@ -797,6 +802,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         #rewrite row as a list
         rows[(chi, a, n)] = [row[key] for key in schema_lf]
+        instances[(chi, a, n)] = tuple_instance(row)
 
     def populate_complex_rows():
         for key, row in Ldbresults.iteritems():
@@ -829,6 +835,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
         for (orbit_label, a), triples in rational_keys.iteritems():
+            # for now skip degree >= 100
+            if len(triples) > 100:
+                continue
             pairs = [ original_pair[elt] for elt in triples ]
             #print a, pairs, triples
             chi = triples[0][0]
@@ -841,6 +850,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['positive_zeros'] = []
             for elt in triples:
                 row['positive_zeros'].extend(rows[elt][positive_zeros])
+            row['positive_zeros'].sort()
             zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in triples], key = lambda x : x[1])
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
             row['origin'] = rational_origin(chi, a)
@@ -907,9 +917,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
             #rewrite row as a list
             rational_rows[(orbit_label, a)] = [row[key] for key in schema_lf]
-        #FIXME
-        #if len(triples) == 1:
-        #    rows.pop(triples[0])
+            instances[(chi, a, n)] = tuple_instance(row)
+
+        # if dim == 1, drop row
+        if len(triples) == 1:
+            rows.pop(triples[0])
 
 
 
@@ -951,13 +963,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 HF.write("\t".join(map(str,v)) + "\n")
 
 
-    # the function below assumes this order
-    assert schema_instances == ['url', 'Lhash', 'type']
-    ord_origin = schema_lf_dict['origin']
-    ord_Lhash = schema_lf_dict['Lhash']
-
-    def tuple_instance(row):
-        return (row[ord_origin], row[ord_Lhash], default_type)
 
     def export_complex_rows(lfunctions_filename, instances_filename):
         write_header(lfunctions_filename, instances_filename)
@@ -965,14 +970,14 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         str_parsing_instances = '\t'.join(['%s'] * len(schema_instances)) + '\n'
 
         with open(lfunctions_filename, 'a') as LF:
-            with open(instances_filename, 'a') as IF:
-                for key, row in rows.iteritems():
-                    LF.write(str_parsing_lf % tuple(row))
-                    IF.write(str_parsing_instances % tuple_instance(row))
+            for key, row in rows.iteritems():
+                LF.write(str_parsing_lf % tuple(row))
 
-                for key, row in rational_rows.iteritems():
-                    LF.write(str_parsing_lf % tuple(row))
-                    IF.write(str_parsing_instances % tuple_instance(row))
+            for key, row in rational_rows.iteritems():
+                LF.write(str_parsing_lf % tuple(row))
+        with open(instances_filename, 'a') as IF:
+            for key, row in instances.iteritems():
+                IF.write(str_parsing_instances % tuple_instance(row))
 
 
 
