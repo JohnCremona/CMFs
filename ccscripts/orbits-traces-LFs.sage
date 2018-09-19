@@ -830,7 +830,7 @@ def do(level, weight):
             assert len(set(deltas)) == 1, "the deltas = %s aren't all the same, write a patch" % (deltas,)
             row['plot_delta'] = deltas[0]
             min_len = min([ len(rows[elt][plot_values]) for elt in triples])
-            row['plot_values'] = [ prod([rows[elt][plot_values][i] for elt in triples]) for i in range(min_len)]
+            row['plot_values'] = [ RDF(prod([rows[elt][plot_values][i] for elt in triples])) for i in range(min_len)]
             row['leading_term'] = '\N'
             row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
             row['coefficient_field'] = '1.1.1.1'
