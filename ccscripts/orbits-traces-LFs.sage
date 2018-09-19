@@ -994,7 +994,7 @@ def do_Nk2(Nk2):
     instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (Nk2)
     hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (Nk2)
     write_header(lfun_filename, instances_filename, overwrite = True)
-    write_header(hecke_filename, overwrite = True)
+    write_header_hecke_file(hecke_filename, overwrite = True)
     start_time = time.time()
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
