@@ -293,7 +293,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
     for p_index, p in todo:
         if p_index > len(euler_factors_cc[0]):
             assert level % p == 0
-            bad_lfactors.append([p, [1] + [None]*halfdegree])
+            bad_lfactors.append([int(p), [int(1)] + [None]*halfdegree])
             continue
 
         #try to guess the rest by multiplying them
@@ -337,7 +337,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
             efzz += efzz2
             euler_factors.append(efzz)
         else:
-            bad_lfactors.append([p, efzz])
+            bad_lfactors.append([int(p), efzz])
             if p_index < 30:
                 euler_factors.append(efzz)
         if p < 11:
