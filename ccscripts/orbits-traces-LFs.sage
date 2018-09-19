@@ -837,7 +837,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         for (orbit_label, a), triples in rational_keys.iteritems():
             # for now skip degree >= 100
-            if len(triples) > 100:
+            if len(triples) > 80: # the real limit is 87
                 continue
             pairs = [ original_pair[elt] for elt in triples ]
             #print a, pairs, triples
