@@ -901,7 +901,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
 
             #rewrite row as a list
-            rows[(orbit_label, a)] = [row[key] for key in schema_lf]
+            rational_rows[(orbit_label, a)] = [row[key] for key in schema_lf]
 
 
 
@@ -959,8 +959,15 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         with open(lfunctions_filename, 'a') as LF:
             with open(instances_filename, 'a') as IF:
                 for key, row in rows.iteritems():
+                    print key
                     LF.write(str_parsing_lf % tuple(row))
                     IF.write(str_parsing_instances % tuple_instance(row))
+
+                for key, row in rational_rows.iteritems():
+                    print key
+                    LF.write(str_parsing_lf % tuple(row))
+                    IF.write(str_parsing_instances % tuple_instance(row))
+
 
 
 
@@ -993,8 +1000,9 @@ def do_Nk2(Nk2):
     lfun_filename = '/scratch/importing/CMF/CMF_Lfunctions_%d.txt' % (Nk2)
     instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (Nk2)
     hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (Nk2)
-    write_header(lfun_filename, instances_filename, overwrite = True)
-    write_header_hecke_file(hecke_filename, overwrite = True)
+    for F in [lfun_filename, instances_filename, hecke_filename]:
+        if os.path.exists(F):
+            os.remove(F)
     start_time = time.time()
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
