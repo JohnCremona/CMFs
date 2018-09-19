@@ -959,12 +959,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         with open(lfunctions_filename, 'a') as LF:
             with open(instances_filename, 'a') as IF:
                 for key, row in rows.iteritems():
-                    print key
                     LF.write(str_parsing_lf % tuple(row))
                     IF.write(str_parsing_instances % tuple_instance(row))
 
                 for key, row in rational_rows.iteritems():
-                    print key
                     LF.write(str_parsing_lf % tuple(row))
                     IF.write(str_parsing_instances % tuple_instance(row))
 
