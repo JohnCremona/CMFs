@@ -285,7 +285,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
     CCCx = PolynomialRing(CCC, "x")
     x = CCCx.gen()
     todo = list(enumerate(primes_first_n(30))
-        for p in sorted(level.prime_divisors()):
+    for p in sorted(level.prime_divisors()):
         p_index = prime_pi(p) - 1
         if p_index >= 30:
             todo.append((p_index, p))
