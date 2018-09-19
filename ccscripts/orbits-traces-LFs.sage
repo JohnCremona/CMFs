@@ -918,7 +918,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
             #rewrite row as a list
             rational_rows[(orbit_label, a)] = [row[key] for key in schema_lf]
-            instances[(chi, a, n)] = tuple_instance(row)
+            instances[(orbit_label, a)] = tuple_instance(row)
 
         # if dim == 1, drop row
         if len(triples) == 1:
