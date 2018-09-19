@@ -978,7 +978,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 LF.write(str_parsing_lf % tuple(row))
         with open(instances_filename, 'a') as IF:
             for key, row in instances.iteritems():
-                IF.write(str_parsing_instances % tuple_instance(row))
+                IF.write(str_parsing_instances % tuple(row))
 
 
 
