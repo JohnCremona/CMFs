@@ -825,6 +825,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         Lhash = schema_lf_dict['Lhash']
         plot_delta = schema_lf_dict['plot_delta']
         plot_values = schema_lf_dict['plot_values']
+        central_character = schema_lf_dict['central_character']
         # reverse euler factors from the table for  p^d < 1000
         rational_keys = {}
         for chi, a, n in rows.keys():
@@ -856,7 +857,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['origin'] = rational_origin(chi, a)
             # print row['origin']
             modN = Integers(level)
-            chisum = prod([modN(rows[elt]['central_character'].split(".")[-1]) for elt in triples])
+            chisum = prod([modN(rows[elt][central_character].split(".")[-1]) for elt in triples])
             row['central_character'] = "%s.%s" % (level, chisum)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 1:
