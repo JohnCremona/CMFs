@@ -2,6 +2,7 @@ import sqlite3
 import os
 import sys
 import struct
+import json
 
 from dirichlet_conrey import *
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
@@ -291,7 +292,9 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
             todo.append((p_index, p))
     for p_index, p in todo:
         if p_index > len(euler_factors_cc[0]):
-            assert level % p
+            assert level % p == 0
+            bad_lfactors.append([p, [1] + [None]*halfdegree])
+            continue
 
         #try to guess the rest by multiplying them
         roots = []
@@ -307,7 +310,10 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         partial_efzz = from_power_sums(root_powers)
         efzz = partial_efzz + [None]*(halfdegree +1 - len(partial_efzz))
         if len(traces) > p:
-            efzz[1] = -traces[p - 1]
+            if efzz[1] is None:
+                efzz[1] = -traces[p - 1]
+            else:
+                assert efzz[1] == -traces[p - 1]
 
         # to check that from_power_sums is correct
         ef = prod([CCCx(lf[p_index]) for lf in euler_factors_cc])
@@ -849,6 +855,9 @@ def do(level, weight):
 
             euler_factors_cc = [euler_factors[elt] for elt in pairs]
             row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(traces, euler_factors_cc, level,weight)
+            #handling Nones
+            row['euler_factors'] = json.dumps(row['euler_factors'])
+            row['bad_lfactors'] = json.dumps(row['bad_lfactors'])
 
             # fill in ai
             for i, ai in enumerate(dirichlet):
