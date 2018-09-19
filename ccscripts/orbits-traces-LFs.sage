@@ -856,7 +856,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['origin'] = rational_origin(chi, a)
             # print row['origin']
             modN = Integers(level)
-            chisum = prod([modN(rows[elt]['central_character'].split(".")[-1]) for elt in in triples])
+            chisum = prod([modN(rows[elt]['central_character'].split(".")[-1]) for elt in triples])
             row['central_character'] = "%s.%s" % (level, chisum)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 1:
