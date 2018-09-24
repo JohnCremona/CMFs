@@ -276,6 +276,16 @@ def from_power_sums(ps):
 
 
 
+def prod_plot_values(factor_plot_deltas, factor_values):
+    assert len(factor_plot_deltas) == len(factor_values)
+    halfdegree = len(factor_values)
+    factor_plot_values = [ [ ( j * factor_plot_deltas[k],  z) for j, z in enumerate(values) ] for k, values in enumerate(factor_values)]
+    interpolations = [spline(elt) for elt in factor_plot_values]
+    max_delta = max(factor_plot_deltas)
+    new_delta = delta/halfdegree
+    plot_range = min( [elt[-1][0] for elt in factor_plot_values] )
+    values = [prod([elt(i) for elt in interpolations]) for i in srange(0, plot_range, new_delta)]
+    return new_delta, values
 
 def rational_euler_factors(traces, euler_factors_cc, level, weight):
     dirichlet = [1]*11
@@ -871,10 +881,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 row['z' + str(i + 1)] = zeros_zi[i]
 
             deltas = [rows[elt][plot_delta] for elt in triples]
-            assert len(set(deltas)) == 1, "the deltas = %s aren't all the same, write a patch" % (deltas,)
-            row['plot_delta'] = deltas[0]
-            min_len = min([ len(rows[elt][plot_values]) for elt in triples])
-            row['plot_values'] = [ RDF(prod([rows[elt][plot_values][i] for elt in triples])) for i in range(min_len)]
+            values = [rows[elt][plot_values] for elt in triples]
+            row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
             row['leading_term'] = '\N'
             row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
             row['coefficient_field'] = '1.1.1.1'
