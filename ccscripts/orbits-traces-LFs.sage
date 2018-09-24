@@ -282,7 +282,7 @@ def prod_plot_values(factor_plot_deltas, factor_values):
     factor_plot_values = [ [ ( j * factor_plot_deltas[k],  z) for j, z in enumerate(values) ] for k, values in enumerate(factor_values)]
     interpolations = [spline(elt) for elt in factor_plot_values]
     max_delta = max(factor_plot_deltas)
-    new_delta = delta/halfdegree
+    new_delta = max_delta/halfdegree
     plot_range = min( [elt[-1][0] for elt in factor_plot_values] )
     values = [prod([elt(i) for elt in interpolations]) for i in srange(0, plot_range, new_delta)]
     return new_delta, values
