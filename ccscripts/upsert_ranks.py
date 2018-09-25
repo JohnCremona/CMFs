@@ -16,12 +16,13 @@ def get_url(newform):
     return res
 
 
-def upsert_rank(id_number):
+def upsert_rank(id_number, skip = False):
     newform = db.mf_newforms.lucky({'id':id_number}, projection=['label','char_labels','dim','char_degree','analytic_rank'])
     if newform is None:
         return
-    if newform.get('analytic_rank', None) is not None:
-        return
+    if skip:
+        if newform.get('analytic_rank', None) is not None:
+            return
     urls = get_url(newform)
     rank = None
     for url in urls:
