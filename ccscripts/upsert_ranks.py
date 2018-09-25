@@ -1,3 +1,4 @@
+import os, sys
 os.chdir('/home/edgarcosta/lmfdb/')
 sys.path.append('/home/edgarcosta/lmfdb/')
 from  lmfdb.db_backend import db
