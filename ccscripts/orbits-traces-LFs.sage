@@ -12,6 +12,25 @@ from sage.databases.cremona import cremona_letter_code, class_to_int
 to_compute = 2000 #coeffs/traces that we compute
 to_store = 1000  # that we store
 
+
+# folders
+import socket
+hostname = socket.gethostname()
+assert hostname in ['saint-germain', 'LEGENDRE']
+base_export = None
+base_import = None
+if hostname == 'LEGENDRE':
+    base_export = "/scratch/importing/CMF"
+    base_import = "/scratch/home/bober"
+elif hostname == 'saint-germain':
+    base_import = "/home/edgarcosta/bober"
+    base_export = "/home/edgarcosta/export/CMF"
+else:
+    sys.exit("hostname = %s" % hostname)
+
+
+
+
 ####################
 # postgres stuff
 ###################
@@ -440,10 +459,9 @@ def write_header_hecke_file(filename, overwrite = False):
 
 def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None):
     print "N = %s, k = %s" % (level, weight)
-    base_path = "/scratch/home/bober"
-    polyinfile = os.path.join(base_path, 'polydb/{}.{}.polydb'.format(level, weight))
-    mfdbinfile = os.path.join(base_path, 'mfdb/{}.{}.mfdb'.format(level, weight))
-    Ldbinfile = os.path.join(base_path, 'mfldb/{}.{}.mfldb'.format(level, weight))
+    polyinfile = os.path.join(base_import, 'polydb/{}.{}.polydb'.format(level, weight))
+    mfdbinfile = os.path.join(base_import, 'mfdb/{}.{}.mfdb'.format(level, weight))
+    Ldbinfile = os.path.join(base_import, 'mfldb/{}.{}.mfldb'.format(level, weight))
 
     notfound = False
 
@@ -996,11 +1014,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     populate_conjugates()
     populate_rational_rows()
     if lfun_filename is None:
-        lfun_filename = '/scratch/importing/CMF/CMF_Lfunctions_%d.txt' % (level*weight**2)
+        lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (level*weight**2))
     if instances_filename is None:
-        instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (level*weight**2)
+        instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (level*weight**2))
     if hecke_filename is None:
-        hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (level*weight**2)
+        hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (level*weight**2))
     export_complex_rows(lfun_filename, instances_filename)
     write_hecke_cc(hecke_filename)
     return 0
@@ -1017,9 +1035,9 @@ def do_Nk2(Nk2):
             else:
                 todo.append((N, k))
 
-    lfun_filename = '/scratch/importing/CMF/CMF_Lfunctions_%d.txt' % (Nk2)
-    instances_filename = '/scratch/importing/CMF/CMF_instances_%d.txt' % (Nk2)
-    hecke_filename = '/scratch/importing/CMF/CMF_hecke_cc_%d.txt' % (Nk2)
+    lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (Nk2))
+    instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (Nk2))
+    hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (Nk2))
     for F in [lfun_filename, instances_filename, hecke_filename]:
         if os.path.exists(F):
             os.remove(F)
