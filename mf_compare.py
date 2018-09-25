@@ -35,7 +35,7 @@ def decode_ALs(s):
         return []
     return str_nested_list_to_nested_list(s.replace("<","[").replace(">","]"),3)
 
-def decode_eigdata(s):
+def decode_eigdata(s, key):
     # input is a string representing a list of <pol,bas,n,m,e> where
     # pol is a list of ints, bas is a list of lists of rationals, n &
     # m are ints, and e is a list of lists of lists of ints, i.e.
@@ -63,8 +63,11 @@ def decode_eigdata(s):
         #print("m,n ={}".format(m,n))
         #print("Now rest is = {}".format(rest))
         ans = rest.split("],[")
-        ans = [[ZZ(c) for c in an.split(",")] for an in ans]
-        #print("ans = {}".format(ans))
+        try:
+            ans = [[ZZ(c) for c in an.split(",")] for an in ans]
+        except TypeError:
+            raise RuntimeError("invalid eigdata for {}: an coefficients not integral: {}".format(key,s))
+            #print("ans = {}".format(ans))
         return {'poly':pol, 'basis':bas, 'n':n, 'm':m, 'ans':ans}
 
     return [decode_one(part) for part in parts]
@@ -105,7 +108,7 @@ def read_dtp(fname):
         traces = str_nested_list_to_nested_list(fields[5],2)
         ALs = decode_ALs(fields[6])
         polys =  str_nested_list_to_nested_list(fields[7],2)
-        eigdata = decode_eigdata(fields[9])
+        eigdata = decode_eigdata(fields[9], key)
 
         data[key] = {'dims':dims, 'traces':traces, 'ALs': ALs, 'polys':polys, 'eigdata':eigdata}
         nspaces += 1
@@ -220,7 +223,9 @@ def compare_data(d1,d2, keylist=['dims', 'traces', 'polys','ALs', 'eigdata'], ve
 
                 if t1!=t2:
                     if key=='traces':
-                        print("{} differ for {}: \nfirst #= {}, \nsecond #={}".format(key,k,[len(t) for t in t1],[len(t) for t in t2]))
+                        print("traces differ for {}: \nfirst #= {}, \nsecond #={}".format(k,[len(t) for t in t1],[len(t) for t in t2]))
+                        print("first starts\t {}".format(t1[0][:10]))
+                        print("second starts\t {}".format(t2[0][:10]))
                     elif key=='eigdata':
                         for f1,f2 in zip(t1,t2):
                             ok, reason = compare_eigdata(k,f1,f2,verbose)
