@@ -732,6 +732,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     if not selfdual:
                         conjugate = '{}.{}.{}.{}.{}'.format(level, weight, chibar, mforbitlabel, d - k)
                     else:
+                        chibar = chi
                         conjugate = label
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
@@ -745,7 +746,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     original_pair[converted_label] = (chi,j)
                     selfduals[converted_label] = selfdual
                     ca, cn = convert_label(conjugate)
-                    conjugates[converted_label] = (chi, ca, cn)
+                    conjugates[converted_label] = (chibar, ca, cn)
+#    for key, val in conjugates.iteritems():
+#        print key,"\t--c-->\t", val
 
     for key, val in all_the_labels.iteritems():
         print key," \t--->\t" + "\t".join( map(str, [val[0],val[1],hecke_orbit_code[key]]))
