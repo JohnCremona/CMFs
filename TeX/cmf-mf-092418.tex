@@ -382,6 +382,30 @@ I don't think that this viewpoint helps us in our computations, but (for me at l
 Now I will get back to actually doing some computations!
 \end{verbatim}
 
+\section{Comments on pari}
+
+\begin{verbatim}
+> Two more things:  (1) I had been under the impression that 
+> polredbest(),
+> unlike polredabs(),  was faster because it did not need to factor any
+> discriminants.  But the documentation suggests otherwise.  the docs for
+> polredabs() at http://pari.math.u-bordeaux.fr/dochtml/html-stable/ are 
+> full
+> of warnings regarding factorization; the docs for polredbest() say 
+> nothing
+> like that but do say "This routine computes an LLL-reduced basis for 
+> the
+> ring of integers of ?[X]/(T), then ..."   which implies that the full 
+> ring
+> of integers is known along the way.  Perhaps I should ask on pari-users
+> about that?
+> 
+
+This would be interesting to know, I had always assumed it was "safe" to
+call polredbest() with a polynomial whose discriminant cannot be readily
+factored.
+\end{verbatim}
+
 \begin{thebibliography}{999}
 
 \end{thebibliography}
