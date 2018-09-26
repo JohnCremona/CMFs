@@ -97,6 +97,7 @@ def read_dtp(fname):
         k=int(fields[1])
         chi=int(fields[2])
         key = (N,k,chi)
+        #print(key)
         if key in data:
             print("Duplicate data for {}".format(key))
         t=float(fields[3])
@@ -117,14 +118,16 @@ def read_dtp(fname):
         if dims:
             nspaces0 += 1
             alldims += dims
+            tot_time0 += t
     alldims=list(set(alldims))
     alldims.sort()
     print("Read {} spaces of which {} are nontrivial; {} Galois orbits.".format(nspaces, nspaces0, norbits))
     print("{} orbits have dimension <=20".format(n20))
     print("largest three dimsensions: {}".format(alldims[-3:]))
-    print("Max time = {} for space {}".format(max_time, max_space))
-    print("Average time (all spaces)      = {}".format(tot_time/nspaces))
-    print("Average time (nonzero spaces)  = {}".format(tot_time0/nspaces0))
+    print("Total time = {:0.3f}".format(tot_time))
+    print("Max time = {:0.3f} for space {}".format(max_time, max_space))
+    print("Average time (all spaces)      = {:0.3f}".format(tot_time/nspaces))
+    print("Average time (nonzero spaces)  = {:0.3f}".format(tot_time0/nspaces0))
     return data
 
 def bdd_dims(dims_dict, dmax=20):
@@ -157,7 +160,7 @@ def polredbest_stable(pol):
         oldf, f = f, f.polredbest()
     return sagepol(f,x)
 
-def compare_eigdata(k, ed1, ed2, debug=0):
+def compare_eigdata(k, ed1, ed2, debug=1):
     #if k==(25,2,5): debug=1
     if debug: print("Comparing eigdata for space {}".format(k))
     if debug>1: print("Comparing eigdata\n1: {}\n2: {}".format(ed1,ed2))
@@ -173,7 +176,11 @@ def compare_eigdata(k, ed1, ed2, debug=0):
     if debug:
         print("Field 1 = {}".format(F1))
         print("Field 2 = {}".format(F2))
-    isos = F1.embeddings(F2)
+    #isos = F1.embeddings(F2)
+    flag, isos = F1.is_isomorphic(F2,isomorphism_maps=True) # we need to consider all isomorphisms
+    if not flag:
+        return False, "non-isomorphic Hecke fields"
+    isos = [F1.hom([Qx(iso)(F2.gen())]) for iso in isos]
     if debug:
         print("isomorphisms F1 --> F2: {}".format(isos))
         print("Basis matrix 1: {}".format(ed1['basis']))

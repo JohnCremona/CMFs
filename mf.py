@@ -195,7 +195,7 @@ def oldNewforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     Qchi_y = PolynomialRing(Qchi,'y')
     if Detail>1:
         print("Q(chi)[y] = {}".format(Qchi_y))
-    pols = gp.mfsplit(Snew)
+    pols = gp.mfsplit(Snew,0,1)
     pols = [gp2sage_ypoly(f, Qchi_y) for f in pols[2]]
     dims = [chi_degree*f.degree() for f in pols]
     if dmax==0:
@@ -359,24 +359,13 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     chi_sage = Chars[chi_number-1]
     chi_gp = gp.znconreylog(G,DC.number(chi_sage))
     NK = [N,k,[G,chi_gp]]
+    if Detail>1:
+        print("NK = {}".format(NK))
     SturmBound = gp.mfsturm(NK).sage()
     Snew = gp.mfinit(NK,0)
     if Detail>1:
         print("Computed newspace {}:{}:{}, now splitting into irreducible subspaces".format(N,k,chi_number))
         print("Sturm bound = {}".format(SturmBound))
-
-    # Get the polynomials:  these are polynomials in y with coefficients either integers or polmods with modulus chipoly
-
-    pols = gp.mfsplit(Snew)[2]
-    if Detail>2: print("pols[GP] = {}".format(pols))
-    nnf = len(pols)
-    if nnf==0:
-        if Detail:
-            print("The space {}:{}:{} is empty".format(N,k,chi_number))
-        gp.quit()
-        return []
-    if Detail:
-        print("The space {}:{}:{} has {} newforms".format(N,k,chi_number,nnf))
 
     # Get the character polynomial
 
@@ -391,6 +380,20 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     assert chi_degree==euler_phi(chi_order)==euler_phi(chi_order_2)
     if Detail>1:
         print("chipoly = {}".format(chipoly))
+
+    # Get the relative polynomials:  these are polynomials in y with coefficients either integers or polmods with modulus chipoly
+
+    pols = gp.mfsplit(Snew,0,1)[2]
+    if Detail>2: print("pols[GP] = {}".format(pols))
+    nnf = len(pols)
+    dims = [chi_degree*gp.poldegree(f) for f in pols]
+    if nnf==0:
+        if Detail:
+            print("The space {}:{}:{} is empty".format(N,k,chi_number))
+        gp.quit()
+        return []
+    if Detail:
+        print("The space {}:{}:{} has {} newforms, dimensions {}".format(N,k,chi_number,nnf,dims))
 
     # Get the traces.  NB (1) mftraceform will only give the trace
     # form on the whole space so we only use this when nnf==1,
@@ -427,10 +430,15 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
 
 
     if nnf>1 or (chi_degree*gp.poldegree(pols[1]))<=dmax:
+        if Detail>1:
+            print("...computing mfeigenbasis...")
         newforms = gp.mfeigenbasis(Snew)
+        if Detail>1:
+            print("...computing {} mfcoefs...".format(nan))
         coeffs = gp.mfcoefs(Snew,nan)
         ans = [coeffs*gp.mftobasis(Snew,nf) for nf in newforms]
-        if Detail>2: print("ans[GP] = {}".format(ans))
+        if Detail>2:
+            print("ans[GP] = {}".format(ans))
     else:
         # there is only one newform (so we have the traces) and its
         # dimension is >dmax (so we will not need the a_n):
@@ -550,7 +558,8 @@ def process_GP_nf(GP_nf, dmax=20, Detail=0):
 
     if Detail:
         print("{}: degree = {} = {}*{}".format(Nko, dim, chi_degree, rel_degree))
-        print("rel_poly for {} is {}".format(Nko,rel_poly))
+        if Detail>1:
+            print("rel_poly for {} is {}".format(Nko,rel_poly))
 
     # the newform will have its 'traces' field set already if it is
     # the only newform in its (N,k,chi)-newspace.  Otherwise we will
@@ -739,7 +748,7 @@ def eigdata_reduce(eigdata, SB, Detail=0):
     eigdata['ancs'] = newcoeffs
     return eigdata
 
-def coeff_reduce(C, B, SB, Detail=0, debug=True):
+def coeff_reduce(C, B, SB, Detail=0, debug=False):
     """B is a list of lists of rationals holding an invertible dxd matrix
     C is a list of lists of rationals holding an nxd matrix
     C*B remains invariant
