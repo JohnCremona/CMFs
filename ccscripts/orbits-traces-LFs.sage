@@ -338,6 +338,10 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
             except ValueError:
                 root_powers = root_powers[:j]
                 break
+        print p
+        print root_powers
+        print partial_efzz
+        print
         partial_efzz = from_power_sums(root_powers)
         efzz = map(int, partial_efzz) + [None]*(halfdegree +1 - len(partial_efzz))
         if len(traces) > p:
