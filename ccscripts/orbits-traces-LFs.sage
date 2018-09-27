@@ -287,10 +287,11 @@ def from_power_sums(ps):
     assert ps[0] is None
     es = [None] * len(ps)
     es[0] = 1
-    es[1] = ps[1]
-    for k in range(2, len(ps)):
-        es[k] = sum( (-1)^(i -1) * es[k-i] * ps[i] for i in range(1, k + 1))/k
-    es = [(-1)^i * elt for i, elt in enumerate(es)]
+    if len(ps) > 1:
+        es[1] = ps[1]
+        for k in range(2, len(ps)):
+            es[k] = sum( (-1)^(i -1) * es[k-i] * ps[i] for i in range(1, k + 1))/k
+        es = [(-1)^i * elt for i, elt in enumerate(es)]
     return es
 
 
@@ -312,6 +313,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
     bad_lfactors = []
     halfdegree = len(euler_factors_cc)
     PS = PowerSeriesRing(ZZ, "X")
+    ZZT = PolynomialRing(ZZ, "T")
     CCCx = PolynomialRing(CCC, "x")
     x = CCCx.gen()
     todo = list(enumerate(primes_first_n(30)))
@@ -366,6 +368,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
             efzz += efzz2
             euler_factors.append(efzz)
         else:
+            efzz = ZZT(efzz).list()
             bad_lfactors.append([int(p), efzz])
             if p_index < 30:
                 euler_factors.append(efzz)
@@ -384,9 +387,6 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         extend_multiplicatively(dirichlet)
 
 
-    
-
-            
 
 
     assert len(euler_factors) == 30
