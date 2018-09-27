@@ -1,9 +1,9 @@
-from char import DirichletCharacterGaloisReps
+from char import DirichletCharacterGaloisReps, NChars
 from mf_compare import polredbest_stable#, polredbest, polredabs
 
 from dirichlet_conrey import DirichletCharacter_conrey as DC
 from sage.interfaces.gp import Gp
-from sage.all import ZZ,Integer,QQ, Rational,RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, primes, Matrix, BackslashOperator
+from sage.all import ZZ,QQ, Rational,RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, primes, Matrix, BackslashOperator
 import sys
 import time
 
@@ -360,13 +360,10 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     chi_gp = gp.znconreylog(G,DC.number(chi_sage))
     NK = [N,k,[G,chi_gp]]
     if Detail>1:
-        print("NK = {}".format(NK))
+        print("NK = {} (gp character = {})".format(NK,chi_gp))
     SturmBound = gp.mfsturm(NK).sage()
     Snew = gp.mfinit(NK,0)
-    if Detail>1:
-        print("Computed newspace {}:{}:{}, now splitting into irreducible subspaces".format(N,k,chi_number))
-        print("Sturm bound = {}".format(SturmBound))
-
+    total_dim = Snew.mfdim()
     # Get the character polynomial
 
     # Note that if the character order is 2*m with m odd then Pari uses the
@@ -378,8 +375,11 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     chipoly = cyclotomic_polynomial(chi_order_2,'t')
     chi_degree = chipoly.degree()
     assert chi_degree==euler_phi(chi_order)==euler_phi(chi_order_2)
-    if Detail>1:
-        print("chipoly = {}".format(chipoly))
+    if Detail:
+        print("Computed newspace {}:{}:{}, dimension={}*{}={}, now splitting into irreducible subspaces".format(N,k,chi_number, chi_degree,total_dim,chi_degree*total_dim))
+        if Detail>1:
+            print("Sturm bound = {}".format(SturmBound))
+            print("character order = {}".format(chi_order))
 
     # Get the relative polynomials:  these are polynomials in y with coefficients either integers or polmods with modulus chipoly
 
@@ -663,7 +663,6 @@ def process_GP_nf(GP_nf, dmax=20, Detail=0):
     if Detail>1:
         print("Time to construct ancs) = {}".format(t4-t2))
     ancs = [sum([anci for anci in anc],[]) for anc in ancs]
-    t6 = time.time()
     if Detail>1:
         print("Coefficient vectors of ans: {}".format(ancs))
 
@@ -842,20 +841,32 @@ def data_to_string(N,k,o,t,newforms):
 
     return ":".join([str(N), str(k), str(o), "{:0.3f}".format(t), dims, traces, ALeigs, polys, cutters, eigs, cm, it, pra])
 
-def DecomposeSpaces(filename, Nk2bound, dmax=20, nan=100, njobs=1, jobno=0, Detail=0):
-# Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
+def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0, Detail=0):
     out = open(filename, 'w') if filename else None
     screen = sys.stdout
-    Nmax = int(Nk2bound/4.0)
+    Nmax = int(Nk2max/4.0)
+    nspaces=0
     for N in range(1,Nmax+1):
-        screen.write("N = {}: ".format(N))
+        kmin = max(2,(RR(Nk2min)/N).sqrt().ceil())
+        kmax = (RR(Nk2max)/N).sqrt().floor()
+        if kmin>kmax:
+            continue
+        level_info = "N = {}: ".format(N)
+        level_info += "{} <=k<= {} ".format(kmin,kmax)
+        #level_info += "({} <=Nk^2<= {})".format(N*kmin**2,N*kmax**2)
+        #screen.write(level_info)
+        info_written=False
         Chars = DirichletCharacterGaloisReps(N)
-        kmax = int((RR(Nk2bound)/N).sqrt())
-        for k in range(2, kmax+1):
+        for k in range(kmin, kmax+1):
             if (N+k)%njobs!=jobno:
                 #screen.write("Skipping (N,k)=({},{}) since (N+k)%{}={}, not {}".format(N,k,njobs,(N+k)%njobs,jobno))
                 continue
+            if not info_written:
+                screen.write(level_info)
+                info_written=True
             screen.write(" [k={}] ".format(k))
+            nspaces+=1
+
             for i in range(len(Chars)):
                 screen.write(" (o={}) ".format(i+1))
                 t0=time.time()
@@ -867,9 +878,23 @@ def DecomposeSpaces(filename, Nk2bound, dmax=20, nan=100, njobs=1, jobno=0, Deta
                 else:
                     screen.write('\n')
                     screen.write(line)
-        screen.write('\n')
+        if info_written:
+            screen.write('\n')
     if out:
         out.close()
+    #return nspaces
+
+
+def Nspaces(Nk2min,Nk2max):
+    Nmax = int(Nk2max/4.0)
+    nspaces=0
+    for N in range(1,Nmax+1):
+        kmin = max(2,(RR(Nk2min)/N).sqrt().ceil())
+        kmax = (RR(Nk2max)/N).sqrt().floor()
+        if kmin>kmax:
+            continue
+        nspaces += NChars(N)*(1+kmax-kmin)
+    return nspaces
 
 def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
 # Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax

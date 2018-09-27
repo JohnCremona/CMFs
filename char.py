@@ -8,16 +8,24 @@
 
 from dirichlet_conrey import DirichletGroup_conrey as DG, DirichletCharacter_conrey as DC
 from sage.interfaces.gp import gp
+from sage.all import ZZ, gcd, euler_phi,Mod
 
 def character_traces(chi):
     return [chi(j).trace() for j in range(chi.modulus())]
 
+DCGR_cache={}
 
 def DirichletCharacterGaloisReps(N):
-    Chars = [ch[0] for ch in DG(N).galois_orbits()]
-    vv = [[[DC.multiplicative_order(chi)]+character_traces(DC.sage_character(chi)),i] for i,chi in enumerate(Chars)]
-    vv.sort()
-    return [Chars[v[1]] for v in vv]
+    global DCGR_cache
+    if not N in DCGR_cache:
+        Chars = [ch[0] for ch in DG(N).galois_orbits()]
+        vv = [[[DC.multiplicative_order(chi)]+character_traces(DC.sage_character(chi)),i] for i,chi in enumerate(Chars)]
+        vv.sort()
+        DCGR_cache[N] = [Chars[v[1]] for v in vv]
+    return DCGR_cache[N]
+
+def NChars(N):
+    return ZZ(sum([1/euler_phi(Mod(i,N).multiplicative_order()) for i in range(N) if gcd(i,N)==1]))
 
 # To obtain the index number of a character chi use DC.number(chi)
 

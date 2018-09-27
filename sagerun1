@@ -1,15 +1,16 @@
 #!/bin/bash
 
-Nk2max=$1
-filename=$2
-dmax=$3
-nan=$4
-njobs=$5
+Nk2min=$1
+Nk2max=$2
+filename=$3
+dmax=$4
+nan=$5
+njobs=$6
 let 'njobs1 = njobs - 1'
 
 for jobno in `seq 0 ${njobs1}`; do
 
-cline="import mf; mf.DecomposeSpaces(\"${filename}-${jobno}\",${Nk2max},${dmax},${nan},${njobs},${jobno});"
+cline="import mf; mf.DecomposeSpaces(\"${filename}-${jobno}\",${Nk2min},${Nk2max},${dmax},${nan},${njobs},${jobno});"
 echo ${cline}
 echo ${cline} | sagedev -q  > sage.out-${jobno} &
 done
