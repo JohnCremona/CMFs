@@ -313,7 +313,6 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
     bad_lfactors = []
     halfdegree = len(euler_factors_cc)
     PS = PowerSeriesRing(ZZ, "X")
-    ZZT = PolynomialRing(ZZ, "T")
     CCCx = PolynomialRing(CCC, "x")
     x = CCCx.gen()
     todo = list(enumerate(primes_first_n(30)))
@@ -339,10 +338,6 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
                 root_powers = root_powers[:j]
                 break
         partial_efzz = from_power_sums(root_powers)
-        print p
-        print root_powers
-        print partial_efzz
-        print
         efzz = map(int, partial_efzz) + [None]*(halfdegree +1 - len(partial_efzz))
         if len(traces) > p:
             if efzz[1] is None:
@@ -372,7 +367,11 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
             efzz += efzz2
             euler_factors.append(efzz)
         else:
-            efzz = ZZT(efzz).list()
+            if None not in efzz:
+                k = len(efzz)
+                while efzz[k - 1] == 0 and k >= 1:
+                    k -= 1
+                efzz = efzz[:k]
             bad_lfactors.append([int(p), efzz])
             if p_index < 30:
                 euler_factors.append(efzz)
@@ -933,9 +932,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             euler_factors_cc = [euler_factors[elt] for elt in pairs]
             row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(traces, euler_factors_cc, level,weight)
             #handling Nones
-            for line in row['euler_factors']:
-                print line
-                print json.dumps(line)
             row['euler_factors'] = json.dumps(row['euler_factors'])
             row['bad_lfactors'] = json.dumps(row['bad_lfactors'])
 
