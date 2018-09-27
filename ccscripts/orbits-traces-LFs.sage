@@ -933,6 +933,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             euler_factors_cc = [euler_factors[elt] for elt in pairs]
             row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(traces, euler_factors_cc, level,weight)
             #handling Nones
+            print row['euler_factors']
             row['euler_factors'] = json.dumps(row['euler_factors'])
             row['bad_lfactors'] = json.dumps(row['bad_lfactors'])
 
