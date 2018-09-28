@@ -1036,10 +1036,10 @@ def do_Nk2(Nk2):
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
         if k in ZZ and k > 1:
-            todo.append((N, k))
-            #if N >= 100 and k > 4:
-            #    print "skipping N = %d k = %d" % (N , k)
-            #else:
+            if N >= 100 and k > 4:
+                print "skipping N = %d k = %d" % (N , k)
+            else:
+                todo.append((N, k))
 
     lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (Nk2))
     instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (Nk2))
