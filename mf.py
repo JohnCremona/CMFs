@@ -846,6 +846,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
     screen = sys.stdout
     Nmax = int(Nk2max/4.0)
     nspaces=0
+    n = 0 # will increment for each (N,k,chi) in range, so we skip unless n%njobs==jobno
     for N in range(1,Nmax+1):
         kmin = max(2,(RR(Nk2min)/N).sqrt().ceil())
         kmax = (RR(Nk2max)/N).sqrt().floor()
@@ -858,9 +859,6 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
         info_written=False
         Chars = DirichletCharacterGaloisReps(N)
         for k in range(kmin, kmax+1):
-            if (N+k)%njobs!=jobno:
-                #screen.write("Skipping (N,k)=({},{}) since (N+k)%{}={}, not {}".format(N,k,njobs,(N+k)%njobs,jobno))
-                continue
             if not info_written:
                 screen.write(level_info)
                 info_written=True
@@ -868,6 +866,10 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
             nspaces+=1
 
             for i in range(len(Chars)):
+                n += 1
+                if n%njobs!=jobno:
+                    continue
+
                 screen.write(" (o={}) ".format(i+1))
                 t0=time.time()
                 newforms = Newforms(N,k,i+1,dmax,nan, Detail)
