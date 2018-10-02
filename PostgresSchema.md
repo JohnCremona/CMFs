@@ -62,6 +62,7 @@ Table name: `mf_gamma1_subspaces`.
 
 Column | Type | Notes
 -------|------|------
+label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
 level | integer | level N of the cuspidal space S_k(Gamma_1(N))
 weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
 dim | integer | dimension of S_k(Gamma_1(N))
@@ -73,8 +74,7 @@ Table name: `mf_gamma1_portraits`.
 
 Column | Type | Notes
 -------|------|------
-level | integer | level N of the cuspidal space S_k(Gamma_1(N))
-weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
+label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
 
 
