@@ -157,8 +157,8 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
 conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
 embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
-embedding_root_real | real | real part of the root corresponding to this embedding
-embedding_root_imag | real | imaginary part of the root corresponding to this embedding
+embedding_root_real | double precision | real part of the root corresponding to this embedding
+embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
 angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p, with `\theta_p` between -0.5 and 0.5
 
