@@ -69,6 +69,15 @@ sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed i
 sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
 sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
 
+Table name: `mf_gamma1_portraits`.
+
+Column | Type | Notes
+-------|------|------
+level | integer | level N of the cuspidal space S_k(Gamma_1(N))
+weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
+portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
+
+
 Newforms
 ========
 
