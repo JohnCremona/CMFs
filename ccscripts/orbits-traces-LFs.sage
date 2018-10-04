@@ -442,6 +442,9 @@ def angles_euler_factors(coeffs, level, weight, chi):
             a = (p**(weight-1))*charval
             euler.append([c,b,a])
             alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*a)
+            print b**2 - 4*a*c
+            print sqrt_hack(b**2 - 4*a*c)
+            print arg_hack(alpha)
             theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
             if theta > 0.5:
                 theta -=1
