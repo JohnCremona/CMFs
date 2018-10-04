@@ -922,7 +922,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     row['central_character'] = "%s.%s" % (row['conductor'], 1)
                 # -1
                 elif chiprod_index == level - 1:
-                    row['central_character'] = "%s.%s" % (row['conductor'], row['conductor'] - 1))
+                    row['central_character'] = "%s.%s" % (row['conductor'], row['conductor'] - 1)
                 # ??
                 else:
                     # lift it to the conductor
