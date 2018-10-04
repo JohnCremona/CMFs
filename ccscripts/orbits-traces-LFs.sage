@@ -910,18 +910,29 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in triples], key = lambda x : x[1])
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
             row['origin'] = rational_origin(chi, a)
-            # print row['origin']
-            G = DirichletGroup_conrey(level)
-            print "doing the prod"
-            chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in triples])
-            print chiprod
-            print "prod done"
-            print "index"
-            chiprod_index = DirichletGroup_conrey(row['conductor']).from_sage_character(chiprod).number()
-            row['central_character'] = "%s.%s" % ( level**(degree//2), chiprod_index)
+            # character
+            if degree == 2:
+                row['central_character'] = rows[tripes[0]][central_character]
+            else:
+                G = DirichletGroup_conrey(level)
+                chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in triples])
+                chiprod_index = chiprod.number()
+                # trivial
+                if chiprod_index == 1:
+                    row['central_character'] = "%s.%s" % (row['conductor'], 1)
+                # -1
+                elif chiprod_index == level - 1:
+                    row['central_character'] = "%s.%s" % (row['conductor'], row['conductor'] - 1))
+                # ??
+                else:
+                    # lift it to the conductor
+                    chiprod_index = DirichletGroup_conrey(row['conductor']).from_sage_character(chiprod.extend(row['conductor'])).number()
+                    row['central_character'] = "%s.%s" % (row['conductor'], chiprod_index)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
-            while row['sign_arg'] > 1:
+            while row['sign_arg'] > 0.5:
                 row['sign_arg'] -= 1
+            while row['sign_arg'] <= -0.5:
+                row['sign_arg'] += 1
             zeros_zi = []
             for i in range(0,3):
                 for elt in triples:
