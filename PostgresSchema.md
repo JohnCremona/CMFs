@@ -130,6 +130,7 @@ inner_twist | jsonb | List of integers giving the char_orbit values for the nont
 inner_twist_proved | boolean | whether the inner twist columns are provably correct
 atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character)
 fricke_eigenval | smallint | product of the Atkin-Lehner eigenvalues (NULL if nontrivial character)
+atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
 trace_display | jsonb | list of the first four a_n traces for display on search page results
