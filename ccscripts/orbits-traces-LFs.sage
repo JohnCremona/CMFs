@@ -285,7 +285,7 @@ def RIF_to_float(x):
         return float(x)
 def CBF_to_pair(x):
     a = CCC(x)
-    return [RRF_to_float(a.real()), RRF_to_float(a.imag())]
+    return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
 
 def reciprocal_roots(coeff):
     if len(coeff) == 3:
