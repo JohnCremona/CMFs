@@ -447,7 +447,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
                 theta -=1
             elif theta < 0.5:
                 theta +=1
-            assert theta < 0.5 and theta > -0.5
+            assert theta < 0.5 and theta > -0.5, "%s" % theta
             angles.append([p, float(theta.mid())])
         if len(coeffs) > p**2:
             assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
