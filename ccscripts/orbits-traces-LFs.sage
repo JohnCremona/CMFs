@@ -913,7 +913,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             # print row['origin']
             G = DirichletGroup_conrey(level)
             print "doing the prod"
-            chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ]) for elt in triples])
+            chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in triples])
             print chiprod
             print "prod done"
             print "index"
