@@ -912,7 +912,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['origin'] = rational_origin(chi, a)
             # character
             if degree == 2:
-                row['central_character'] = rows[tripes[0]][central_character]
+                row['central_character'] = rows[triples[0]][central_character]
             else:
                 G = DirichletGroup_conrey(level)
                 chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in triples])
