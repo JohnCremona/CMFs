@@ -454,7 +454,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             angles.append([p, theta])
         if len(coeffs) > p**2:
             assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
-    an_f = map(CDF_to_pair, coeffs[:to_store + 1])
+    an_f = map(CBF_to_pair, coeffs[:to_store + 1])
     return an_f, angles, euler, bad_euler
 
 
@@ -852,8 +852,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row['coefficient_field'] = 'CDF'
 
         # only 30
-        row['euler_factors'] = map( lambda x : map(CDF_to_pair, x), euler_factors[(chi, j)][:30])
-        row['bad_lfactors'] = map( lambda x: [x[0], map(CDF_to_pair, x[1])], bad_euler_factors[(chi, j)])
+        row['euler_factors'] = map( lambda x : map(CBF_to_pair, x), euler_factors[(chi, j)][:30])
+        row['bad_lfactors'] = map( lambda x: [x[0], map(CBF_to_pair, x[1])], bad_euler_factors[(chi, j)])
 
         for key in schema_lf:
             assert key in row, "%s not in row = %s" % (key, row)
