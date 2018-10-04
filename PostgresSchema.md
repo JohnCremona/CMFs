@@ -11,6 +11,7 @@ label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
 odd_weight | boolean | whether k is odd
+analytic_conductor | float | N*(2*Exp(Psi((1+k)/2)))^2
 Nk2 | integer | N*k^2
 char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
 char_orbit_label | text | letter encoded version of (i)
@@ -31,6 +32,7 @@ eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corres
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 AL_dims | jsonb | For spaces with trivial character, this is a list of lists of pairs [AL_eigs,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, and n is the total dimension of the subspace of newforms that lie in the intersection of the corresponding eigenspaces.
+plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
 
 Table name: `mf_newspace_portraits`
 
@@ -90,6 +92,7 @@ space_label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
 odd_weight | boolean | whether k is odd
+analytic_conductor | float | N*(2*Exp(Psi((1+k)/2)))^2
 Nk2 | integer | N*k^2
 char_orbit_index | integer | (i) As above
 char_orbit_label | text | letter encoded version of (i)
