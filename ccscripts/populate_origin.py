@@ -6,7 +6,7 @@ from  lmfdb.db_backend import db
 
 def upsert_origin(id_row):
     Lhash = db.lfunc_lfunctions.lucky({'id':id_row}, projection = 'Lhash')
-    url = list(db.lfunc_instances.search({'Lhash': Lhash, 'type' : 'ECQ'}))
+    url = list(db.lfunc_instances.search({'Lhash': Lhash, 'type' : 'ECQ'}, projection = 'url'))
     assert len(url) == 1
     url = url[0]
     assert 'EllipticCurve/Q/' in url, "%s" % url
