@@ -913,7 +913,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             # print row['origin']
             G = DirichletGroup_conrey(level)
             chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ].sage_character().extend(row['conductor']).maximize_base_ring() for elt in triples])
-            chiprod_index = DirichletGroup_conrey(row['conductor']).from_sage_character(chiprod).index()
+            chiprod_index = DirichletGroup_conrey(row['conductor']).from_sage_character(chiprod).number()
             row['central_character'] = "%s.%s" % ( level**(degree//2), chiprod_index)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 1:
