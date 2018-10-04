@@ -445,7 +445,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
             if theta > 0.5:
                 theta -=1
-            elif theta < 0.5:
+            elif theta < -0.5:
                 theta +=1
             assert theta < 0.5 and theta > -0.5, "%s" % theta
             angles.append([p, float(theta.mid())])
