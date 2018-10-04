@@ -372,6 +372,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         if level % p != 0:
             sign = RRR(ef.list()[-1].real()/p^((halfdegree)*(weight - 1))).unique_integer()
             assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
+            assert sign == 1, "%s, %s, %s" (p, level, weight)
             efzz2 = [None] * halfdegree
             for i, elt in enumerate(reversed(efzz[:-1])):
                 if elt is None:
@@ -910,7 +911,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
             row['origin'] = rational_origin(chi, a)
             # print row['origin']
-            modN = Integers(level)
+            modN = Integers(level**(degree//2))
             chisum = prod([modN(rows[elt][central_character].split(".")[-1]) for elt in triples])
             row['central_character'] = "%s.%s" % ( level**(degree//2), chisum)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
@@ -932,14 +933,14 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['coefficient_field'] = '1.1.1.1'
 
             for chi, _, _ in triples:
-                if (level, weight, chi) in traces_lists:
-                    for elt in  traces_lists[(level, weight, chi)]:
+                if (lev, weight, chi) in traces_lists:
+                    for elt in  traces_lists[(lev, weight, chi)]:
                         if set(elt[1]) <= set(pairs):
                             traces = elt[0]
                             break
                     else:
                         print pairs
-                        print traces_lists[(level, weight, chi)]
+                        print traces_lists[(lev, weight, chi)]
                         assert False
                     break
             else:
@@ -950,7 +951,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
             euler_factors_cc = [euler_factors[elt] for elt in pairs]
-            row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(traces, euler_factors_cc, level,weight)
+            row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(traces, euler_factors_cc, level, weight)
             #handling Nones
             row['euler_factors'] = json.dumps(row['euler_factors'])
             row['bad_lfactors'] = json.dumps(row['bad_lfactors'])
