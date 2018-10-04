@@ -937,14 +937,14 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['coefficient_field'] = '1.1.1.1'
 
             for chi, _, _ in triples:
-                if (lev, weight, chi) in traces_lists:
-                    for elt in  traces_lists[(lev, weight, chi)]:
+                if (level, weight, chi) in traces_lists:
+                    for elt in  traces_lists[(level, weight, chi)]:
                         if set(elt[1]) <= set(pairs):
                             traces = elt[0]
                             break
                     else:
                         print pairs
-                        print traces_lists[(lev, weight, chi)]
+                        print traces_lists[(level, weight, chi)]
                         assert False
                     break
             else:
