@@ -10,7 +10,7 @@ def upsert_hash(id_number, skip = False):
     trace_hash = int(row['Lhash'])
     assert trace_hash < 2**61
     assert "Genus2Curve/Q/" in row['origin'] or "EllipticCurve/Q/" in row['origin']
-    db.lfunc_lfunctions.upsert({'id': row['id']}, {'trace_hash':trace_hash)
+    db.lfunc_lfunctions.upsert({'id': row['id']}, {'trace_hash':trace_hash})
 
 import sys
 if len(sys.argv) == 3:
