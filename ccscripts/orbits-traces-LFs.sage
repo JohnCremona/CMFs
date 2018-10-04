@@ -277,15 +277,15 @@ def read_orbit(orbitblob):
     A = struct.unpack_from('i'*(len(orbitblob)/4r), orbitblob)
     return [ (A[2*i], A[2*i+1]) for i in range(len(A)/2r) ]
 
-def RBF_to_float(x):
+def RIF_to_float(x):
     x = RRR(x)
     if x.contains_zero():
         return 0
     else:
-        return float(x.mid())
+        return float(x)
 def CBF_to_pair(x):
     a = CCC(x)
-    return [RBF_to_float(a.real()), RBF_to_float(a.imag())]
+    return [RRF_to_float(a.real()), RRF_to_float(a.imag())]
 
 def reciprocal_roots(coeff):
     if len(coeff) == 3:
