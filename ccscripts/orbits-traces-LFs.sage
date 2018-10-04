@@ -373,7 +373,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         if level % p != 0:
             sign = RRR(ef.list()[-1].real()/p^((halfdegree)*(weight - 1))).unique_integer()
             assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
-            assert sign == 1, "%s, %s, %s" (p, level, weight)
+            assert sign == 1, "%s, %s, %s" % (p, level, weight)
             efzz2 = [None] * halfdegree
             for i, elt in enumerate(reversed(efzz[:-1])):
                 if elt is None:
