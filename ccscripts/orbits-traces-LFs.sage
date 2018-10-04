@@ -373,7 +373,6 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         if level % p != 0:
             sign = RRR(ef.list()[-1].real()/p^((halfdegree)*(weight - 1))).unique_integer()
             assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
-            assert sign == 1, "%s %s, %s, %s" % (sign, p, level, weight)
             efzz2 = [None] * halfdegree
             for i, elt in enumerate(reversed(efzz[:-1])):
                 if elt is None:
@@ -913,7 +912,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['origin'] = rational_origin(chi, a)
             # print row['origin']
             G = DirichletGroup_conrey(level)
-            chiprod = prod([G[ rows[elt][central_character].split(".")[-1] ].sage_character().extend(row['conductor']).maximize_ring() for elt in triples])
+            chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ].sage_character().extend(row['conductor']).maximize_ring() for elt in triples])
             chiprod_index = DirichletGroup_conrey(row['conductor']).from_sage_character(chiprod).index()
             row['central_character'] = "%s.%s" % ( level**(degree//2), chiprod_index)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
