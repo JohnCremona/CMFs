@@ -194,7 +194,7 @@ schema_instances_types.pop('id')
 
 # sqrt hack for ComplexBallField
 def sqrt_hack(foo):
-    if not foo.imag().contains_zero() and foo.real().mid() < 0:
+    if not foo.real().contains_zero() and foo.real().mid() < 0:
         return foo.parent().0*(-foo).sqrt()
     else:
         return foo.sqrt()
