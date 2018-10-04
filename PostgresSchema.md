@@ -101,7 +101,7 @@ prim_orbit_index | integer | char_orbit for the primitive version of this charac
 char_order | integer | the order of the character
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | boolean | whether the character
+char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_degree | integer | Degree of the (cyclotomic) character field
 hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
@@ -109,6 +109,7 @@ dim | integer | the dimension of this Hecke orbit
 field_poly | jsonb | list of integers giving defining polynomial for the Hecke field (standard Sage order of coefficients)
 is_polredabs | boolean | whether the polynomial has been reduced by Pari's `polredabs`
 nf_label | text | LMFDB label for the corresponding number field (can be NULL)
+is_self_dual | smallint | 1 if L-func is self-dual (coeff field is totally real), -1 if not self-dual, 0 if unknown
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
 hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse bases that specifies powers of nu in terms of the betas
