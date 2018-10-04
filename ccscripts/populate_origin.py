@@ -9,7 +9,7 @@ def upsert_origin(id_row):
     url = list(db.lfunc_instances.search({'Lhash': Lhash, 'type' : 'ECQ'}))
     assert len(url) == 1
     url = url[0]
-    assert 'EllipticCurve/Q/' in url
+    assert 'EllipticCurve/Q/' in url, "%s" % url
     print url, Lhash
     db.lfunc_lfunctions.upsert({'id': id_row}, {'origin': url})
 
