@@ -193,14 +193,20 @@ schema_instances_types.pop('id')
 
 # sqrt hack for ComplexBallField
 def sqrt_hack(foo):
-    if not foo.real().contains_zero() and foo.real().mid() < 0:
+    if not foo.imag().contains_zero() and foo.real().mid() < 0:
         return foo.parent().0*(-foo).sqrt()
     else:
         return foo.sqrt()
 
 def arg_hack(foo):
     if not foo.real().contains_zero() and foo.real().mid() < 0:
-        return (-foo).arg() + foo.parent().pi().real()
+        arg = (-foo).arg()
+        #print arg
+        if arg > 0:
+            arg -= foo.parent().pi().real()
+        else:
+            arg += foo.parent().pi().real()
+        return arg
     else:
         return foo.arg()
 
@@ -270,9 +276,15 @@ def read_orbit(orbitblob):
     A = struct.unpack_from('i'*(len(orbitblob)/4r), orbitblob)
     return [ (A[2*i], A[2*i+1]) for i in range(len(A)/2r) ]
 
-def CDF_to_pair(x):
-    a = CDF(x)
-    return [float(a.real()), float(a.imag())]
+def RBF_to_float(x):
+    x = RRR(x)
+    if x.contains_zero():
+        return 0
+    else:
+        return float(x.mid())
+def CBF_to_pair(x):
+    a = CCC(x)
+    return [RBF_to_float(a.real()), RBF_to_float(a.imag())]
 
 def reciprocal_roots(coeff):
     if len(coeff) == 3:
@@ -428,7 +440,12 @@ def angles_euler_factors(coeffs, level, weight, chi):
             a = (p**(weight-1))*charval
             euler.append([c,b,a])
             alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*a)
-            theta = arg_hack(alpha) / (2*CCC.pi().real())
+            theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
+            if theta > 0.5:
+                theta -=1
+            elif theta < 0.5:
+                theta +=1
+            assert theta < 0.5 and theta > -0.5
             angles.append([p, float(theta.mid())])
         if len(coeffs) > p**2:
             assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
