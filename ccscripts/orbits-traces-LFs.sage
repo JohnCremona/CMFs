@@ -387,7 +387,8 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
                 for i in range(1, 3):
                     dirichlet[p**i] = foo[i]
             else:
-                dirichlet[p] = -efzz[1]
+                dirichlet[p] = -efzz[1] if len(efzz) > 1 else 0;
+            assert dirichlet[p] == traces[p-1], "p = %s, ap = %s, tp = %s, efzz = %s" % (p, dirichlet[p], traces[p-1], efzz)
 
         extend_multiplicatively(dirichlet)
 
