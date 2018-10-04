@@ -17,6 +17,7 @@ def convert_eigenvals_to_qexp(basis, eigenvals):
     return qexp
 
 
+#FIXME upsert coeff info
 def upsert_embedding(id_number, skip = False):
     rowcc = db.mf_hecke_cc.lucky({'id':id_number}, projection=['an', 'hecke_orbit_code','id','lfunction_label', 'embedding_root_imag','embedding_root_real'])
     if rowcc is None:

@@ -41,7 +41,7 @@ default_type = 'CMF'
 def constant_lf(level, weight, degree):
     assert degree % 2 == 0
     output =  {
-        'primitive' : 't', # True
+        'primitive' : 't' if degree == 2 else 'f', 
         'conductor' : level**(degree//2),
         'load_key' : 'CMFs-workshop',
         'motivic_weight': weight - 1,
@@ -54,12 +54,13 @@ def constant_lf(level, weight, degree):
         'analytic_normalization': float(weight - 1)/2,
         'precision': '\N',
         'algebraic': 't',
-        'coeff_info': '\N',
+        'coeff_info': '\N', #FIXME
         'credit' : '\N',
         'values': '\N', # no special values at the moment
         'gamma_factors': [[], [0]*(degree//2)],
         'coefficient_field': '\N', # the label of the Hecke field, we set as \N as start
-        'dirichlet_coefficients' : '\N' # we already store a2 .. a10
+        'dirichlet_coefficients' : '\N', # we already store a2 .. a10
+        'trace_hash': '\N'
         }
     for i in range(2,11):
         output['A' + str(i)] = '\N'
@@ -167,7 +168,8 @@ schema_lf_types = {u'A10': u'numeric',
      u'values': u'jsonb',
      u'z1': u'numeric',
      u'z2': u'numeric',
-     u'z3': u'numeric'}
+     u'z3': u'numeric',
+     'trace_hash': 'bigint'}
 
 schema_lf_types.pop('id')
 
@@ -892,7 +894,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             # print row['origin']
             modN = Integers(level)
             chisum = prod([modN(rows[elt][central_character].split(".")[-1]) for elt in triples])
-            row['central_character'] = "%s.%s" % (level, chisum)
+            row['central_character'] = "%s.%s" % ( level**(degree//2), chisum)
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 1:
                 row['sign_arg'] -= 1
