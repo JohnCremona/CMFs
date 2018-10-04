@@ -105,6 +105,7 @@ schema_lf = [
         'values', # special values, format???
         'dirichlet_coefficients', # the ap traces as algebraic numbers
         'coefficient_field', # the label of the Hecke field
+        'trace_hash'
         ]
 for i in range(2,11):
     schema_lf.append('A'+ str(i))
