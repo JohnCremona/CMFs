@@ -17,7 +17,7 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:it:pra* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The 12 fields in each record are defined as follows:
+Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:itwists:ispolredabs* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The 12 fields in each record are defined as follows:
 
  1) N = level, a positive integer
  2) k = weight, a positive integer (for .m.txt files, k > 1)
@@ -35,8 +35,8 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:it:pra* where B is an upper 
       4) m is a boolean (0 or 1) indicating whether or not we know that n is maximal, i.e. n = [Z(f):O_{Q(f)}]
       5) e is a list of eigenvalues specified in terms of the basis b (list of deg(f) integers for each a_n)
 11) cm = list of cm discriminants, one for each subspace listed in D up to the degree bound, 0 indicates non-CM forms (rigorous)
-12) it = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (not rigorous!)
-13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
+12) itwists = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (not rigorous!)
+13) ispolredabs = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
 
 Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
 
