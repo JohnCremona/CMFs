@@ -130,7 +130,7 @@ has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=u
 is_twist_minimal | boolean |
 inner_twist | jsonb | List of integers giving the char_orbit values for the nontrivial Dirichlet characters that give inner twists
 inner_twist_proved | boolean | whether the inner twist columns are provably correct
-atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character)
+atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
 fricke_eigenval | smallint | product of the Atkin-Lehner eigenvalues (NULL if nontrivial character)
 atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
