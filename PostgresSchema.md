@@ -30,7 +30,9 @@ eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding 
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
-AL_dims | jsonb | For spaces with trivial character, this is a list of lists of pairs [AL_eigs,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, and n is the total dimension of the subspace of newforms that lie in the intersection of the corresponding eigenspaces.
+AL_dims | jsonb | For spaces with trivial character, this is a lists of pairs [AL_eigs,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, and n is the total dimension of the subspace of newforms that lie in the intersection of the corresponding eigenspaces.
+plus_dim | integer | dimension of the +1 eigenspace for the Fricke operator
+minus_dim | integer | dimension of the -1 eigenspace for the Fricke operator
 
 Table name: `mf_newspace_portraits`
 
@@ -126,6 +128,7 @@ inner_twist | jsonb | List of integers giving the char_orbit values for the nont
 inner_twist_proved | boolean | whether the inner twist columns are provably correct
 atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character)
 fricke_eigenval | smallint | product of the Atkin-Lehner eigenvalues (NULL if nontrivial character)
+atkin_lehner_str | text | A string of + and - corresponding to the Atkin-Lehner signs
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
 trace_display | jsonb | list of the first four a_n traces for display on search page results
