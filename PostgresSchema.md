@@ -11,7 +11,7 @@ label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
 odd_weight | boolean | whether k is odd
-analytic_conductor | float | N*(2*Exp(Psi((1+k)/2)))^2
+analytic_conductor | float | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) = Gamma'(t)/Gamma(t)
 Nk2 | integer | N*k^2
 char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
 char_orbit_label | text | letter encoded version of (i)
