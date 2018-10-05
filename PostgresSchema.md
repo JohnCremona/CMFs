@@ -3,7 +3,7 @@ Spaces
 
 Table name: `mf_newspaces`.
 
-This table represents (Galois orbits of) spaces of newfors`S_k^{new}(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
+This table represents (Galois orbits of) spaces of newforms `S_k^{new}(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
 
 Column | Type | Notes
 -------|------|------
@@ -31,7 +31,7 @@ eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding 
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
-AL_dims | jsonb | For spaces with trivial character, this is a list of lists of pairs [AL_eigs,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, and n is the total dimension of the subspace of newforms that lie in the intersection of the corresponding eigenspaces.
+AL_dims | jsonb | For spaces with trivial character, this is a lists of pairs [AL_eigs,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, and n is the total dimension of the subspace of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
 
 Table name: `mf_newspace_portraits`
@@ -164,8 +164,8 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
 conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
 embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
-embedding_root_real | real | real part of the root corresponding to this embedding
-embedding_root_imag | real | imaginary part of the root corresponding to this embedding
+embedding_root_real | double precision | real part of the root corresponding to this embedding
+embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
 angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p, with `\theta_p` between -0.5 and 0.5
 
