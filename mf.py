@@ -145,6 +145,19 @@ def abstrace(x,deg):
     except NameError:
         return x.trace().trace().sage()
 
+def NewSpace(N, k, chi_number,Detail=0):
+    Chars = DirichletCharacterGaloisReps(N)
+    if chi_number<1 or chi_number>len(Chars):
+        print("Character number {} out of range for N={} (should be between 1 and {})".format(chi_number,N,len(Chars)))
+        return None
+    gp = Gp() # A new gp interface for each space
+    gp.default('parisizemax',64000000000)
+    G = gp.znstar(N,1)
+    chi_sage = Chars[chi_number-1]
+    chi_gp = gp.znconreylog(G,DC.number(chi_sage))
+    NK = [N,k,[G,chi_gp]]
+    return gp.mfinit(NK,0)
+
 # First working version, later repalced by more efficient version:
 
 def oldNewforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
@@ -486,7 +499,7 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t1=time.time()
     if Detail:
         print("{}: finished constructing GP newforms (time {:0.3f})".format(Nko,t1-t0))
-    nfs = [process_GP_nf(nf, dmax, Detail) for nf in GP_nfs]
+    nfs = [process_GP_nf(gp, nf, dmax, Detail) for nf in GP_nfs]
     if len(nfs)>1:
         nfs.sort(key=lambda f: f['traces'])
     t2=time.time()
@@ -516,7 +529,308 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     gp.quit()
     return nfs
 
-def process_GP_nf(GP_nf, dmax=20, Detail=0):
+def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
+    t0=time.time()
+    Chars = DirichletCharacterGaloisReps(N)
+    if chi_number<1 or chi_number>len(Chars):
+        print("Character number {} out of range for N={} (should be between 1 and {})".format(chi_number,N,len(Chars)))
+        return []
+    if Detail:
+        print("Decomposing space {}:{}:{}".format(N,k,chi_number))
+    gp = Gp() # A new gp interface for each space
+    gp.default('parisizemax',64000000000)
+    G = gp.znstar(N,1)
+    chi_sage = Chars[chi_number-1]
+    chi_gp = gp.znconreylog(G,DC.number(chi_sage))
+    NK = [N,k,[G,chi_gp]]
+    if Detail>1:
+        print("NK = {} (gp character = {})".format(NK,chi_gp))
+    SturmBound = gp.mfsturm(NK).sage()
+    Snew = gp.mfinit(NK,0)
+    total_dim = Snew.mfdim() # this is the relative dimension i.e. degree over Q(chi)
+    # Get the character polynomial
+
+    # Note that if the character order is 2*m with m odd then Pari uses the
+    # m'th cyclotomic polynomial and not the 2m'th (e.g. for a
+    # character of order 6 it uses t^2+t+1 and not t^2-t+1).
+
+    chi_order = DC.multiplicative_order(chi_sage)
+    chi_order_2 = chi_order//2 if chi_order%4==2 else chi_order
+    chipoly = cyclotomic_polynomial(chi_order_2,'t')
+    chi_degree = chipoly.degree()
+    assert chi_degree==euler_phi(chi_order)==euler_phi(chi_order_2)
+    if Detail:
+        print("Computed newspace {}:{}:{}, dimension={}*{}={}, now splitting into irreducible subspaces".format(N,k,chi_number, chi_degree,total_dim,chi_degree*total_dim))
+        if Detail>1:
+            print("Sturm bound = {}".format(SturmBound))
+            print("character order = {}".format(chi_order))
+
+    if total_dim==0:
+        if Detail:
+            print("The space {}:{}:{} is empty".format(N,k,chi_number))
+        gp.quit()
+        return []
+
+    # First just compute a few Hecke matrices, to find a splitting operator
+    s0=time.time()
+    nan0=10  ## we'll test all nonzero subsums of the first nan0 T_p to find a semisimple one
+    # TODO: replace this short list of fixed size (NB 5 fails quite soon) with an iterator yielding the next Tp matrix
+    
+    smallprimes = []
+    p=ZZ(2)
+    while len(smallprimes)<nan0:
+        if N%p:
+            smallprimes += [p]
+        p = p.next_prime()
+    if Detail:
+        print("Starting to compute {} Hecke matrices T_p for p in {}".format(nan0,smallprimes))
+    heckemats = [T for T in gp.mfheckemat(Snew,gp(smallprimes))]
+    s1=time.time()
+    if Detail:
+        print("Computed {} Hecke matrices in {:0.3f}s".format(nan0,s1-s0))
+    op = heckemats[0]
+    if Detail:
+        print("testing T_{}".format(smallprimes[0]))
+    f = op.charpoly()
+    ok = f.issquarefree()
+    if ok and Detail:
+        print("Lucky first time: semisimple")
+    ops=[op]
+    i0=0
+    while i0+1<nan0 and not ok:
+        i0 += 1
+        opi = heckemats[i0]
+        if Detail:
+            print("testing T_{}".format(smallprimes[i0]))
+        f = opi.charpoly()
+        ok = f.issquarefree()
+        if ok:
+            op = opi
+            if Detail:
+                print("success using T_{}".format(smallprimes[i0]))
+            break
+        if Detail:
+            print("testing combinations...")
+        for opj in ops:
+            op=opi+opj
+            f=op.charpoly()
+            ok = f.issquarefree()
+            if ok:
+                if Detail:
+                    print("success using a combination of T_p for p in {}".format(smallprimes[:i0+1]))
+                break
+        ops += ([opi] + [opi+opj for opj in ops])
+    if not ok:
+        raise RuntimeError("failed to find a 0,1-combination of Tp for p in {} which is semisimple".format(smallprimes))
+    ffac = f.factor()
+    nnf = ffac.matsize()[1]
+    gp_pols = ffac.mattranspose()[1,] # syntax [,1] not allowed
+    pols = [pol for pol in gp_pols]
+    reldims = [pol.poldegree().sage() for pol in pols]
+    dims = [d*chi_degree for d in reldims]
+    # We'll need the coefficients an, if any newforms have dimension >1 and <=dmax.
+    an_needed = [i for i,d in enumerate(dims) if d>1 and d<=dmax]
+    if Detail:
+        print("Need to compute a_n for {} newforms: {}".format(len(an_needed), an_needed))
+
+    s2=time.time()
+    if Detail:
+        print("Computed splitting in {:0.3f}, # newforms = {}".format(s2-s1,nnf))
+        print("relative dims = {},  absolute dims = {}".format(reldims,dims))
+
+    # Compute AL-matrices if character is trivial:
+    if chi_order==1:
+        Qlist = [(pr,pr**e) for pr,e in ZZ(N).factor()]
+        ALs = [gp.mfatkininit(Snew,Q[1])[2] for Q in Qlist]
+        if Detail:
+            print("AL-matrices:")
+            for Q,AL in zip(Qlist,ALs):
+                print("W_{}={}".format(Q[1],AL) )
+
+    if nnf==1 and dims[0]>dmax:
+        if Detail:
+            print("Only one newform and dim={}, so use traceform to get traces".format(dims[0]))
+        traces = gp.mfcoefs(gp.mftraceform(NK), nan)
+        if Detail>1:
+            print("raw traces: {}".format(traces))
+        if chi_degree>1:
+            # This is faster than the more simple
+            # traces = [c.trace() for c in traces]
+            gptrace = gp.eval('c->if(type(c)=="t_POLMOD",trace(c),c*{})'.format(chi_degree))
+            traces = gp.apply(gptrace,traces)
+            if Detail>1:
+                print("traces to QQ: {}".format(traces))
+        traces = traces.sage()[1:]
+        traces[0] = dims[0]
+        if Detail>1:
+            print("final traces: {}".format(traces))
+        traces = [traces]
+    else:  # >1 newform, or just one but its absolute dim is <=dmax
+        hs = [f/fi for fi in pols]
+        if Detail>1:
+            print("fs: {}".format(pols))
+            print("hs: {}".format(hs))
+            print("  with degrees {}".format([h.poldegree() for h in hs]))
+        if Detail>1:
+            print("Starting to compute gcds")
+        As = [(hi*(fi.gcdext(hi)[2])).subst(gp("x"),op) for fi,hi in zip(pols,hs)]
+        if Detail:
+            print("Computed idempotent matrix decomposition")
+        ims = [A.matimage() for A in As]
+        U = gp.matconcat(ims)
+        Uinv = U**(-1) # gp("{}^(-1)".format(U.name()))
+        if Detail:
+            print("Computed U and U^-1")
+        starts = [1+sum(d for d in reldims[:i]) for i in range(len(reldims))]
+        stops = [sum(d for d in reldims[:i+1]) for i in range(len(reldims))]
+        ums = [gp("{}[{}..{},]".format(Uinv.name(),r1,r2)) for r1,r2 in zip(starts,stops)]
+        imums = [imA*umA for imA,umA in zip(ims,ums)]
+        s3=time.time()
+        if Detail:
+            print("Computed projectors in {:0.3f}".format(s3-s2))
+            print("Starting to compute {} Hecke matrices T_n".format(nan))
+        heckemats = gp.mfheckemat(Snew,gp(range(1,nan+1)))
+        s4=time.time()
+        if Detail:
+            print("Computed {} Hecke matrices in {:0.3f}s".format(nan,s4-s3))
+
+        # If we are going to compute any a_n then we now compute
+        # umA*T*imA for all Hecke matrices T, whose traces give the
+        # traces and whose first columns (or any row or column) give
+        # the coefficients of the a_n with respect to some
+        # Q(chi)-basis for the Hecke field.
+
+        # But if we only need the traces then it is faster to
+        # precompute imA*umA=imAumA and then the traces are
+        # trace(imAumA*T).   NB trace(UMV)=trace(VUM)!
+
+        if Detail:
+            print("Computing traces")
+        # Note that computing the trace of a matrix product is faster
+        # than first computing the product and then the trace:
+        trpr = gp("(M1,M2) -> [m,n]=matsize(M1); sum(i=1,m,sum(j=1,n,M1[i,j]*M2[j,i]))")
+        chitraces = [gp("[{}(m,{}) | m <- {}]".format(trpr.name(),imumA.name(),heckemats.name())) for imumA in imums]
+        s4=time.time()
+        if Detail:
+            print("Computed traces to Q(chi) in {:0.3f}".format(s4-s3))
+        gptrace = gp.eval('c->if(type(c)=="t_POLMOD",trace(c),c*{})'.format(chi_degree))
+        traces = [gp.apply(gptrace,chitracesA) for chitracesA in chitraces]
+        traces = [tracesA.sage() for tracesA in traces]
+        s5=time.time()
+        if Detail:
+            print("Computed traces to Z in {:0.3f}".format(s5-s4))
+            for tr in traces:
+                print(tr[:20])
+
+    ans = [None for _ in range(nnf)]
+    bases = [None for _ in range(nnf)]
+    if an_needed:
+        if Detail:
+            print("...computing a_n...")
+        for i in an_needed:
+            dr = reldims[i]
+            if Detail:
+                print("newform #{}/{}, relative dimension {}".format(i,nnf,dr))
+
+            # method: for each irreducible component we have matrices
+            # um and im (sizes dr x n and n x dr where n is the
+            # relative dimension of the whole space) such that for
+            # each Hecke matrix T, its restriction to the component is
+            # um*T*im.  To get the eigenvalue in a suitable basis all
+            # we need do is take any one column (or row): we choose
+            # the first column.  So the computation can be done as
+            # um*(T*im[,1]) (NB the placing of parentheses).
+
+            ans[i] = gp("[{}*(m*({}[,1])) | m <- {}]".format(ums[i].name(),ims[i].name(),heckemats.name()))
+            if Detail:
+                print("ans done")
+                if Detail>1:
+                    print("an: {}...".format(ans[i]))
+
+            # Now compute the bases (of the relative Hecke field over
+            # Q(chi) w.r.t which these coefficients are given.  Here
+            # we use e1 because we picked the first column just now.
+
+            B = ums[i]*op*ims[i]
+            e1 = gp("{}~".format([int(j==0) for j in range(dr)]))
+            cols = [e1]
+            while len(cols)<dr:
+                cols.append(B*cols[-1])
+            W = gp.matconcat(cols)
+            bases[i] = W.mattranspose()**(-1)
+            if Detail>1:
+                print("basis = {}".format(bases[i].lift()))
+
+    # Compute AL-eigenvalues if character is trivial:
+    if chi_order==1:
+        ALeigs = [[
+            [Q[0],gp("({}*({}*({}[,1])))[1]".format(umA.name(),AL.name(),imA.name())).sage()] for Q,AL in zip(Qlist,ALs)]
+                  for umA,imA in zip(ums,ims)]
+        if Detail: print("ALeigs: {}".format(ALeigs))
+    else:
+        ALeigs = [[] for _ in range(nnf)]
+
+    Nko = (N,k,chi_number)
+    #print("len(traces) = {}".format(len(traces)))
+    #print("len(newforms) = {}".format(len(newforms)))
+    #print("len(pols) = {}".format(len(pols)))
+    #print("len(ans) = {}".format(len(ans)))
+    #print("len(ALeigs) = {}".format(len(ALeigs)))
+
+    GP_nfs = [
+        { 'Nko': Nko,
+          'SB': SturmBound,
+          'chipoly': chipoly,
+          'poly': pols[i],
+          'ans': ans[i],
+          'basis': bases[i],
+          'ALeigs': ALeigs[i],
+          'traces': traces[i],
+        }   for i in range(nnf)]
+
+    # We could return these as they are but the next processing step
+    # will fail if the underlying gp process has quit, so we do the
+    # processing here.
+
+    # This processing returns full data but the polynomials have not
+    # yet been polredbested and the an coefficients have not been
+    # optimized (or even made integral):
+    #return GP_nfs
+
+    t1=time.time()
+    if Detail:
+        print("{}: finished constructing GP newforms (time {:0.3f})".format(Nko,t1-t0))
+    nfs = [process_GP_nf(gp, nf, dmax, Detail) for nf in GP_nfs]
+    if len(nfs)>1:
+        nfs.sort(key=lambda f: f['traces'])
+    t2=time.time()
+    if Detail:
+        print("{}: finished first processing of newforms (time {:0.3f})".format(Nko,t2-t1))
+        if Detail>2:
+            for nf in nfs:
+                if 'eigdata' in nf:
+                    print(nf['eigdata']['ancs'])
+    nfs = [bestify_newform(nf,dmax,Detail) for nf in nfs]
+    t3=time.time()
+    if Detail:
+        print("{}: finished bestifying newforms (time {:0.3f})".format(Nko,t3-t2))
+        if Detail>2:
+            for nf in nfs:
+                if 'eigdata' in nf:
+                    print(nf['eigdata']['ancs'])
+    nfs = [integralify_newform(nf,dmax,Detail) for nf in nfs]
+    t4=time.time()
+    if Detail:
+        print("{}: finished integralifying newforms (time {:0.3f})".format(Nko,t4-t3))
+        if Detail>2:
+            for nf in nfs:
+                if 'eigdata' in nf:
+                    print(nf['eigdata']['ancs'])
+        print("Total time for space {}: {:0.3f})".format(Nko,t4-t0))
+    gp.quit()
+    return nfs
+
+def process_GP_nf(gp, GP_nf, dmax=20, Detail=0):
     r"""
     Input is a dict with keys 'Nko' (N,k,chi_number), 'chipoly',  'SB' (Sturm bound), 'GP_newform',  'poly',  'ans',   'ALeigs', 'traces'
 
@@ -528,24 +842,29 @@ def process_GP_nf(GP_nf, dmax=20, Detail=0):
     """
     Nko = GP_nf['Nko']
     chipoly = GP_nf['chipoly']
+    poly = GP_nf['poly']
     SB = GP_nf['SB']
     ALeigs = GP_nf['ALeigs']
     traces = GP_nf['traces']
+    assert traces # not None
+    ans = GP_nf['ans']
+    basis = GP_nf['basis']
 
     # initialize with data needing no more processing:
 
     newform = {'Nko': Nko, 'chipoly': chipoly, 'SB': SB, 'ALeigs':ALeigs, 'traces':traces}
 
-    # Set the polynomial.  This is a polynomial in y, (just y if the
-    # top degree is 1) with coefficients either integers (if the
-    # bottom degree is 1) or polmods with modulus chipoly.  In all
-    # cases rel_poly will be in Qchi[y].
+    # Set the polynomial.  poly is the relative polynomial, in x (so
+    # just x if the top degree is 1) with coefficients either integers
+    # (if the bottom degree is 1) or polmods with modulus chipoly.
+    #  rel_poly is in Qchi[x].
 
-    Qchi = NumberField(chipoly,'z')
-    Qchi_y = PolynomialRing(Qchi,'y')
+    Qx = PolynomialRing(QQ,'x')
+    Qchi = NumberField(chipoly,'t')
+    Qchi_x = PolynomialRing(Qchi,'x')
     chi_degree = chipoly.degree()
 
-    rel_poly = gp2sage_ypoly(GP_nf['poly'], Qchi_y)
+    rel_poly = gp2sage_ypoly(poly, Qchi_x)
     rel_degree = rel_poly.degree()
 
     newform['dim'] = dim = chi_degree*rel_degree
@@ -561,59 +880,64 @@ def process_GP_nf(GP_nf, dmax=20, Detail=0):
         if Detail>1:
             print("rel_poly for {} is {}".format(Nko,rel_poly))
 
-    # the newform will have its 'traces' field set already if it is
-    # the only newform in its (N,k,chi)-newspace.  Otherwise we will
-    # have set its 'ans' field and now compute the traces from that.
-    # The 'ans' field will be None if we don't need the an, which is
-    # if (1) the dimension is greater than dmax and (2) the
-    # (N,k,chi)-newspace is irreducible.
+    # The newform has its 'traces' field set already. We will have set
+    # its 'ans' field where relevant (1<dim<=dmax) to a list of lists
+    # of coefficients in Qchi.  In the genuinely relative case we'll
+    # need to absolutise these.
 
-    ans = GP_nf['ans']
     if Detail>1: print("raw ans = {}".format(ans))
 
-    # dimension 1 spaces: special case simpler traces, and no more to do:
+    # dimension 1 spaces: little to do
 
-    Qx = PolynomialRing(QQ,'x')
-    x = Qx.gen()
     if dim==1:  # e.g. (11,2,1)[0]
-        traces = ans.sage()[1:]
-        if newform['traces']==None:
-            newform['traces'] = traces
-        newform['poly'] = x
-        if Detail>1: print("traces = {}".format(newform['traces']))
+        newform['poly'] = Qx.gen()
         return newform
-
-    # All dimensions >1: traces
-
-    if newform['traces']==None:
-        traces = [abstrace(an,dim) for an in ans][1:]
-        # fix up trace(a_1)
-        traces[0]=dim
-        if Detail>1: print("traces = {}".format(traces))
-        newform['traces'] = traces
 
     # no more data required for non-small spaces:
 
     if not small:
         return newform
 
-    if chi_degree==1 or rel_degree==1: # e.g. (13,4,1)[1] or (25,2,4)[0] respectively
-
-        # field is not relative, ans are t_POLMOD modulo GP_pol in y
-        # or t, so if we lift them and take their coefficient vector
-        # we'll get the coordinates w.r.t. a power basis for the field
-        # defined by either rel_poly or chipoly.
-
+    if chi_degree==1: # e.g. (13,4,1)[1]; now rel_degree>1
+        # field is not relative, ans are lists of integers, coeffs w.r.t. basis
         t0=time.time()
-        ancs = [an.lift().Vecrev(dim).sage() for an in ans][1:]
+        ancs = [an.sage() for an in ans]
         t1 = time.time()
         if Detail:
             print("time for converting an coeffs to QQ = {}".format(t1-t0))
-        basis = [[int(i==j) for j in range(dim)] for i in range(dim)]
-        newform['poly'] = poly = Qx(rel_poly) if chi_degree==1 else Qx(chipoly)
+            if Detail>1:
+                print("Coefficient vectors of ans: {}".format(ancs))
+        newform['poly'] = poly = Qx(rel_poly)
+        # basis is a gp matrix over Q
+        basis = basis.sage()
 
-        if Detail>1:
-            print("Coefficient vectors of ans: {}".format(ancs))
+        newform['eigdata'] = {
+            'pol': poly.list(),
+            'bas': basis,
+            'n': 0, # temporary
+            'm': 0, # temporary
+            'ancs': ancs,
+            }
+
+        return newform
+
+    if rel_degree==1: # e.g. (25,2,4)[0]; now chi_degree>1
+
+        # the field is not relative; ans is a lists of 1-lists of
+        # t_POLMOD modulo a GP poly in t, so we lift them and take
+        # their coefficient vector to get the coordinates w.r.t. a
+        # power basis for the field defined by chipoly.
+
+        t0=time.time()
+        ancs = [an[1].lift().Vecrev(dim).sage() for an in ans] # list of lists of integers/rationals
+        t1 = time.time()
+        if Detail:
+            print("time for converting an coeffs to QQ = {}".format(t1-t0))
+            if Detail>1:
+                print("Coefficient vectors of ans: {}".format(ancs))
+        newform['poly'] = poly = Qx(chipoly)
+        # basis is a 1x1 gp matrix over Qchi, so we want the power basis for Qchi: trivial
+        basis = [[int(i==j) for j in range(dim)] for i in range(dim)]
 
         newform['eigdata'] = {
             'pol': poly.list(),
@@ -628,12 +952,15 @@ def process_GP_nf(GP_nf, dmax=20, Detail=0):
     # Now we are in the genuinely relative case where chi_degree>1 and rel_degree>1
     # e.g. (25,2,5)
 
+    # Now ans is a (python) list of nan (GP) lists of d_rel elements
+    # of Qchi, and basis is a GP d_rel x d_rel matrix over Qchi
+
     #Setting the Hecke field as a relative extension of Qchi and as an absolute field:
 
     t0=time.time()
     Frel  = Qchi.extension(rel_poly,'b')
     abs_poly = Frel.absolute_polynomial()
-    newform['poly'] = abs_poly(x)
+    newform['poly'] = abs_poly(Qx.gen())
     t1 = time.time()
     if Detail:
         print("absolute poly = {}".format(abs_poly))
@@ -642,23 +969,29 @@ def process_GP_nf(GP_nf, dmax=20, Detail=0):
     Fabs = Frel.absolute_field('a')
     rel2abs = Fabs.structure()[1] # the isomorphism Frel --> Fabs
     z = rel2abs(Qchi.gen())
-    y = rel2abs(Frel.gen())
     zpow = [z**i for i in range(chi_degree)]
-    ypow = [y**j for j in range(rel_degree)]
-    basis = sum([[(zpowi*ypowj).list() for zpowi in zpow] for ypowj in ypow],[])
+    # convert basis to a Sage list of lists of elements of Qchi:
+    our_basis_coeffs = [[gp2sage_tpolmod(basis[i+1,j+1],Qchi) for j in range(rel_degree)] for i in range(rel_degree)]
+    #print("our basis coeffs: {}".format(our_basis_coeffs))
+    our_basis_rel = [Frel(b) for b in our_basis_coeffs]
+    #print("our basis (Sage, relative): {}".format(our_basis_rel))
+    our_basis_abs = [rel2abs(b) for b in our_basis_rel]
+    #print("our basis (Sage, absolute): {}".format(our_basis_abs))
+    basis = sum([[(zpowi*yj).list() for zpowi in zpow] for yj in our_basis_abs],[])
+    #print("basis (Sage, matrix/Q): {}".format(basis))
     t2 = time.time()
     if Detail>1:
         print("Time to construct Fabs and y,z in Fabs and basis matrix = {}".format(t2-t1))
 
-    #  Get coordinates of the an.  After lifting twice these are
-    #  polynomials in Q[t][y] so simply extracting coefficient vectors
-    #  gives their coordinates in terms of the basis z^i*y^j where
-    #  Qchi=Q(z) and F=Qchi(y).  To relate these to the power basis of
-    #  Fabs we only need the change of basis matrix whose rows give
-    #  the power basis coefficients of each z^i*y^j (in the right
-    #  order).
+    #  Convert coordinates of the an.  After lifting these are lists
+    #  of lists of polynomials in Q[t] so simply extracting
+    #  coefficient vectors gives their coordinates in terms of the
+    #  basis z^i*y_j where Qchi=Q(z) and [y_1,...,y_d_rel] is the
+    #  Qchi-basis of Frel.  To relate these to the power basis of Fabs
+    #  we only need the change of basis matrix whose rows give the
+    #  power basis coefficients of each z^i*y_j (in the right order).
 
-    ancs = [[c.lift().Vecrev(chi_degree).sage() for c in a.lift().Vecrev(rel_degree)] for a in ans][1:]
+    ancs = [[c.lift().Vecrev(chi_degree).sage() for c in an] for an in ans]
     t4 = time.time()
     if Detail>1:
         print("Time to construct ancs) = {}".format(t4-t2))
@@ -772,6 +1105,7 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
     # Make primitive:
     S, V1, V2 = C1.smith_form(transformation=True)
     S = S.submatrix(nrows=d)
+    #print("About to invert matrices of size {}, {}".format(S.dimensions(),V2.dimensions()))
     C2 = C1*V2*S**(-1)
     B2 = S*V2**(-1)*B1
     if debug:
@@ -796,6 +1130,7 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
         print("U = {}\ndet(U)={}".format(U,U.det()))
         assert U.det() in [1,-1]
     Cred = C2*U
+    #print("About to invert matrix of size {}".format(U.dimensions()))
     Bred = U**(-1)*B2
     # Check output is consistent with input:
     if debug:
@@ -872,7 +1207,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
 
                 screen.write(" (o={}) ".format(i+1))
                 t0=time.time()
-                newforms = Newforms(N,k,i+1,dmax,nan, Detail)
+                newforms = NewformTraces(N,k,i+1,dmax,nan, Detail)
                 t0=time.time()-t0
                 line = data_to_string(N,k,i+1,t0,newforms) + "\n"
                 if out:
@@ -910,7 +1245,7 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
         for i in range(len(Chars)):
             screen.write(" (o={}) ".format(i+1))
             t0=time.time()
-            newforms = Newforms(N,1,i+1,dmax,nan, Detail)
+            newforms = NewformTraces(N,1,i+1,dmax,nan, Detail)
             t0=time.time()-t0
             line = data_to_string(N,1,i+1,t0,newforms) + "\n"
             if out:

@@ -161,7 +161,7 @@ def polredbest_stable(pol):
     return sagepol(f,x)
 
 def compare_eigdata(k, ed1, ed2, debug=1):
-    #if k==(25,2,5): debug=1
+    #if k==(90,2,12): debug=1
     if debug: print("Comparing eigdata for space {}".format(k))
     if debug>1: print("Comparing eigdata\n1: {}\n2: {}".format(ed1,ed2))
     Qx = PolynomialRing(QQ,'x')
@@ -210,7 +210,14 @@ def compare_eigdata(k, ed1, ed2, debug=1):
 def compare_data(d1,d2, keylist=['dims', 'traces', 'polys','ALs', 'eigdata'], verbose=False):
     assert d1.keys()==d1.keys()
     QX = PolynomialRing(QQ,'x')
+    nforms = len(d1.keys())
+    nstep = ZZ(int(nforms/20.0))
+    nf = 0
+    print("Comparing data for {} newforms".format(nforms))
     for k in d1.keys():
+        nf+=1
+        if nf%nstep==0:
+            print("compared {}/{} ({:0.3f}%)".format(nf,nforms,100.0*nf/nforms))
         if d1[k]!=d2[k]:
             for key in keylist:
                 # take copies! we want to be able to change these without affecting the input dicts
