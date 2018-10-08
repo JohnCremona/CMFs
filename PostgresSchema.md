@@ -3,7 +3,7 @@ Spaces
 
 Table name: `mf_newspaces`.
 
-This table represents (Galois orbits of) spaces of newfors`S_k^{new}(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
+This table represents (Galois orbits of) spaces of newforms `S_k^{new}(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
 
 Column | Type | Notes
 -------|------|------
@@ -11,6 +11,7 @@ label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
 odd_weight | boolean | whether k is odd
+analytic_conductor | double precision | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)
 Nk2 | integer | N*k^2
 char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
 char_orbit_label | text | letter encoded version of (i)
@@ -30,7 +31,8 @@ eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding 
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
-AL_dims | jsonb | For spaces with trivial character, this is a list of lists of pairs [AL_eigs,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, and n is the total dimension of the subspace of newforms that lie in the intersection of the corresponding eigenspaces.
+AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
+plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
 
 Table name: `mf_newspace_portraits`
 
@@ -62,12 +64,21 @@ Table name: `mf_gamma1_subspaces`.
 
 Column | Type | Notes
 -------|------|------
+label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
 level | integer | level N of the cuspidal space S_k(Gamma_1(N))
 weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
 dim | integer | dimension of S_k(Gamma_1(N))
 sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed in S^k(Gamma_1(N))
 sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
 sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
+
+Table name: `mf_gamma1_portraits`.
+
+Column | Type | Notes
+-------|------|------
+label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
+portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
+
 
 Newforms
 ========
@@ -81,6 +92,7 @@ space_label | text | (N.k.i)
 level | integer | (N)
 weight | smallint | (k)
 odd_weight | boolean | whether k is odd
+analytic_conductor | double precision | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)
 Nk2 | integer | N*k^2
 char_orbit_index | integer | (i) As above
 char_orbit_label | text | letter encoded version of (i)
@@ -89,7 +101,7 @@ prim_orbit_index | integer | char_orbit for the primitive version of this charac
 char_order | integer | the order of the character
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | boolean | whether the character
+char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_degree | integer | Degree of the (cyclotomic) character field
 hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
@@ -97,13 +109,16 @@ dim | integer | the dimension of this Hecke orbit
 field_poly | jsonb | list of integers giving defining polynomial for the Hecke field (standard Sage order of coefficients)
 is_polredabs | boolean | whether the polynomial has been reduced by Pari's `polredabs`
 nf_label | text | LMFDB label for the corresponding number field (can be NULL)
+is_self_dual | smallint | 1 if L-func is self-dual (coeff field is totally real), -1 if not self-dual, 0 if unknown
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
 hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse bases that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | jsonb | List of integers, giving the denominators of the inverse basis
 hecke_ring_index | jsonb | (a divisor of) the index of the order generated by the Hecke eigenvalues in the maximal order.  Stored as its factorization, as a list of pairs [p,e].
 hecke_ring_index_proven | boolean | whether the index has been proven correct (computing the maximal order may not be possible)
-trace_hash | bigint | appropriate linear combination of the a_p between 2^12 and 2^13
+trace_hash | bigint | linear combination of the a_p between 2^12 and 2^13 reduced mod 2^61-1 as defined in BSSVY
+trace_zratio | text | proportion of zero a_p values for p <= 2^13 (rounded to three decimal places)
+trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^13 (rounded to three decimal places)
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 isogeny_class_label | text | the isogeny class label of the corresponding elliptic curve or modular abelian variety (could be null if not yet in the database)
 analytic_rank | smallint |
@@ -115,8 +130,9 @@ has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=u
 is_twist_minimal | boolean |
 inner_twist | jsonb | List of integers giving the char_orbit values for the nontrivial Dirichlet characters that give inner twists
 inner_twist_proved | boolean | whether the inner twist columns are provably correct
-atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character)
+atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
 fricke_eigenval | smallint | product of the Atkin-Lehner eigenvalues (NULL if nontrivial character)
+atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
 trace_display | jsonb | list of the first four a_n traces for display on search page results
@@ -148,8 +164,8 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
 conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
 embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
-embedding_root_real | real | real part of the root corresponding to this embedding
-embedding_root_imag | real | imaginary part of the root corresponding to this embedding
+embedding_root_real | double precision | real part of the root corresponding to this embedding
+embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
 angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p, with `\theta_p` between -0.5 and 0.5
 
