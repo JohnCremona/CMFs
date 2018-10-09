@@ -927,6 +927,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             chi = triples[0][0]
             degree = 2*len(triples)
             row = constant_lf(level, weight, degree)
+            row['origin'] = rational_origin(chi, a)
+            print row['origin']
             row['self_dual'] = 't'
             row['conjugate'] = '\N'
             row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in triples])
@@ -937,7 +939,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['positive_zeros'].sort()
             zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in triples], key = lambda x : x[1])
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
-            row['origin'] = rational_origin(chi, a)
             # character
             if degree == 2:
                 row['central_character'] = rows[triples[0]][central_character]
