@@ -947,7 +947,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 chiprod_index = chiprod.number()
                 chiprod_index_above = None
                 try:
-                    chiprod_index_above = index_above(level, halfdegree, chiprod_index)
+                    chiprod_index_above = index_above(level, len(triples), chiprod_index)
                     row['central_character'] = "%s.%s" % (row['conductor'], chiprod_index_above)
                 except NotImplementedError, AttributeError:
                     row['central_character'] = "%s.%s" % (level, chiprod_index)
