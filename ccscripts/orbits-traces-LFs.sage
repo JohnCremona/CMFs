@@ -29,7 +29,35 @@ else:
     sys.exit("hostname = %s" % hostname)
 
 
+def index_above(n, k ,c):
+    if c == 1:
+        return c
+    h = DirichletGroup_conrey(n)[c].primitive_character()
+    assert (h*h).is_trivial()
+    G = DirichletGroup_conrey(n**k)
+    if c == n - 1:
+        if G[-1].primitive_character() == h:
+            return n**k - 1
+    tor2 = []
+    for g in G.gens():
+        mo =  G[g].multiplicative_order()
+        if mo % 2 == 0:
+            #print g, mo
+            tor2.append(power_mod(g, mo//2, G.modulus()))
 
+    # try to see if is just a generator
+    for t in tor2:
+        if h == G[t].primitive_character():
+            return t
+
+
+    for k in range(2**len(tor2)):
+        if ZZ(k).popcount() == 1:
+            continue
+        chi = prod([ G[t] for t, l in zip(tor2, ZZ(k).digits(base = 2, padto = len(tor2))) if l != 0])
+        if chi != 1 and chi.primitive_character() == h:
+            return chi.number()
+    
 
 ####################
 # postgres stuff
@@ -917,17 +945,13 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 G = DirichletGroup_conrey(level)
                 chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in triples])
                 chiprod_index = chiprod.number()
-                # trivial
-                if chiprod_index == 1:
-                    row['central_character'] = "%s.%s" % (row['conductor'], 1)
-                # -1
-                elif chiprod_index == level - 1:
-                    row['central_character'] = "%s.%s" % (row['conductor'], row['conductor'] - 1)
-                # ??
-                else:
-                    # lift it to the conductor
-                    chiprod_index = DirichletGroup_conrey(row['conductor']).from_sage_character(chiprod.extend(row['conductor'])).number()
-                    row['central_character'] = "%s.%s" % (row['conductor'], chiprod_index)
+                chiprod_index_above = None
+                try:
+                    chiprod_index_above = index_above(level, halfdegree, chiprod_index)
+                    row['central_character'] = "%s.%s" % (row['conductor'], chiprod_index_above)
+                except NotImplementedError, AttributeError:
+                    row['central_character'] = "%s.%s" % (level, chiprod_index)
+
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 0.5:
                 row['sign_arg'] -= 1
