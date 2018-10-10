@@ -29,6 +29,7 @@ else:
     sys.exit("hostname = %s" % hostname)
 
 
+from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
 def index_above(n, k ,c):
     if c == 1:
         return c
@@ -57,7 +58,19 @@ def index_above(n, k ,c):
         chi = prod([ G[t] for t, l in zip(tor2, ZZ(k).digits(base = 2, padto = len(tor2))) if l != 0])
         if chi != 1 and chi.primitive_character() == h:
             return chi.number()
-    
+def wrapper_index_above(n, k, c):
+    try:
+        C = index_above(n, k, c)
+        N = n**k
+        if C is None:
+            raise AttributeError
+    except (NotImplementedError, AttributeError):
+        C = c
+        N = n
+    print '%s.%s' % (N, C)
+
+def call_index_above(n, k, c):
+    return subprocess.check_output(["sage", "-python","/home/edgarcosta/CMF/ccscripts/index.py"]+ map(str, [n, k, c]))
 
 ####################
 # postgres stuff
@@ -946,12 +959,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 G = DirichletGroup_conrey(level)
                 chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in triples])
                 chiprod_index = chiprod.number()
-                chiprod_index_above = None
-                try:
-                    chiprod_index_above = index_above(level, len(triples), chiprod_index)
-                    row['central_character'] = "%s.%s" % (row['conductor'], chiprod_index_above)
-                except (NotImplementedError, AttributeError):
-                    row['central_character'] = "%s.%s" % (level, chiprod_index)
+                if chiprod_index == 1:
+                    row['central_character'] = "%s.%s" % (row['conductor'], 1)
+                else:
+                    row['central_character'] = call_index_above(level, len(triples), chiprod_index)
 
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 0.5:
