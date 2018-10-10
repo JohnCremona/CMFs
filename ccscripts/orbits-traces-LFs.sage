@@ -71,9 +71,10 @@ def wrapper_index_above(n, k, c):
 import subprocess
 def call_index_above(n, k, c):
     try:
-        res = subprocess.check_output(["sage", "-python","/home/edgarcosta/CMF/ccscripts/index.py"]+ map(str, [n, k, c]))
+        res = subprocess.check_output(["sage", "-python","/home/edgarcosta/CMFs/ccscripts/index.py"]+ map(str, [n, k, c]))
         # getting rid of the error message
-        return res.split('\n')[-1]
+        print res.split('\n')
+        return res.split('\n')[-2]
     except subprocess.CalledProcessError:
         return '%s.%s' % (n, c)
 
