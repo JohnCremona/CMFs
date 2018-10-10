@@ -1004,7 +1004,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         # if dim == 1, drop row
         if len(triples) == 1:
+            print len(rows), triples[0]
             rows.pop(triples[0])
+            print len(rows)
+            print
 
 
 
