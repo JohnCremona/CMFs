@@ -68,9 +68,12 @@ def wrapper_index_above(n, k, c):
         C = c
         N = n
     print '%s.%s' % (N, C)
-
+import subprocess
 def call_index_above(n, k, c):
-    return subprocess.check_output(["sage", "-python","/home/edgarcosta/CMF/ccscripts/index.py"]+ map(str, [n, k, c]))
+    try:
+        return subprocess.check_output(["sage", "-python","/home/edgarcosta/CMF/ccscripts/index.py"]+ map(str, [n, k, c]))
+    except subprocess.CalledProcessError:
+        return '%s.%s' % (n, c)
 
 ####################
 # postgres stuff
