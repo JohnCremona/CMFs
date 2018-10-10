@@ -332,6 +332,8 @@ def from_power_sums(ps):
 def prod_plot_values(factor_plot_deltas, factor_values):
     assert len(factor_plot_deltas) == len(factor_values)
     halfdegree = len(factor_values)
+    if halfdegree == 1:
+        return factor_plot_deltas[0], factor_values[0]
     factor_plot_values = [ [ ( j * factor_plot_deltas[k],  z) for j, z in enumerate(values) ] for k, values in enumerate(factor_values)]
     interpolations = [spline(elt) for elt in factor_plot_values]
     max_delta = max(factor_plot_deltas)
