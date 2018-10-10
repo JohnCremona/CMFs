@@ -31,8 +31,7 @@ else:
 def index_above(n, k ,c):
     if c == 1:
         return n**k, 1
-    if c == n - 1:
-        if n % 2 == 1 or n % 4 == 0:
+    if c == n - 1 and  (n % 2 == 1 or n % 4 == 0):
         return n**k, n**k - 1
     else:
         # DirichletGroup_conrey is to slow!
