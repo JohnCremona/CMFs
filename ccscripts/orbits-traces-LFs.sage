@@ -950,7 +950,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 try:
                     chiprod_index_above = index_above(level, len(triples), chiprod_index)
                     row['central_character'] = "%s.%s" % (row['conductor'], chiprod_index_above)
-                except NotImplementedError, AttributeError:
+                except (NotImplementedError, AttributeError):
                     row['central_character'] = "%s.%s" % (level, chiprod_index)
 
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
