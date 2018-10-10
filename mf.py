@@ -571,57 +571,60 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
         gp.quit()
         return []
 
-    # First just compute a few Hecke matrices, to find a splitting operator
-    s0=time.time()
-    nan0=10  ## we'll test all nonzero subsums of the first nan0 T_p to find a semisimple one
-    # TODO: replace this short list of fixed size (NB 5 fails quite soon) with an iterator yielding the next Tp matrix
-    
-    smallprimes = []
-    p=ZZ(2)
-    while len(smallprimes)<nan0:
-        if N%p:
-            smallprimes += [p]
-        p = p.next_prime()
-    if Detail:
-        print("Starting to compute {} Hecke matrices T_p for p in {}".format(nan0,smallprimes))
-    heckemats = [T for T in gp.mfheckemat(Snew,gp(smallprimes))]
+    # First just compute Hecke matrices one at a time, to find a splitting operator
+    def Hecke_op_iter():
+        p=ZZ(1)
+        while True:
+            p = p.next_prime()
+            # while p.divides(N):
+            #     p=p.next_prime()
+            print("Computing T_{}".format(p))
+            yield p, gp.mfheckemat(Snew,p)
+
+    Tp_iter = Hecke_op_iter()
+    p, op = Tp_iter.next()
     s1=time.time()
     if Detail:
-        print("Computed {} Hecke matrices in {:0.3f}s".format(nan0,s1-s0))
-    op = heckemats[0]
-    if Detail:
-        print("testing T_{}".format(smallprimes[0]))
+        print("testing T_{}".format(p))
     f = op.charpoly()
     ok = f.issquarefree()
     if ok and Detail:
         print("Lucky first time: semisimple")
-    ops=[op]
-    i0=0
-    while i0+1<nan0 and not ok:
-        i0 += 1
-        opi = heckemats[i0]
+    ops=[(p,op)]
+    while not ok:
+        pi, opi = Tp_iter.next()
         if Detail:
-            print("testing T_{}".format(smallprimes[i0]))
+            print("testing T_{}".format(pi))
         f = opi.charpoly()
         ok = f.issquarefree()
         if ok:
             op = opi
             if Detail:
-                print("success using T_{}".format(smallprimes[i0]))
+                print("success using T_{}".format(pi))
             break
-        if Detail:
-            print("testing combinations...")
-        for opj in ops:
-            op=opi+opj
-            f=op.charpoly()
-            ok = f.issquarefree()
-            if ok:
+        else:
+            #ops.append((pi,opi))
+            ops += [(pi,opi)]
+            if Detail:
+                print("T_{} not semisimple".format(pi))
+                print("testing combinations...")
+            for j in range(5):
+                co = [ZZ.random_element(-5,5) for _ in ops]
+                while not co:
+                    co = [ZZ.random_element(-5,5) for _ in ops]
+
                 if Detail:
-                    print("success using a combination of T_p for p in {}".format(smallprimes[:i0+1]))
-                break
-        ops += ([opi] + [opi+opj for opj in ops])
+                    print("Testing lin comb of {} ops with coeffs {}".format(len(co),co))
+                op = sum([ci*opi[1] for ci,opi in zip(co,ops)])
+                f=op.charpoly()
+                ok = f.issquarefree()
+                if ok:
+                    if Detail:
+                        print("success using {}-combo of T_p for p in {}".format(co,[opi[0] for opi in ops]))
+                    break
+
     if not ok:
-        raise RuntimeError("failed to find a 0,1-combination of Tp for p in {} which is semisimple".format(smallprimes))
+        raise RuntimeError("failed to find a 0,1-combination of Tp which is semisimple")
     ffac = f.factor()
     nnf = ffac.matsize()[1]
     gp_pols = ffac.mattranspose()[1,] # syntax [,1] not allowed
@@ -901,7 +904,7 @@ def process_GP_nf(gp, GP_nf, dmax=20, Detail=0):
     if chi_degree==1: # e.g. (13,4,1)[1]; now rel_degree>1
         # field is not relative, ans are lists of integers, coeffs w.r.t. basis
         t0=time.time()
-        ancs = [an.sage() for an in ans]
+        ancs = ans.sage()
         t1 = time.time()
         if Detail:
             print("time for converting an coeffs to QQ = {}".format(t1-t0))
