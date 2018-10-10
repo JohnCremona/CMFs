@@ -1002,12 +1002,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             rational_rows[(orbit_label, a)] = [row[key] for key in schema_lf]
             instances[(orbit_label, a)] = tuple_instance(row)
 
-        # if dim == 1, drop row
-        if len(triples) == 1:
-            print len(rows), triples[0]
-            rows.pop(triples[0])
-            print len(rows)
-            print
+            # if dim == 1, drop row
+            if len(triples) == 1:
+                rows.pop(triples[0])
 
 
 
