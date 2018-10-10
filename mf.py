@@ -525,7 +525,7 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
             for nf in nfs:
                 if 'eigdata' in nf:
                     print(nf['eigdata']['ancs'])
-        print("Total time for space {}: {:0.3f})".format(Nko,t4-t0))
+        print("Total time for space {}: {:0.3f}".format(Nko,t4-t0))
     gp.quit()
     return nfs
 
@@ -578,7 +578,7 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
             p = p.next_prime()
             # while p.divides(N):
             #     p=p.next_prime()
-            print("Computing T_{}".format(p))
+            #print("Computing T_{}".format(p))
             yield p, gp.mfheckemat(Snew,p)
 
     Tp_iter = Hecke_op_iter()
@@ -615,12 +615,12 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
 
                 if Detail:
                     print("Testing lin comb of {} ops with coeffs {}".format(len(co),co))
-                op = sum([ci*opi[1] for ci,opi in zip(co,ops)])
+                op = sum([ci*opj[1] for ci,opj in zip(co,ops)])
                 f=op.charpoly()
                 ok = f.issquarefree()
                 if ok:
                     if Detail:
-                        print("success using {}-combo of T_p for p in {}".format(co,[opi[0] for opi in ops]))
+                        print("success using {}-combo of T_p for p in {}".format(co,[opj[0] for opj in ops]))
                     break
 
     if not ok:
@@ -829,7 +829,7 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
             for nf in nfs:
                 if 'eigdata' in nf:
                     print(nf['eigdata']['ancs'])
-        print("Total time for space {}: {:0.3f})".format(Nko,t4-t0))
+        print("Total time for space {}: {:0.3f}".format(Nko,t4-t0))
     gp.quit()
     return nfs
 
@@ -1224,6 +1224,17 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
         out.close()
     #return nspaces
 
+def OneSpace(N, k, char_number, dmax=20, nan=100, filename=None, Detail=0):
+    if filename==None:
+        filename = "{}.{}.{}.txt".format(N, k, char_number)
+    out = open(filename, 'w')
+    t0=time.time()
+    newforms = NewformTraces(N,k,char_number,dmax,nan, Detail)
+    t0=time.time()-t0
+    line = data_to_string(N,k,char_number,t0,newforms) + "\n"
+    out.write(line)
+    out.close()
+    print("{} newforms computed in {:0.3f}s.  Output written to {}".format(len(newforms),t0,filename))
 
 def Nspaces(Nk2min,Nk2max):
     Nmax = int(Nk2max/4.0)
