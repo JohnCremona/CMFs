@@ -938,10 +938,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 G = DirichletGroup_conrey(level)
                 chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in triples])
                 chiprod_index = chiprod.number()
-                if chiprod_index == 1:
-                    row['central_character'] = "%s.%s" % (row['conductor'], 1)
-                else:
-                    row['central_character'] = "%s.%s" % index_above(level, len(triples), chiprod_index)
+                row['central_character'] = "%s.%s" % (level, chiprod_index)
 
             row['sign_arg'] = sum([rows[elt][sign_arg] for elt in triples])
             while row['sign_arg'] > 0.5:
