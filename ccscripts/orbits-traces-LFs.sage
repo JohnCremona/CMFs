@@ -1007,6 +1007,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             # if dim == 1, drop row
             if len(triples) == 1:
                 rows.pop(triples[0])
+                instances.pop(triples[0])
 
 
 
