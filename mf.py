@@ -160,7 +160,7 @@ def NewSpace(N, k, chi_number,Detail=0):
 
 # First working version, later repalced by more efficient version:
 
-def oldNewforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
+def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
     # N and k are Sage ints but chi is a gp vector
     Chars = DirichletCharacterGaloisReps(N)
     if chi_number<1 or chi_number>len(Chars):
@@ -499,7 +499,7 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t1=time.time()
     if Detail:
         print("{}: finished constructing GP newforms (time {:0.3f})".format(Nko,t1-t0))
-    nfs = [process_GP_nf(gp, nf, dmax, Detail) for nf in GP_nfs]
+    nfs = [process_GP_nf_v1(nf, dmax, Detail) for nf in GP_nfs]
     if len(nfs)>1:
         nfs.sort(key=lambda f: f['traces'])
     t2=time.time()
@@ -995,6 +995,166 @@ def process_GP_nf(gp, GP_nf, dmax=20, Detail=0):
     #  power basis coefficients of each z^i*y_j (in the right order).
 
     ancs = [[c.lift().Vecrev(chi_degree).sage() for c in an] for an in ans]
+    t4 = time.time()
+    if Detail>1:
+        print("Time to construct ancs) = {}".format(t4-t2))
+    ancs = [sum([anci for anci in anc],[]) for anc in ancs]
+    if Detail>1:
+        print("Coefficient vectors of ans: {}".format(ancs))
+
+    newform['eigdata'] = {
+        'pol': abs_poly.list(),
+        'bas': basis,
+        'n': 0, # temporary
+        'm': 0, # temporary
+        'ancs': ancs,
+    }
+
+    return newform
+
+def process_GP_nf_v1(GP_nf, dmax=20, Detail=0):
+    r"""
+    Input is a dict with keys 'Nko' (N,k,chi_number), 'chipoly',  'SB' (Sturm bound), 'GP_newform',  'poly',  'ans',   'ALeigs', 'traces'
+
+    Output adds 'traces' (unless already computed), and also 'eigdata' if 1<dimension<=dmax
+    We do not yet use polredbest or optimize an coeffients
+
+    NB This must be called on  each newform *before* the GP process associated with the data has been terminated.
+
+    """
+    Nko = GP_nf['Nko']
+    chipoly = GP_nf['chipoly']
+    SB = GP_nf['SB']
+    ALeigs = GP_nf['ALeigs']
+    traces = GP_nf['traces']
+
+    # initialize with data needing no more processing:
+
+    newform = {'Nko': Nko, 'chipoly': chipoly, 'SB': SB, 'ALeigs':ALeigs, 'traces':traces}
+
+    # Set the polynomial.  This is a polynomial in y, (just y if the
+    # top degree is 1) with coefficients either integers (if the
+    # bottom degree is 1) or polmods with modulus chipoly.  In all
+    # cases rel_poly will be in Qchi[y].
+
+    Qchi = NumberField(chipoly,'z')
+    Qchi_y = PolynomialRing(Qchi,'y')
+    chi_degree = chipoly.degree()
+
+    rel_poly = gp2sage_ypoly(GP_nf['poly'], Qchi_y)
+    rel_degree = rel_poly.degree()
+
+    newform['dim'] = dim = chi_degree*rel_degree
+    small = (dmax==0) or (dim<=dmax)
+
+    # for 'small' spaces we compute more data, where 'small' means
+    # dimension<=dmax (unless dmax==0 in which case all spaces are
+    # deemed small).  However spaces of dimension 1 never need the
+    # additional data.
+
+    if Detail:
+        print("{}: degree = {} = {}*{}".format(Nko, dim, chi_degree, rel_degree))
+        if Detail>1:
+            print("rel_poly for {} is {}".format(Nko,rel_poly))
+
+    # the newform will have its 'traces' field set already if it is
+    # the only newform in its (N,k,chi)-newspace.  Otherwise we will
+    # have set its 'ans' field and now compute the traces from that.
+    # The 'ans' field will be None if we don't need the an, which is
+    # if (1) the dimension is greater than dmax and (2) the
+    # (N,k,chi)-newspace is irreducible.
+
+    ans = GP_nf['ans']
+    if Detail>1: print("raw ans = {}".format(ans))
+
+    # dimension 1 spaces: special case simpler traces, and no more to do:
+
+    Qx = PolynomialRing(QQ,'x')
+    x = Qx.gen()
+    if dim==1:  # e.g. (11,2,1)[0]
+        traces = ans.sage()[1:]
+        if newform['traces']==None:
+            newform['traces'] = traces
+        newform['poly'] = x
+        if Detail>1: print("traces = {}".format(newform['traces']))
+        return newform
+
+    # All dimensions >1: traces
+
+    if newform['traces']==None:
+        traces = [abstrace(an,dim) for an in ans][1:]
+        # fix up trace(a_1)
+        traces[0]=dim
+        if Detail>1: print("traces = {}".format(traces))
+        newform['traces'] = traces
+
+    # no more data required for non-small spaces:
+
+    if not small:
+        return newform
+
+    if chi_degree==1 or rel_degree==1: # e.g. (13,4,1)[1] or (25,2,4)[0] respectively
+
+        # field is not relative, ans are t_POLMOD modulo GP_pol in y
+        # or t, so if we lift them and take their coefficient vector
+        # we'll get the coordinates w.r.t. a power basis for the field
+        # defined by either rel_poly or chipoly.
+
+        t0=time.time()
+        ancs = [an.lift().Vecrev(dim).sage() for an in ans][1:]
+        t1 = time.time()
+        if Detail:
+            print("time for converting an coeffs to QQ = {}".format(t1-t0))
+        basis = [[int(i==j) for j in range(dim)] for i in range(dim)]
+        newform['poly'] = poly = Qx(rel_poly) if chi_degree==1 else Qx(chipoly)
+
+        if Detail>1:
+            print("Coefficient vectors of ans: {}".format(ancs))
+
+        newform['eigdata'] = {
+            'pol': poly.list(),
+            'bas': basis,
+            'n': 0, # temporary
+            'm': 0, # temporary
+            'ancs': ancs,
+            }
+
+        return newform
+
+    # Now we are in the genuinely relative case where chi_degree>1 and rel_degree>1
+    # e.g. (25,2,5)
+
+    #Setting the Hecke field as a relative extension of Qchi and as an absolute field:
+
+    t0=time.time()
+    Frel  = Qchi.extension(rel_poly,'b')
+    abs_poly = Frel.absolute_polynomial()
+    newform['poly'] = abs_poly(x)
+    t1 = time.time()
+    if Detail:
+        print("absolute poly = {}".format(abs_poly))
+        if Detail>1:
+            print("Time to construct Frel and find absolute poly = {}".format(t1-t0))
+    Fabs = Frel.absolute_field('a')
+    rel2abs = Fabs.structure()[1] # the isomorphism Frel --> Fabs
+    z = rel2abs(Qchi.gen())
+    y = rel2abs(Frel.gen())
+    zpow = [z**i for i in range(chi_degree)]
+    ypow = [y**j for j in range(rel_degree)]
+    basis = sum([[(zpowi*ypowj).list() for zpowi in zpow] for ypowj in ypow],[])
+    t2 = time.time()
+    if Detail>1:
+        print("Time to construct Fabs and y,z in Fabs and basis matrix = {}".format(t2-t1))
+
+    #  Get coordinates of the an.  After lifting twice these are
+    #  polynomials in Q[t][y] so simply extracting coefficient vectors
+    #  gives their coordinates in terms of the basis z^i*y^j where
+    #  Qchi=Q(z) and F=Qchi(y).  To relate these to the power basis of
+    #  Fabs we only need the change of basis matrix whose rows give
+    #  the power basis coefficients of each z^i*y^j (in the right
+    #  order).
+
+    ancs = [[c.lift().Vecrev(chi_degree).sage() for c in a.lift().Vecrev(rel_degree)] for a in ans][1:]
     t4 = time.time()
     if Detail>1:
         print("Time to construct ancs) = {}".format(t4-t2))
