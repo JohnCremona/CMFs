@@ -2,13 +2,13 @@ from dirichlet_conrey import DirichletGroup_conrey
 from sage.all import ZZ, power_mod, prod
 def index_above(n, k ,c):
     if c == 1:
-        return c
+        return 1
+    if c == n - 1:
+        if n % 2 == 1 or n % 4 == 0:
+        return n**k - 1
     h = DirichletGroup_conrey(n)[c].primitive_character()
     assert (h*h).is_trivial()
     G = DirichletGroup_conrey(n**k)
-    if c == n - 1:
-        if G[-1].primitive_character() == h:
-            return n**k - 1
     tor2 = []
     for g in G.gens():
         mo =  G[g].multiplicative_order()
@@ -30,6 +30,8 @@ def index_above(n, k ,c):
             return chi.number()
 def wrapper_index_above(n, k, c):
     try:
+        if n**k >= 2**32:
+            raise AttributeError
         C = index_above(n, k, c)
         N = n**k
         if C is None:
