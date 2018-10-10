@@ -70,7 +70,7 @@ def wrapper_index_above(n, k, c):
     print '%s.%s' % (N, C)
 import subprocess
 def call_index_above(n, k, c):
-    cmd = ["sage", "-python","/home/edgarcosta/CMFs/ccscripts/index.py"]+ map(str, [n, k, c]
+    cmd = ["sage", "-python","/home/edgarcosta/CMFs/ccscripts/index.py"]+ map(str, [n, k, c])
     pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, std_err = pipes.communicate()
     if pipes.returncode != 0
