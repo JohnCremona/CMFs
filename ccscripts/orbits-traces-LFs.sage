@@ -73,7 +73,7 @@ def call_index_above(n, k, c):
     cmd = ["sage", "-python","/home/edgarcosta/CMFs/ccscripts/index.py"]+ map(str, [n, k, c])
     pipes = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     std_out, std_err = pipes.communicate()
-    if pipes.returncode != 0
+    if pipes.returncode != 0:
         N, C = n, c
     else:
         # a bit stupid but assures that we don't read junk
