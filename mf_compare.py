@@ -123,7 +123,7 @@ def read_dtp(fname):
     alldims.sort()
     print("Read {} spaces of which {} are nontrivial; {} Galois orbits.".format(nspaces, nspaces0, norbits))
     print("{} orbits have dimension <=20".format(n20))
-    print("largest three dimsensions: {}".format(alldims[-3:]))
+    print("largest three dimensions: {}".format(alldims[-3:]))
     print("Total time = {:0.3f}".format(tot_time))
     print("Max time = {:0.3f} for space {}".format(max_time, max_space))
     print("Average time (all spaces)      = {:0.3f}".format(tot_time/nspaces))
@@ -211,7 +211,7 @@ def compare_data(d1,d2, keylist=['dims', 'traces', 'polys','ALs', 'eigdata'], ve
     assert d1.keys()==d1.keys()
     QX = PolynomialRing(QQ,'x')
     nforms = len(d1.keys())
-    nstep = ZZ(int(nforms/20.0))
+    nstep = ZZ(max(1,int(nforms/20.0)))
     nf = 0
     print("Comparing data for {} newforms".format(nforms))
     for k in d1.keys():
