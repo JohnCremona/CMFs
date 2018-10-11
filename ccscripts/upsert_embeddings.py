@@ -17,7 +17,6 @@ def convert_eigenvals_to_qexp(basis, eigenvals):
     return qexp
 
 
-#FIXME upsert coeff info
 def upsert_embedding(id_number, skip = False):
     rowcc = db.mf_hecke_cc.lucky({'id':id_number}, projection=['an', 'hecke_orbit_code','id','lfunction_label', 'embedding_root_imag','embedding_root_real'])
     if rowcc is None:
@@ -29,6 +28,9 @@ def upsert_embedding(id_number, skip = False):
     row_embeddings =  {}
     hecke_orbit_code = rowcc['hecke_orbit_code']
     newform = db.mf_newforms.lucky({'hecke_orbit_code':hecke_orbit_code})
+    if newform is None:
+        # No newform in db
+        return
     if newform['dim'] == 1:
         row_embeddings['embedding_root_imag'] = 0
         row_embeddings['embedding_root_real'] = 0
