@@ -821,6 +821,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     def tuple_instance(row):
         return (row['origin'], row['Lhash'], default_type)
 
+    real_zeros = []
     rows = {}
     def populate_complex_row(Ldbrow):
         row = dict(constant_lf(level, weight, 2))
@@ -831,7 +832,17 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row['order_of_vanishing'] = int(Ldbrow['rank'])
         zeros_as_int = zeros[(chi,j)][row['order_of_vanishing']:]
         prec = row['accuracy'] = Ldbrow['zeroprec']
-        row['positive_zeros'] = [float(z/2**prec) for z in zeros_as_int]
+        two_power = 2**prec
+        double_zeros = [float(z/two_power) for z in zeros_as_int]
+        zeros_as_real = [RealNumber(z.str()+".")/two_power for z in zeros_as_int]
+        real_zeros[(chi, a, n)] = zeros_as_real
+        zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
+        for i, z in enumerate(zeros_as_str):
+            assert float(z) == double_zeros[i]
+            assert RealNumber(z) * two_power).round() == zeros_as_int[i]
+
+        row['positive_zeros'] = '[%s]' % ', '.join(zeros_as_str)
+
         row['origin'] = origin(chi, a, n)
         row['central_character'] = "%s.%s" % (level, chi)
         row['self_dual'] = self_dual(chi, a, n)
@@ -925,11 +936,18 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['conjugate'] = '\N'
             row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in triples])
             row['accuracy'] = min([rows[elt][accuracy] for elt in triples])
-            row['positive_zeros'] = []
+
+
+            ###
+            zeros_as_real = []
             for elt in triples:
-                row['positive_zeros'].extend(rows[elt][positive_zeros])
-            row['positive_zeros'].sort()
-            zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in triples], key = lambda x : x[1])
+                zeros_as_real.extend( real_zeros[elt] )
+            zeros_as_real.sort()
+            zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
+
+
+            row['positive_zeros'] = zeros_as_str
+            zeros_hash = sorted([ (rows[elt][Lhash], zeros_as_real[elt][0]) for elt in triples], key = lambda x : x[1])
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
             # character
             if degree == 2:
