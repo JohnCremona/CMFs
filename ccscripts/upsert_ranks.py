@@ -5,6 +5,8 @@ from  lmfdb.db_backend import db
 
 def get_url(newform):
     char_labels = newform['char_labels']
+    if newform['dim'] == 1:
+        return [ "ModularForm/GL2/Q/holomorphic/" + ".".join(newform['label'].split(".")) ]
     N, k, char_orbit, hecke_letter  = newform['label'].split(".")
     base_url = "ModularForm/GL2/Q/holomorphic/%s/%s/" % (N, k)
     base_label = [N, k]
@@ -28,11 +30,9 @@ def upsert_rank(id_number, skip = False):
     rank = None
     for url in urls:
         Lhash = db.lfunc_instances.lucky({'url': url}, projection='Lhash')
-        if Lhash is None:
-            return
+        assert Lhash is not None
         rankL = db.lfunc_lfunctions.lucky({'Lhash' : Lhash}, projection='order_of_vanishing')
-        if rankL is None:
-            return
+        assert rankL is not None
         if rank is None:
             rank = rankL
         else:
