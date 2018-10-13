@@ -821,7 +821,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     def tuple_instance(row):
         return (row['origin'], row['Lhash'], default_type)
 
-    real_zeros = []
+    real_zeros = {}
     rows = {}
     def populate_complex_row(Ldbrow):
         row = dict(constant_lf(level, weight, 2))
@@ -839,7 +839,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
         for i, z in enumerate(zeros_as_str):
             assert float(z) == double_zeros[i]
-            assert RealNumber(z) * two_power).round() == zeros_as_int[i]
+            assert (RealNumber(z) * two_power).round() == zeros_as_int[i]
 
         row['positive_zeros'] = '[%s]' % ', '.join(zeros_as_str)
 
@@ -944,10 +944,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 zeros_as_real.extend( real_zeros[elt] )
             zeros_as_real.sort()
             zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
-
-
-            row['positive_zeros'] = zeros_as_str
-            zeros_hash = sorted([ (rows[elt][Lhash], zeros_as_real[elt][0]) for elt in triples], key = lambda x : x[1])
+            row['positive_zeros'] = '[%s]' % ', '.join(zeros_as_str)
+            zeros_hash = sorted([ (rows[elt][Lhash], real_zeros[elt][0]) for elt in triples], key = lambda x : x[1])
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
             # character
             if degree == 2:
