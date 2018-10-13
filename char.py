@@ -7,8 +7,7 @@
 # convert into gp characters
 
 from dirichlet_conrey import DirichletGroup_conrey as DG, DirichletCharacter_conrey as DC
-from sage.interfaces.gp import gp
-from sage.all import ZZ, gcd, euler_phi,Mod
+from sage.all import pari, ZZ, gcd, euler_phi,Mod
 
 def character_traces(chi):
     return [chi(j).trace() for j in range(chi.modulus())]
@@ -42,9 +41,9 @@ def OrderedConreyLabels(N):
 
 def DC_char_to_gp_char(chi, G=None):
     if G==None:
-        G = gp.znstar(chi.modulus(),1)
-    return gp.znconreylog(G,DC.number(chi))
+        G = pari(chi.modulus()).znstar(1)
+    return G.znconreylog(DC.number(chi))
 
 def GP_DirichletCharacterGaloisReps(N):
-    G = gp.znstar(N,1)
-    return [gp.znconreylog(G,DC.number(chi)) for chi in DirichletCharacterGaloisReps(N)]
+    G = pari(N).znstar(1)
+    return [G.znconreylog(DC.number(chi)) for chi in DirichletCharacterGaloisReps(N)]

@@ -2,8 +2,7 @@ from char import DirichletCharacterGaloisReps, NChars
 from mf_compare import polredbest_stable#, polredbest, polredabs
 
 from dirichlet_conrey import DirichletCharacter_conrey as DC
-from sage.interfaces.gp import Gp
-from sage.all import pari,ZZ,QQ, Rational,RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, primes, Matrix, BackslashOperator
+from sage.all import pari,ZZ,QQ, Rational,RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, Matrix
 from sage.libs.pari.convert_sage import gen_to_sage
 import sys
 import time
@@ -52,206 +51,6 @@ def NewSpace(N, k, chi_number,Detail=0):
     chi_gp = G.znconreylog(DC.number(chi_sage))
     NK = [N,k,[G,chi_gp]]
     return NK, pari(NK).mfinit(0)
-
-# First working version, later repalced by more efficient version:
-
-def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
-    # N and k are Sage ints but chi is a gp vector
-    Chars = DirichletCharacterGaloisReps(N)
-    if chi_number<1 or chi_number>len(Chars):
-        print("Character number {} out of range for N={} (should be between 1 and {})".format(chi_number,N,len(Chars)))
-        return []
-    if Detail:
-        print("Decomposing space {}:{}:{}".format(N,k,chi_number))
-    gp = Gp() # A new gp interface for each space
-    gp.default('parisizemax',64000000000)
-    G = gp.znstar(N,1)
-    chi_sage = Chars[chi_number-1]
-    chi_gp = gp.znconreylog(G,DC.number(chi_sage))
-    Snew = gp.mfinit([N,k,[G,chi_gp]],0)
-    chi_order = DC.multiplicative_order(chi_sage)
-    newforms = gp.mfeigenbasis(Snew)
-    nnf = len(newforms)
-    if nnf==0:
-        if Detail:
-            print("The space {}:{}:{} is empty".format(N,k,chi_number))
-        return []
-    if Detail:
-        print("The space {}:{}:{} has {} newforms".format(N,k,chi_number,nnf))
-
-    # Setting the character field and polynomial
-
-    # The following line works now but it seems fragile to reply on the internal structure this way.
-    #chipoly = Qt(str(newforms[1][1][2][3][4]))
-    # Instead we compute the cyclotomic polynomial ourselves, noting
-    # that if the character order is 2*m with m odd then Pari uses the
-    # m'th cyclotomic polynomial and not the 2m'th (e.g. for a
-    # character of order 6 it uses t^2+t+1 and not t^2-t+1).
-    chi_order_2 = chi_order//2 if chi_order%4==2 else chi_order
-    chipoly = cyclotomic_polynomial(chi_order_2,'t')
-    chi_degree = chipoly.degree()
-    assert chi_degree==euler_phi(chi_order)==euler_phi(chi_order_2)
-    if Detail>1:
-        print("chipoly = {}".format(chipoly))
-
-    Qchi = NumberField(chipoly,'z')
-    if Detail>1:
-        print("Q(chi) = {}".format(Qchi))
-
-    # Setting the polynomials.  These are polynomials in y with coefficients either integers or polmods with modulus chipoly
-
-    Qchi_y = PolynomialRing(Qchi,'y')
-    if Detail>1:
-        print("Q(chi)[y] = {}".format(Qchi_y))
-    pols = gp.mfsplit(Snew,0,1)
-    pols = [gp2sage_ypoly(f, Qchi_y) for f in pols[2]]
-    dims = [chi_degree*f.degree() for f in pols]
-    if dmax==0:
-        dmax = max(dims)
-    nnf0 = len([d for d in dims if d<=dmax])
-
-    if Detail:
-        print("dims = {}, so {} newforms have dimensions <={}".format(dims,nnf0,dmax))
-        if Detail>1:
-            print("pols = {}".format(pols))
-
-    #Setting the Hecke fields as relative extensions of Qchi and as absolute fields:
-
-    Hecke_fields_relative  = [Qchi.extension(f,'b') for f in pols[:nnf0]]
-    abs_polys = [F.absolute_polynomial() for F in Hecke_fields_relative]
-    if Detail>1:
-        print("absolute pols = {}".format(abs_polys))
-    Hecke_fields_absolute = [F.absolute_field('a') for F in Hecke_fields_relative]
-    isoms = [F.structure()[1] for F in Hecke_fields_absolute]
-
-    # if Detail:
-    #     print("Relative  Hecke fields: {}".format(Hecke_fields_relative))
-    #     print("Absolute Hecke fields: {}".format(Hecke_fields_absolute))
-
-    # Compute an's and convert to elements of the (relative) Hecke field:
-
-    coeffs = gp.mfcoefs(Snew,nan)
-    ans = [coeffs*gp.mftobasis(Snew,nf) for nf in newforms]
-    if Detail>2: print("ans = {}".format(ans))
-    # Alternative method for traces:
-    traces = [[abstrace(a,d) for a in ansi][1:] for ansi,d in zip(ans,dims)]
-    # fix up trace(a_1)
-    for i,tr in enumerate(traces):
-        tr[0]=dims[i]
-    if Detail>2: print("traces = {}".format(traces))
-
-    if Detail>1: print("about to convert ans...")
-    ans = [gp2sage_anfelt_list(ansi, iso) for ansi, iso in zip(ans[:nnf0], isoms)]
-    if Detail>1: print("finished")
-    if Detail>2: print("ans = {}".format(ans))
-
-    # apply polredbest_stable to these polys:
-    best_polys = [polredbest_stable(f) for f in abs_polys]
-    if Detail>1:
-        print("polredbest pols = {}".format(best_polys))
-    Hecke_fields = [NumberField(f,'a') for f in best_polys]
-    isoms2 = [F1.embeddings(F2)[0] for F1,F2 in zip(Hecke_fields_absolute, Hecke_fields)]
-
-    # adjust all the ans: NB we do not omit a_0 so far for convenience so a_p has index p
-    ans = [[iso(an) for an in ansi] for ansi,iso in zip(ans,isoms2)]
-    if Detail>2: print("best ans = {}".format(ans))
-
-    if Detail:
-        print("Computing Hecke orders...")
-    ancs = [[] for _ in range(nnf0)]
-    bases = [[] for _ in range(nnf0)]
-    for i in range(nnf0):
-        if Detail:
-            print("#{}:".format(i+1))
-        F = Hecke_fields[i]
-        ansi = ans[i]
-        if dims[i]==1:
-            if Detail: print("Hecke field is Q, skipping")
-            ancs[i] = [[an] for an in ansi[1:]]
-            bases[i] = [[1]]
-        else:
-            z = F(isoms2[i](isoms[i](Qchi.gen())))
-            Fgen = F.gen()
-            Ogens = [z,Fgen]
-            O = O0 = F.order(Ogens)
-            #O = O0 = F.maximal_order()
-            D = ZZ(O0.discriminant())
-            if Detail:
-                print("Hecke field (degree {}) equation order has discriminant {} = {}".format(dims[i],D,D.factor(proof=False)))
-            maxp = 1
-            for p in primes(2,nan):
-                if D.is_squarefree():
-                    break
-                ap = ansi[p]
-                if ap in O:
-                    continue
-                print("a_{} ={} has coordinates {}".format(p,ap,O.coordinates(ap)))
-                maxp = p
-                Ogens += [ap]
-                print("adding a_{} ={} to order generators".format(p,ap))
-                O = F.order(Ogens)
-                D = ZZ(O.discriminant())
-                if Detail:
-                    print("Order now has discriminant {}".format(D))
-            if Detail>-1:
-                print("Using a_p for p up to {}, order discriminant = {}".format(maxp,D))
-            ind = O0.index_in(O)
-            bases[i] = [b.list() for b in O.basis()]
-            ancs[i] = [O.coordinates(an).list() for an in ansi[1:]]
-            # Check that the coordinates and basis are consistent with the original an's:
-            for c,b in zip(bases[i],O.basis()):
-                assert b==F(c)
-            for j in range(nan):
-                an = ans[i][j+1]
-                bn = sum(c*b for c,b in zip(ancs[i][j],O.basis()))
-                if an!=bn:
-                    print("**** inconsistent representations of a_{}: value = {} but coordinates give {}".format(j+1,an,bn))
-                elif j==1:
-                    print("a_2 = {}".format(an))
-                    print("coordinates: {}".format(ancs[i][j]))
-                    print("basis: {}".format(O.basis()))
-                    print("combination of basis = {}".format(bn))
-                    print("basis matrix = {}".format(bases[i]))
-                    newbasis = [F(co) for co in bases[i]]
-                    print("basis from its matrix: {}".format(newbasis))
-                    assert O.basis()==newbasis
-            if Detail>1:
-                print("Hecke order has discriminant {}, contains equation order with index {}\nIntegral basis: {}".format(D, ind, O.basis()))
-                print("order basis matrix: {}".format(bases[i]))
-                if Detail>2:
-                    print("Coefficient vectors of ans: {}".format(ancs[i]))
-            if not all(all(anc in ZZ for anc in an) for an in ancs[i]):
-                print("*****************************************")
-                print("Not all coefficients are integral!")
-                print("*****************************************")
-
-    # Compute AL-eigenvalues if character is trivial:
-    if chi_order==1:
-        Qlist = [(p,p**e) for p,e in ZZ(N).factor()]
-        ALs = [gp.mfatkineigenvalues(Snew,Q[1]).sage() for Q in Qlist]
-        if Detail: print("ALs: {}".format(ALs))
-        # "transpose" this list of lists:
-        ALeigs = [[[Q[0],ALs[i][j][0]] for i,Q in enumerate(Qlist)] for j in range(nnf)]
-        if Detail: print("ALeigs: {}".format(ALeigs))
-    else:
-        ALeigs = [[] for _ in range(nnf)]
-
-    all_nf = [
-        {'dim': dims[i],
-         'chipoly': chipoly,
-         'poly': pols[i] if i<nnf0 else None,
-         'abs_poly': abs_polys[i] if i<nnf0 else None,
-         'best_poly': best_polys[i] if i<nnf0 else None,
-         'traces': traces[i],
-         'basis': bases[i] if i<nnf0 else None,
-         'ans': ans[i] if i<nnf0 else None,
-         'ancs': ancs[i] if i<nnf0 else None,
-         'ALeigs': ALeigs[i],
-        }   for i in range(nnf)]
-
-    if nnf>1:
-        all_nf.sort(key=lambda f: f['traces'])
-    return all_nf
 
 def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t0=time.time()
@@ -627,7 +426,7 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
 
             imsicol1 = pari_col1(ims[i])
             umsi = ums[i]
-            ans[i] = [umsi*(T*imsicol1) for T in heckemats]
+            ans[i] = [(umsi*(T*imsicol1)).Vec() for T in heckemats]
             if Detail:
                 print("ans done")
                 if Detail>1:
@@ -746,7 +545,7 @@ def process_pari_nf(pari_nf, dmax=20, Detail=0):
     #  rel_poly is in Qchi[x].
 
     Qx = PolynomialRing(QQ,'x')
-    pari_Qx_poly_to_sage = lambda f: Qx(gen_to_sage(f.Vecrev()))
+    #pari_Qx_poly_to_sage = lambda f: Qx(gen_to_sage(f.Vecrev()))
     Qchi = NumberField(chipoly,'t')
     chi_degree = chipoly.degree()
     # NB the only reason for negating the chi_degree parameter here is to get around a bug in the Sage/pari interface
@@ -797,12 +596,12 @@ def process_pari_nf(pari_nf, dmax=20, Detail=0):
             print("time for converting an coeffs to QQ = {}".format(t1-t0))
             if Detail>1:
                 print("Coefficient vectors of ans: {}".format(ancs))
-        newform['poly'] = poly = Qx(rel_poly)
+        newform['poly'] = rel_poly
         # basis is a pari matrix over Q
         basis = gen_to_sage(basis)
 
         newform['eigdata'] = {
-            'pol': poly.list(),
+            'pol': rel_poly.list(),
             'bas': basis,
             'n': 0, # temporary
             'm': 0, # temporary
@@ -825,12 +624,12 @@ def process_pari_nf(pari_nf, dmax=20, Detail=0):
             print("time for converting an coeffs to QQ = {}".format(t1-t0))
             if Detail>1:
                 print("Coefficient vectors of ans: {}".format(ancs))
-        newform['poly'] = poly = Qx(chipoly)
+        newform['poly'] = chipoly
         # basis is a 1x1 gp matrix over Qchi, so we want the power basis for Qchi: trivial
         basis = [[int(i==j) for j in range(dim)] for i in range(dim)]
 
         newform['eigdata'] = {
-            'pol': poly.list(),
+            'pol': chipoly.list(),
             'bas': basis,
             'n': 0, # temporary
             'm': 0, # temporary
@@ -849,20 +648,22 @@ def process_pari_nf(pari_nf, dmax=20, Detail=0):
 
     t0=time.time()
     Frel  = Qchi.extension(rel_poly,'b')
-    abs_poly = Frel.absolute_polynomial()
-    newform['poly'] = abs_poly(Qx.gen())
+    newform['poly'] = abs_poly = Frel.absolute_polynomial()(Qx.gen())
     t1 = time.time()
     if Detail:
         print("absolute poly = {}".format(abs_poly))
         if Detail>1:
+            print("Frel = {}".format(Frel))
             print("Time to construct Frel and find absolute poly = {}".format(t1-t0))
     Fabs = Frel.absolute_field('a')
+    if Detail>1:
+        print("Fabs = {}".format(Fabs))
     rel2abs = Fabs.structure()[1] # the isomorphism Frel --> Fabs
     z = rel2abs(Qchi.gen())
     zpow = [z**i for i in range(chi_degree)]
     # convert basis to a Sage list of lists of elements of Qchi:
     our_basis_coeffs = [[pari_Qchi_to_sage(basis[i,j]) for j in range(rel_degree)] for i in range(rel_degree)]
-    #print("our basis coeffs: {}".format(our_basis_coeffs))
+    #print("our basis coeffs: {} (parent {})".format(our_basis_coeffs, our_basis_coeffs[0][0].parent()))
     our_basis_rel = [Frel(b) for b in our_basis_coeffs]
     #print("our basis (Sage, relative): {}".format(our_basis_rel))
     our_basis_abs = [rel2abs(b) for b in our_basis_rel]
@@ -923,7 +724,7 @@ def process_pari_nf_v1(pari_nf, dmax=20, Detail=0):
     # cases rel_poly will be in Qchi[y].
 
     Qx = PolynomialRing(QQ,'x')
-    pari_Qx_poly_to_sage = lambda f: Qx(gen_to_sage(f.Vecrev()))
+    #pari_Qx_poly_to_sage = lambda f: Qx(gen_to_sage(f.Vecrev()))
     Qchi = NumberField(chipoly,'t')
     chi_degree = chipoly.degree()
     # NB the only reason for negating the chi_degree parameter here is to get around a bug in the Sage/pari interface
@@ -1089,7 +890,9 @@ def bestify_newform(nf, dmax=20, Detail=0):
     if dim>dmax:
         nf['best_poly'] = None
         return nf
-    poly = nf['poly']
+    Qx = PolynomialRing(QQ,'x')
+    pari_Qx_poly_to_sage = lambda f: Qx(gen_to_sage(f.Vecrev()))
+    poly = Qx(nf['poly'].list())
     if Detail:
         print("non-best poly for {} is {}".format(Nko,poly))
     nf['best_poly'] = best_poly = polredbest_stable(poly)
@@ -1100,12 +903,13 @@ def bestify_newform(nf, dmax=20, Detail=0):
 
     # Now the real work starts
     Fold = NumberField(poly,'a')
+    #print("Fold = {}".format(Fold))
     Fnew = NumberField(best_poly,'b')
-    #iso = Fold.embeddings(Fnew)[0] # we do not care which isomorphism
+    #print("Fnew = {}".format(Fnew))
     iso = Fold.is_isomorphic(Fnew,isomorphism_maps=True)[1][0] # we do not care which isomorphism
-    Qx = PolynomialRing(QQ,'x')
-    #x = Qx.gen()
-    iso = Fold.hom([Qx(iso)(Fnew.gen())])
+    #print("iso = {}".format(iso))
+    iso = pari_Qx_poly_to_sage(iso)
+    iso = Fold.hom([iso(Fnew.gen())])
     new_basis_matrix = [a.list() for a in [iso(b) for b in [Fold(co) for co in nf['eigdata']['bas']]]]
     nf['eigdata']['bas'] = new_basis_matrix
     nf['eigdata']['pol'] = best_poly.list()
@@ -1150,7 +954,9 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
     C=Matrix(C)
     if debug:
         print("B has size {}".format(B.dimensions()))
+        #print("B={}".format(B))
         print("C has size {}".format(C.dimensions()))
+        #print("C={}".format(C))
         CB=C*B
     # Make integral:
     C1, den = C._clear_denom()
@@ -1158,7 +964,12 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
     if Detail and den>1:
         print("denominator = {}".format(den))
     # Make primitive:
+    if debug:
+        print("C1 is in {}".format(C1.parent()))
+        #print("C1 = {}".format(C1))
     C1 = pari(C1)
+    # if debug:
+    #     print("B1={} in {}".format(B1, B1.parent()))
     B1 = pari(B1)
     V1V2S  = C1.matsnf(1)
     V2 = V1V2S[1]
