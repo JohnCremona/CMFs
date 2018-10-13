@@ -30,9 +30,9 @@ def upsert_rank(id_number, skip = False):
     rank = None
     for url in urls:
         Lhash = db.lfunc_instances.lucky({'url': url}, projection='Lhash')
-        assert Lhash is not None
+        assert Lhash is not None, url
         rankL = db.lfunc_lfunctions.lucky({'Lhash' : Lhash}, projection='order_of_vanishing')
-        assert rankL is not None
+        assert rankL is not None, Lhash
         if rank is None:
             rank = rankL
         else:
