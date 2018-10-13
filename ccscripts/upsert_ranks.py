@@ -6,7 +6,7 @@ from  lmfdb.db_backend import db
 def get_url(newform):
     char_labels = newform['char_labels']
     if newform['dim'] == 1:
-        return [ "ModularForm/GL2/Q/holomorphic/" + ".".join(newform['label'].split(".")) ]
+        return [ "ModularForm/GL2/Q/holomorphic/" + "/".join(newform['label'].split(".")) ]
     N, k, char_orbit, hecke_letter  = newform['label'].split(".")
     base_url = "ModularForm/GL2/Q/holomorphic/%s/%s/" % (N, k)
     base_label = [N, k]
