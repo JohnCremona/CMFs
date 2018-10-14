@@ -841,7 +841,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             assert float(z) == double_zeros[i]
             assert (RealNumber(z) * two_power).round() == zeros_as_int[i]
 
-        row['positive_zeros'] = zeros_as_str
+        row['positive_zeros'] = str(zeros_as_str).replace("'","\"")
 
         row['origin'] = origin(chi, a, n)
         row['central_character'] = "%s.%s" % (level, chi)
@@ -944,7 +944,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 zeros_as_real.extend( real_zeros[elt] )
             zeros_as_real.sort()
             zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
-            row['positive_zeros'] = zeros_as_str
+            row['positive_zeros'] = str(zeros_as_str).replace("'","\"")
             zeros_hash = sorted([ (rows[elt][Lhash], real_zeros[elt][0]) for elt in triples], key = lambda x : x[1])
             row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
             # character
