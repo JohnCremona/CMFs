@@ -1260,15 +1260,20 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
                     continue
 
                 screen.write(" (o={}) ".format(i+1))
+                screen.flush()
                 t0=time.time()
-                newforms = NewformTraces(N,k,i+1,dmax,nan, Detail)
-                t0=time.time()-t0
-                line = data_to_string(N,k,i+1,t0,newforms) + "\n"
-                if out:
-                    out.write(line)
-                else:
-                    screen.write('\n')
-                    screen.write(line)
+                try:
+                    newforms = NewformTraces(N,k,i+1,dmax,nan, Detail)
+                    t0=time.time()-t0
+                    line = data_to_string(N,k,i+1,t0,newforms) + "\n"
+                    if out:
+                        out.write(line)
+                    else:
+                        screen.write('\n')
+                        screen.write(line)
+                except PariError, e:
+                    t1=time.time()
+                    print("\n*************************\nPariError {} on ({},{},{}) after {}s\n***********************".format(e,N,k,i+1,t1-t0))
         if info_written:
             screen.write('\n')
     if out:
