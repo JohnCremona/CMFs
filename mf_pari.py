@@ -1047,6 +1047,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
     Nmax = int(Nk2max/4.0)
     nspaces=0
     n = 0 # will increment for each (N,k,chi) in range, so we skip unless n%njobs==jobno
+    failed_spaces = []
     for N in range(1,Nmax+1):
         kmin = max(2,(RR(Nk2min)/N).sqrt().ceil())
         kmax = (RR(Nk2max)/N).sqrt().floor()
@@ -1072,18 +1073,25 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
 
                 screen.write(" (o={}) ".format(i+1))
                 t0=time.time()
-                newforms = NewformTraces(N,k,i+1,dmax,nan, Detail)
-                t0=time.time()-t0
-                line = data_to_string(N,k,i+1,t0,newforms) + "\n"
-                if out:
-                    out.write(line)
-                else:
-                    screen.write('\n')
-                    screen.write(line)
+                try:
+                    newforms = NewformTraces(N,k,i+1,dmax,nan, Detail)
+                    t0=time.time()-t0
+                    line = data_to_string(N,k,i+1,t0,newforms) + "\n"
+                    if out:
+                        out.write(line)
+                    else:
+                        screen.write('\n')
+                        screen.write(line)
+                except PariError, e:
+                    t1=time.time()
+                    print("\n*************************\nPariError {} on ({},{},{}) after {}s\n***********************".format(e,N,k,i+1,t1-t0))
+                    failed_spaces.append((N,k,i+1))
         if info_written:
             screen.write('\n')
     if out:
         out.close()
+    if failed_spaces:
+        print("Completed apart from: {}".format(failed_spaces))
     #return nspaces
 
 def OneSpace(N, k, char_number, dmax=20, nan=100, filename=None, Detail=0):
