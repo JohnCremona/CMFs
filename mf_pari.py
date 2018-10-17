@@ -2,7 +2,7 @@ from char import DirichletCharacterGaloisReps, NChars
 from mf_compare import polredbest_stable#, polredbest, polredabs
 
 from dirichlet_conrey import DirichletCharacter_conrey as DC
-from sage.all import pari,ZZ,QQ, Rational,RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, Matrix
+from sage.all import pari,ZZ,QQ, Rational,RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, Matrix, prime_range
 from sage.libs.pari.convert_sage import gen_to_sage
 import sys
 import time
@@ -51,6 +51,38 @@ def NewSpace(N, k, chi_number,Detail=0):
     chi_gp = G.znconreylog(DC.number(chi_sage))
     NK = [N,k,[G,chi_gp]]
     return NK, pari(NK).mfinit(0)
+
+def is_semisimple_modular(M, m,  nprimes=5):
+    """M is a pari matrix over Q(zeta_m).  Check if M mod p has squarefree
+    char poly for nprimes primes p=1 (mod m).  If True for any p,
+    return True since then the char poly of M itself must be
+    square-free.  If False for all p, return False since the M
+    probably has non-squarefree char poly.  There may therefore be
+    false negatives.
+    """
+    pol = cyclotomic_polynomial(m)
+    pt = pari("t")
+    np=0
+    for p in prime_range(1000000):
+        if m>1 and not p%m==1:
+            continue
+        np+=1
+        #print("testing modulo p={}".format(p))
+        if np>nprimes:
+            #print("op not semisimple modulo {} primes, so returning False".format(nprimes))
+            return False
+        zmodp = pol.roots(GF(p))[0][0]
+        try:
+            Mmodp = M.lift().subst(pt,zmodp)
+            if Mmodp.charpoly().issquarefree():
+                #print("op is semisimple mod {}".format(p))
+                return True
+            else:
+                #print("op is not semisimple mod {}".format(p))
+                pass
+        except PariError: ## happens if M not integral mod p
+            np-=1
+
 
 def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t0=time.time()
@@ -245,8 +277,9 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
     chipoly = cyclotomic_polynomial(chi_order_2,'t')
     chi_degree = chipoly.degree()
     assert chi_degree==euler_phi(chi_order)==euler_phi(chi_order_2)
+    t05=time.time()
     if Detail:
-        print("Computed newspace {}:{}:{}, dimension={}*{}={}, now splitting into irreducible subspaces".format(N,k,chi_number, chi_degree,total_dim,chi_degree*total_dim))
+        print("Computed newspace {}:{}:{} in {:0.3f}, dimension={}*{}={}, now splitting into irreducible subspaces".format(N,k,chi_number, t05-t0, chi_degree,total_dim,chi_degree*total_dim))
         if Detail>1:
             print("Sturm bound = {}".format(SturmBound))
             print("character order = {}".format(chi_order))
@@ -271,21 +304,26 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
     s1=time.time()
     if Detail:
         print("testing T_{}".format(p))
-    f = op.charpoly()
-    ok = f.issquarefree()
-    if ok and Detail:
-        print("Lucky first time: semisimple")
+    ok = is_semisimple_modular(op,chi_order_2)
+    # f = op.charpoly()
+    # ok = f.issquarefree()
+    if ok:
+        if Detail:
+            print("Lucky first time: semisimple. Finding char poly")
+        f = op.charpoly()
     ops=[(p,op)]
     while not ok:
         pi, opi = Tp_iter.next()
         if Detail:
             print("testing T_{}".format(pi))
-        f = opi.charpoly()
-        ok = f.issquarefree()
+        ok = is_semisimple_modular(op,chi_order_2)
+        # f = opi.charpoly()
+        # ok = f.issquarefree()
         if ok:
-            op = opi
             if Detail:
-                print("success using T_{}".format(pi))
+                print("success using T_{}. Finding char poly".format(pi))
+            op = opi
+            f = op.charpoly()
             break
         else:
             #ops.append((pi,opi))
@@ -301,11 +339,13 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
                 if Detail:
                     print("Testing lin comb of {} ops with coeffs {}".format(len(co),co))
                 op = sum([ci*opj[1] for ci,opj in zip(co,ops)])
-                f=op.charpoly()
-                ok = f.issquarefree()
+                ok = is_semisimple_modular(op,chi_order_2)
+                # f=op.charpoly()
+                # ok = f.issquarefree()
                 if ok:
                     if Detail:
-                        print("success using {}-combo of T_p for p in {}".format(co,[opj[0] for opj in ops]))
+                        print("success using {}-combo of T_p for p in {}. Finding char poly".format(co,[opj[0] for opj in ops]))
+                    f = op.charpoly()
                     break
 
     if not ok:
@@ -452,7 +492,7 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
             [Q[0], gen_to_sage((umA*(AL*(pari_col1(imA))))[0])]
             for Q,AL in zip(Qlist,ALs)]
                   for umA,imA in zip(ums,ims)]
-        if Detail: print("ALeigs: {}".format(ALeigs))
+        if Detail>1: print("ALeigs: {}".format(ALeigs))
     else:
         ALeigs = [[] for _ in range(nnf)]
 
@@ -945,6 +985,7 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
     Computes invertible U and returns (C', B') = (C*U, U^(-1)*B), so
     that the entries of C' are integers and 'small'
     """
+    t0 = time.time()
     if Detail>1:
         print("Before LLL, coefficients:\n{}".format(C))
     # convert to actual matrices:
@@ -961,8 +1002,9 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
     # Make integral:
     C1, den = C._clear_denom()
     B1 = B/den
-    if Detail and den>1:
-        print("denominator = {}".format(den))
+    t1 = time.time()
+    if Detail:
+        print("Cleared denominator = {} in {:0.3f}".format(den,t1-t0))
     # Make primitive:
     if debug:
         print("C1 is in {}".format(C1.parent()))
@@ -972,10 +1014,13 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
     #     print("B1={} in {}".format(B1, B1.parent()))
     B1 = pari(B1)
     V1V2S  = C1.matsnf(1)
+    t2 = time.time()
     V2 = V1V2S[1]
     S = pari_row_slice(nan-d+1,nan)(V1V2S[2])
+    if Detail:
+        print("Computed Smith form in {:0.3f}".format(t2-t1))
     if debug:
-        print("Computed Smith form. About to invert matrix of size {}".format(V2.matsize()))
+        print("About to invert matrix of size {}".format(V2.matsize()))
     C1 *= V2
     B1 = V2**(-1)*B1
     if debug:
@@ -991,8 +1036,9 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
 
     # LLL-reduce
     U = C1.qflll()
+    t3 = time.time()
     if Detail:
-        print("LLL done")
+        print("LLL done in {:0.3f}".format(t3-t2))
     if debug:
         assert U.matdet() in [1,-1]
     C1 *= U
