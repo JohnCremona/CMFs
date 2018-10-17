@@ -2,8 +2,9 @@ from char import DirichletCharacterGaloisReps, NChars
 from mf_compare import polredbest_stable#, polredbest, polredabs
 
 from dirichlet_conrey import DirichletCharacter_conrey as DC
-from sage.all import pari,ZZ,QQ, Rational,RR, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, Matrix, prime_range
+from sage.all import pari,ZZ,QQ, Rational,RR, GF, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, Matrix, prime_range
 from sage.libs.pari.convert_sage import gen_to_sage
+from sage.libs.pari.all import PariError
 import sys
 import time
 
