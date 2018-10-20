@@ -8,14 +8,15 @@ This table represents (Galois orbits of) spaces of newforms `S_k^{new}(N, [\chi]
 Column | Type | Notes
 -------|------|------
 label | text | (N.k.i)
-level | integer | (N)
+level | integer | the level N of the modular form
+level_radical | integer | product of prime divisors of N
 level_primes | jsonb | list of primes divisors of N
-weight | smallint | (k)
+weight | smallint | the weight k of the modular form
 odd_weight | boolean | whether k is odd
 analytic_conductor | double precision | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)
 Nk2 | integer | N*k^2
-char_orbit | integer | (i) Index in the list of traces down to Q of the values of all characters of modulus N, starting at 1.  This is encoded into i in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for i-1.
-char_orbit_label | text | letter encoded version of (i)
+char_orbit | integer | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
+char_orbit_label | text | string encoding the char_orbit i via 1->a, 2->b, ... 26->z, 27->ba,... (note the shift, a is 1 not 0).
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
 char_conductor | integer | Conductor of the Dirichlet character
@@ -32,6 +33,7 @@ eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding 
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
+mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
 AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
 
@@ -90,14 +92,15 @@ Column | Type | Notes
 -------|------|------
 label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
-level | integer | (N)
+level | integer | the level N of the modular form
+level_radical | integer | product of prime divisors of N
 level_primes | jsonb | list of prime divisors of N
-weight | smallint | (k)
+weight | smallint | the weight k of the modular form
 odd_weight | boolean | whether k is odd
 analytic_conductor | double precision | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)
 Nk2 | integer | N*k^2
-char_orbit_index | integer | (i) As above
-char_orbit_label | text | letter encoded version of (i)
+char_orbit_index | integer | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
+char_orbit_label | text | string encoding i (with a=1).
 char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit_index | integer | char_orbit for the primitive version of this character
 char_order | integer | the order of the character
@@ -138,7 +141,8 @@ fricke_eigenval | smallint | product of the Atkin-Lehner eigenvalues (NULL if no
 atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
-trace_display | jsonb | list of the first four a_n traces for display on search page results
+trace_display | jsonb | list of traces tr(a_2), tr(a_3), tr(a_5), tr(a_7) for display on search page results
+traces | jsonb | full list of traces tr(a_n) for n from 1 to 1000
 
 Table name: `mf_newform_portraits`
 

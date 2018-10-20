@@ -21,6 +21,32 @@ intrinsic NumberOfCharacterOrbits (N::RngIntElt) -> RngIntElt
     return Integers()! &+[1/EulerPhi(Order(g)):g in MultiplicativeGroup(Integers(N))];
 end intrinsic;
 
+intrinsic IsConjugate (chi1::GrpDrchElt,chi2::GrpDrchElt) -> Boolean
+{ Returns true if chi1 and chi2 are Galois conjugate Dirichlet characters with the same codomain. }
+    e := Order(chi1);
+    if Order(chi2) ne e then return false; end if;
+    chi1 := MinimalBaseRingCharacter(chi1);  chi2 := MinimalBaseRingCharacter(chi2);
+    v1 := ValuesOnUnitGenerators(chi1);  v2 := ValuesOnUnitGenerators(chi2);
+    if [OrderOfRootOfUnity(a,e):a in v1] ne [OrderOfRootOfUnity(a,e): a in v2] then return false; end if;
+    return #Set(GaloisConjugacyRepresentatives([chi1,Parent(chi1)!chi2])) eq 1 select true else false;
+end intrinsic;
+
+
+intrinsic CompareCharacters (chi1::GrpDrchElt,chi2::GrpDrchElt) -> RngIntElt
+{ Compare Dirichlet characters based on order and lexicographic ordering of traces. }
+    N := Modulus(chi1);  assert Modulus(chi2) eq N;
+    n1 := Order(chi1); n2 := Order(chi2);
+    if n1 ne n2 then return n1-n2; end if;
+    // this will be very slow if characters are actually conjugate, avoid using t
+    for a:=2 to N-1 do
+        if GCD(a,N) ne 1 then continue; end if;
+        t1 := Trace(chi1(a));  t2 := Trace(chi2(a));
+        if t1 ne t2 then return t1-t2; end if;
+    end for;
+    return 0;
+end intrinsic;
+
+/*    
 intrinsic CharacterOrbitVector(chi::GrpDrchElt) -> SeqEnum[RngIntElt]
 { The list [Order(chi)] cat [Trace(chi(n)): n in [1..Modulus(chi)] used to sort and uniquely identify Galois orbits of Dirichlet characters. }
     return [Order(chi)] cat [Trace(z):z in ValueList(chi)];
@@ -44,6 +70,31 @@ intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false) -> List, Assoc
     else
         return [* G[T[i][2]] : i in [1..#G] *],_;
     end if;
+end intrinsic;
+*/
+
+intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false) -> List, Assoc
+{ The list of Galois orbit representatives of the full Dirichlet group of modulus N with minimal codomains sorted by order and trace vectors.
+  If the optional boolean argument RepTable is set then a table mapping Dirichlet characters to indexes in this list is also returned. }
+    G := [* MinimalBaseRingCharacter(chi): chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N)) *];
+    X := [i:i in [1..#G]];
+    X := Sort(X,func<i,j|CompareCharacters(G[i],G[j])>);
+    G := [* G[i] : i in X *];
+    if not RepTable then return G; end if;
+    A := AssociativeArray();
+    for i:=1 to #G do v:=[OrderOfRootOfUnity(a,Order(G[i])):a in ValuesOnUnitGenerators(G[i])]; if IsDefined(A,v) then Append(~A[v],i); else A[v]:=[i]; end if; end for;
+    H := Elements(FullDirichletGroup(N));
+    T := AssociativeArray(Parent(H[1]));
+    for h in H do
+        v := [OrderOfRootOfUnity(a,Order(h)):a in ValuesOnUnitGenerators(h)];
+        m := A[v];
+        if #m eq 1 then
+            T[h] := m[1];
+        else
+            for i in m do if IsConjugate(h,G[i]) then T[h]:=i; break; end if; end for;
+        end if;
+    end for;
+    return G, T;
 end intrinsic;
 
 intrinsic CharacterOrbit(chi::GrpDrchElt) -> RngIntElt
