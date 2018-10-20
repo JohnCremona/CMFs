@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# for running weight 1 forms
+
+Nmin=$1
+Nmax=$2
+filename=$3
+dmax=$4
+nan=$5
+njobs=$6
+let 'njobs1 = njobs - 1'
+
+for jobno in `seq 0 ${njobs1}`; do
+
+cline="import mf_pari; mf_pari.WeightOne(\"${filename}-${jobno}\",${Nmin},${Nmax},${dmax},${nan},${njobs},${jobno});"
+echo ${cline}
+echo ${cline} | sagedev -q  > sage.out-${filename}-${jobno} &
+done
+
+
+
+
