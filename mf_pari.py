@@ -1111,6 +1111,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
                 screen.write(level_info)
                 info_written=True
             screen.write(" [k={}] ".format(k))
+            screen.flush()
             nspaces+=1
 
             for i in range(len(Chars)):
@@ -1136,6 +1137,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
                     failed_spaces.append((N,k,i+1))
         if info_written:
             screen.write('\n')
+            screen.flush()
     if out:
         out.close()
     if failed_spaces:
@@ -1176,6 +1178,7 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
         Chars = DirichletCharacterGaloisReps(N)
         for i in range(len(Chars)):
             screen.write(" (o={}) ".format(i+1))
+            screen.flush()
             t0=time.time()
             newforms = NewformTraces(N,1,i+1,dmax,nan, Detail)
             t0=time.time()-t0
@@ -1186,5 +1189,6 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
                 screen.write('\n')
                 screen.write(line)
         screen.write('\n')
+        screen.flush()
     if out:
         out.close()
