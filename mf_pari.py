@@ -1171,12 +1171,15 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
 # Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
     out = open(filename, 'w') if filename else None
     screen = sys.stdout
+    n = 0 # will increment for each (N,1,chi) in range, so we skip unless n%njobs==jobno
     for N in range(Nmin,Nmax+1):
-        if N%njobs!=jobno:
-            continue
         screen.write("N = {}: ".format(N))
         Chars = DirichletCharacterGaloisReps(N)
         for i in range(len(Chars)):
+            n += 1
+            if n%njobs!=jobno:
+                continue
+            n += 1
             screen.write(" (o={}) ".format(i+1))
             screen.flush()
             t0=time.time()

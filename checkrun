@@ -2,9 +2,15 @@
 
 name=t$1-$2
 
-cline="import mf_pari; print(mf_pari.Nspaces($1,$2));"
-nspaces=`echo ${cline} | sagedev -q | head -1 | cut -d " " -f 2`
-#echo $nspaces spaces to compute for $1..$2
+nspacesfile=nspaces.$1-$2
+if [ -e $nspacesfile ]; then
+  nspaces=`cat $nspacesfile`;
+else
+ cline="import mf_pari; print(mf_pari.Nspaces($1,$2));"
+ nspaces=`echo ${cline} | sagedev -q | head -1 | cut -d " " -f 2`
+ echo $nspaces spaces to compute for $1..$2
+ echo $nspaces > $nspacesfile
+fi 
 ndone=`cat ${name}-* | wc -l`
 #echo $ndone spaces done
 echo $ndone / ${nspaces} spaces completed for $1..$2
