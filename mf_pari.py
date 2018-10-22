@@ -1093,7 +1093,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
     screen = sys.stdout
     Nmax = int(Nk2max/4.0)
     nspaces=0
-    n = 0 # will increment for each (N,k,chi) in range, so we skip unless n%njobs==jobno
+    n = -1 # will increment for each (N,k,chi) in range, so we skip unless n%njobs==jobno
     failed_spaces = []
     for N in range(1,Nmax+1):
         kmin = max(2,(RR(Nk2min)/N).sqrt().ceil())
@@ -1128,6 +1128,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
                     line = data_to_string(N,k,i+1,t0,newforms) + "\n"
                     if out:
                         out.write(line)
+                        out.flush()
                     else:
                         screen.write('\n')
                         screen.write(line)
@@ -1171,15 +1172,14 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
 # Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
     out = open(filename, 'w') if filename else None
     screen = sys.stdout
-    n = 0 # will increment for each (N,1,chi) in range, so we skip unless n%njobs==jobno
+    n = -1 # will increment for each (N,1,chi) in range, so we skip unless n%njobs==jobno
     for N in range(Nmin,Nmax+1):
-        screen.write("N = {}: ".format(N))
-        Chars = DirichletCharacterGaloisReps(N)
-        for i in range(len(Chars)):
+        nch = NChars(N)
+        screen.write("N = {}, {} characters: ".format(N,nch))
+        for i in range(nch):
             n += 1
             if n%njobs!=jobno:
                 continue
-            n += 1
             screen.write(" (o={}) ".format(i+1))
             screen.flush()
             t0=time.time()
@@ -1188,6 +1188,7 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
             line = data_to_string(N,1,i+1,t0,newforms) + "\n"
             if out:
                 out.write(line)
+                out.flush()
             else:
                 screen.write('\n')
                 screen.write(line)
