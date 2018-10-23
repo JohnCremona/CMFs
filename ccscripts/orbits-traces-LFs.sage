@@ -763,7 +763,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 coeffs_list.sort(cmp=CBFlistcmp, key = lambda z : z[-1])
                 for k, _coeffs in enumerate(coeffs_list):
                     j = _coeffs[1]
-                    ol = cremona_letter_code(orbit_labels[chi] - 1)
                     sa, sn = cremona_letter_code(mforbitlabel), k+1
                     if selfdual:
                         chibar = chi
@@ -774,11 +773,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     # mforbitlabel starts at 0
                     hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
                     all_the_labels[(chi,j)] = (level, weight, ol, sa, chi, sn)
-                    converted_label = (ol, sa, chi, sn)
+                    converted_label = (chi, sa, sn)
                     labels[(chi, j)] = converted_label
                     original_pair[converted_label] = (chi,j)
                     selfduals[converted_label] = selfdual
-                    conjugates[converted_label] = (ol, ca, chibar, cn)
+                    conjugates[converted_label] = (chibar, ca, cn)
 #    for key, val in conjugates.iteritems():
 #        print key,"\t--c-->\t", val
 
@@ -815,7 +814,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row = dict(constant_lf(level, weight, 2))
         chi = int(Ldbrow['chi'])
         j = int(Ldbrow['j'])
-        _, a, _, n = label(chi,j)
+        _, a, n = label(chi,j)
 
         row['order_of_vanishing'] = int(Ldbrow['rank'])
         zeros_as_int = zeros[(chi,j)][row['order_of_vanishing']:]
@@ -838,8 +837,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row['Lhash'] = str(zeros_as_int[0] * 2**(100-prec).round())
         if prec < 100:
             row['Lhash'] = '_' + row['Lhash']
-        ol = cremona_letter_code(orbit_labels[chi] - 1)
-        Lhashes[(ol, a, chi, n)] = row['Lhash']
+        Lhashes[(a, chi, n)] = row['Lhash']
         row['sign_arg'] = float(Ldbrow['signarg']/(2*pi))
         for i in range(0,3):
             row['z' + str(i + 1)] = RealNumber(str(zeros_as_int[i]) + ".")/2**prec
@@ -1031,7 +1029,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         for key, label in labels.iteritems():
             # key = (chi,j)
             # label = (chi, a, n)
-            lfuntion_label = ".".join( map(str, [level, weight] + list(label)))
+            chi, a, n = label
+            ol = cremona_letter_code(orbit_labels[chi] - 1)
+            lfuntion_label = ".".join( map(str, [level, weight] + [ol, a, chi, n]))
             hecke_cc[key] = [
                     hecke_orbit_code[key],
                     lfuntion_label, # N.k.c.x.n
