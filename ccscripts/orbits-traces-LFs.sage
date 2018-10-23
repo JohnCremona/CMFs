@@ -838,7 +838,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row['Lhash'] = str(zeros_as_int[0] * 2**(100-prec).round())
         if prec < 100:
             row['Lhash'] = '_' + row['Lhash']
-        Lhashes[(a, chi, n)] = row['Lhash']
+        Lhashes[(chi, a, n)] = row['Lhash']
         row['sign_arg'] = float(Ldbrow['signarg']/(2*pi))
         for i in range(0,3):
             row['z' + str(i + 1)] = RealNumber(str(zeros_as_int[i]) + ".")/2**prec
