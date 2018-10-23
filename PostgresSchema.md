@@ -54,6 +54,7 @@ label | text | label N.k.i for the cuspidal space `S_k(N, [\chi])` (same as the 
 level | integer | level N of the cuspidal space `S_k(N, [\chi])`
 weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
 char_orbit_index | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
+char_orbit_label | text | base-26 encoding of index i (1='a') that appears in label
 char_labels | jsonb | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
 dim | integer | dimension of `S_k(N, [\psi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
