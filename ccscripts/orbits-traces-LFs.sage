@@ -529,14 +529,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             for ol in orbit_labels.values():
                 F.write('{}:{}:{}:{}:{}\n'.format(level, weight, ol, degrees_sorted[ol], traces_sorted[ol]).replace(' ',''))
 
-    dim = dimension_new_cusp_forms(Gamma1(level), weight)
-    if notfound:
-        assert  dim == 0, "dim = %s" % dim
-        write_traces(traces_filename)
-        return 1
-
-
-
     #level_list = set()
     #level_weight_list = []
     #for dirpath, dirnames, filenames in os.walk(inpath):
@@ -561,8 +553,16 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         k = 0
         orbit_labels[1] = 1
 
-    degrees_sorted = [ [] for _ in range(k + 1)]
-    traces_sorted = [ [] for _ in range(k + 1)]
+    degrees_sorted = [ [] for _ in range(k + 2)]
+    traces_sorted = [ [] for _ in range(k + 2)]
+
+    dim = dimension_new_cusp_forms(Gamma1(level), weight)
+    if notfound:
+        assert  dim == 0, "dim = %s" % dim
+        write_traces(traces_filename)
+        return 1
+
+
 
     degree_lists = {}
     traces_lists = {}
