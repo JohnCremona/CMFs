@@ -764,6 +764,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 for k, _coeffs in enumerate(coeffs_list):
                     j = _coeffs[1]
                     sa, sn = cremona_letter_code(mforbitlabel), k+1
+                    ol = cremona_letter_code(orbit_labels[chi] - 1)
                     if selfdual:
                         chibar = chi
                         ca, cn = sa, sn
