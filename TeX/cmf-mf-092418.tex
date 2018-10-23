@@ -1,0 +1,413 @@
+\documentclass[11pt]{amsart}
+
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{epsfig}
+\usepackage{enumerate}
+\usepackage{fullpage}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,urlcolor=blue,citecolor=blue,linkcolor=blue}
+\usepackage{colonequals}
+
+%\usepackage[top=1.2cm, bottom=1.8cm, left=2.cm, right=1.9cm]{geometry}
+
+\numberwithin{equation}{subsection}
+
+\newtheorem{thm}[equation]{Theorem}
+\newtheorem{prop}[equation]{Proposition}
+\newtheorem{lem}[equation]{Lemma}
+\newtheorem{cor}[equation]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{defi}[equation]{Definition}
+\newtheorem{defis}[equation]{Definitions}
+\newtheorem{rem}[equation]{Remark}
+\newtheorem{rems}[equation]{Remarks}
+\newtheorem{rmk}[equation]{Remark}
+\newtheorem{ex}[equation]{Example}
+\newtheorem{exs}[equation]{Examples}
+\newtheorem{algo}[equation]{Algorithm}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\calP}{\mathcal{P}}
+\newcommand{\Hamil}{\mathbb{H}}
+\newcommand{\disc}{\Delta}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\prm}{\mathfrak{p}}
+\newcommand{\order}{\mathcal{O}}
+\newcommand{\calO}{\order}
+\newcommand{\lat}{\mathrm{Lat}}
+\newcommand{\hlat}{\lat^{*}}
+%\newcommand{\hlat}{\mathrm{HLat}}
+\newcommand{\hlato}{\lat^{*1}}
+%\newcommand{\hlato}{\mathrm{HLat}^{1}}
+
+\newcommand{\scal}[1]{\langle{#1}\rangle}
+
+\DeclareMathOperator{\PSL}{PSL}
+\DeclareMathOperator{\GL}{GL}
+\DeclareMathOperator{\SL}{SL}
+\DeclareMathOperator{\U}{U}
+\DeclareMathOperator{\Cl}{Cl}
+\DeclareMathOperator{\vol}{vol}
+\DeclareMathOperator{\covol}{covol}
+\DeclareMathOperator{\mat}{\mathcal{M}}
+\DeclareMathOperator{\Frob}{Frob}
+\DeclareMathOperator{\Cls}{Cls}
+\DeclareMathOperator{\aCls}{Cls^{*1}}
+\DeclareMathOperator{\trd}{trd}
+\DeclareMathOperator{\nrd}{nrd}
+\DeclareMathOperator{\proj}{pr}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Nm}{Nm}
+\DeclareMathOperator{\dist}{\rho}
+\DeclareMathOperator{\diag}{diag}
+
+\usepackage{xcolor}
+\definecolor{pastelred}{rgb}{0.741176, 0., 0.14902}
+\newcommand{\ap}[1]{{\color{pastelred} \textsf{[[AP: #1]]}}}
+\newcommand{\jv}[1]{{\color{red} \textsf{[[JV: #1]]}}}
+
+
+\begin{document}
+
+\title{Computing classical modular forms}
+\author{}
+\address{}
+\email{}
+\urladdr{}
+
+\author{}
+\address{}
+\email{}
+\urladdr{}
+
+%\author{John Voight}
+%\address{Department of Mathematics, Dartmouth College, 6188 Kemeny Hall, Hanover, NH 03755, USA}
+%\email{jvoight@gmail.com}
+%\urladdr{\url{http://www.math.dartmouth.edu/~jvoight/}}
+
+\date{\today}
+
+\hypersetup{pdftitle={Computing classical modular forms},
+pdfauthor={}}
+
+\begin{abstract}
+We discuss the practical aspects of computing classical modular forms.
+\end{abstract}
+
+\maketitle
+
+\section{Data status}
+
+\begin{verbatim}
+Third, I'd like to give you an update on where things stand.  It looks like we now have a complete data set for Nk^2 <= 1000 and k >= 2, modulo a few issues with the complex embeddings / L-function data that I need to follow up with Edgar tomorrow.  We also have pari data for k=1 computed by JC, and data computed by AB for all the dihedral forms, (I also discovered that Magma can also compute the dihedral cases), so I think we are in a good position to add weight 1 data, which we will work on this week.
+
+Just to give some stats on the data we do have (excluding k=1), this range covers 5533 (Galois orbits of) spaces S_k^new(N,chi), of which 2653 are non-trivial.  Among these there are 4843 irreducible Galois stable subspaces, corresponding to 4843 (Galois orbits of) newforms.  The total dimension is 145398 (so this is the total number of degree-2 L-functions).
+
+Among the 4843 newforms, 3707 have coefficient fields of degree <= 20, and we now have canonical (polredabs) defining polynomials for all of them, allowing us to conclude that there are only 1128 distinct Hecke fields in this data set, of which 597 are not (yet) in the LMFDB (the smallest missing field is x^4+35x^2+142, with discriminant 980706528 (which is outside the range covered by the LMFDB).  You can find a list of these 1128 fields in the file hecke_fields_1000.txt in the github repo, along with the LMFDB labels of the 531 that are in the LMFDB.
+
+For all 3707 of the newforms with coefficient field degree <= 20 we have computed algebraic a_n for 1 <= n <= 1000 using the wonderfully nice LLL-basis computed by JV's code.  I modified JV's code to go ahead and compute the exact index of the coefficient ring in the maximal order whenever we have a polredabs poly (if we can polredabs we should not be afraid to factor the discriminant), so we now know the exact value of the index (which can be surprisingly large).
+
+To compare to the current Mongo DB database of modular forms, within this range only 2373 newforms are present, and this includes some duplicates (the currently implementation usually stores only one newform per Galois orbit, but sometimes it stores more than one), so currently the LMFDB is missing more than half of the newforms we computed last week; the smallest is the form 26.2.25 (see http://www.lmfdb.org/ModularForm/GL2/Q/holomorphic/26/2/25/).  We are also storing a lot more coefficients than are currently available.
+
+On the other hand the current database contains a lot of newforms that are well outside our Nk^2 <= 1000 range, although in most cases it only contains a few forms in each S_k^{new}(Gamma_1(N)) (often only one example with non-trivial character).  In total there are (at most) 8664 newforms in the current database.  If we were to expand our range to Nk^2 <= 4000 we would hit far more than this (for Nk^2 <= 2000 we already get more than 15000 newforms).
+
+We would still be missing some forms that are in the current database, e.g. http://www.lmfdb.org/ModularForm/GL2/Q/holomorphic/88/11/67/a/ or http://www.lmfdb.org/ModularForm/GL2/Q/holomorphic/4/99/3/a/, but these are isolatedcases that I don't think are worth pursuing.  I note that it only takes 10-15 minutes to compute these examples in magma (which is less than the hardest examples in the Nk^2 <= 1000 range), so we could certainly replicate the cherry picked cases if we wanted to, but I see absolutely no reason to do this.
+
+The one place where I could imagine wanting to go past Nk^2 <= 4000 is for trivial character, where we could certainly go a lot further if we wanted to (maybe Nk^2 <= 40000?), at least on the algebraic side.
+
+Running on 64 cores the magma code now takes about 1.5 hours to compute all the data for Nk^2 <= 1000, and for Nk^2 <= 2000 I think it will take about 36-48 hours (I kicked this off last night and about 10 threads are still running).  The time is actually dominated by computing 1000 exact eigenvalues for all the degree <= 20 cases, if we lowered the number of coefficients and or the degree bound it would be faster, but I actually think we could get to Nk^2 <= 4000 if we are willing to throw enough cores at it and/or wait a few weeks.  Given that JC's pari code is 10-20 times faster than the magma code, there is certainly no problem getting algebraic data in this range, it's more a question of validating it.
+
+I guess my main question for AB and JB is this: what do you think about the feasibility of getting L-function data for the range Nk^2 <= 4000 in the near term (i.e. the next few weeks)?  (or Nk^2 <= 2000 if that is significantly easier)?
+
+In my view the data we have for Nk^2 <= 1000 is already clearly better than what is currently available (especially if we can include weight 1), but it would really be a slam dunk if we had Nk^2 <= 4000, which I think this is entirely feasible on the algebraic side.  Another option would be to only include L-functions for a smaller range, but this seems a shame to do, given how much of the data has already been computed.
+
+Best,
+
+Drew
+\end{verbatim}
+
+\section{Notes from discussions}
+
+\begin{verbatim}
+* Magma doesn't compute Atkin-Lehner eigenvalues for quadratic character
+* Maybe later, it would be nice if we could also compute exact Hecke data using pari
+* Sage code for Conrey labels
+* Polredabs the polys in mffield_500.txt
+  -> Sort decomp by trace up to absolute degree <= 20
+* Compute L-function data whenever feasible (and then they might not have labels), including product L-functions for <= 4
+  -> Compute L-hash for product L-function
+  -> is CM?, has inner twist (what is relationship to Galois conjugates?), Sato-Tate group
+  -> special to weight 2: numerical (geometric) endomorphism algebra, database of modular abelian varieties?
+
+In database entry:
+  - at least a_n's up to Sturm bound
+           
+Two boxes:
+  k*N <= 1000
+  k = 2, N = larger bound
+           
+JV:
+* a_n or a_p
+
+
+Bober has:
+  * N <= 999, k <= 4 : labeling for decomp (Conrey label), a_{p^n}'s for p^n < 2000 
+  * N <= 99, k <= 12 
+  * N <= 30, k <= 30 
+
+polydb: 
+  * N <= 434, k <= 3,4
+  * N*k <= 390, k <= 30
+  
+* Make exact matches for Galois orbits
+
+
+
+=====
+
+* T_1 + T_p + T_q linear combinations to pick out quadratic subspaces, k = 2 and chi = triv
+
+\end{verbatim}
+
+\section{Introduction}
+
+\section{Running time}
+
+\subsection{In theory}
+
+\begin{verbatim}
+This is a bit optimistic, but typically OK, yes :
+
+1) you assume that the weight is fixed (otherwise the size of the matrix
+entries must be taken into account); and that the Nebentypus has fixed order
+as well [ otherwise you need to work in cyclotomic fields or large degree, which
+increases the cost of "base field" computations ]
+
+2) splitting the space may need many (linear combinations of) T_p 
+[ I don't know anything better than the Sturm bound to guarantee that the
+T_p, p <= B, generate the Hecke algebra ]. So O~(d^4) would be a
+worst case [ given assumption 1) ]
+
+>   * To get further eigenvalues, you typically only need one row of
+> T_p, but you still need to multiply this row by each eigenvector, so
+> it ends up being basically soft-O(d*p) again.
+
+For the trace formula, here's a quick back-of-the-enveloppe computation.
+Will check this with Henri in september :-) :
+
+1) We must first build the space S_k^new: 
+
+1.a) we pick successive forms T_j Tr^new until they generate the space.
+Assuming the first O~(d) values of j are enough [ heuristic for now but it may
+be possible to prove this; it's true in practice ], this requires
+expanding those O~(d) forms up to Sturm bound ( O~(d) ). So will need
+O~(d * max(j)) = O~(d^2) coeffs of Tr^new.
+
+1.b) all Hurwitz class numbers of index O~(d * max(j)) are precomputed
+[ cost O~(d^3) ]; the coefficient Tr(n) [ = trace of T_n on the space S_k]
+costs O(sqrt(n)). I am assuming that the weight and Nebentypus are
+fixed, otherwise we need to take into account the "size" of coefficients.
+
+So computing all Tr(n) up to O~(d^2) costs O~(d^3). The Tr^new(n) are
+simple convolutions of the Tr(n) with Moebius function and the like and
+costs the same up to log factors (sums over divisors etc.).
+
+1.c) we compute the rank of the matrix made up by the coefficients of
+the T_j Tr^new, and hope to get maximal rank in O(1) trials with O~(d)
+forms: O(d^3) [ or whatever exponent: no soft-Oh because we expect to
+detect the rank by projecting Z[\chi] to a small finite field ]
+
+1.d) we precompute base change matrices from and to Miller's basis: at
+least O~(d^\omega+1) [ the T_j Tr^new form a somewhat random basis and the
+coefficients in the original -> Miller base change matrix are huge ]
+
+Total [heuristic] cost for this phase: O~(d^\omega+1)
+
+2) To compute the matrix of T_p on our basis for S_k^new, we now need
+coefficients of Tr^new up to O~(d * max(j) * p). The Hurwitz class
+number precomputation and subsequent coefficients computation jumps to
+O~(d^3 p^{3/2}).
+
+3) Then it's the same as in the other methods: characteristic polynomial,
+factorization over Q(\chi), splitting, etc.
+
+
+Thus, in theory, I would expect the trace formula to be slower than modular
+symbols because of
+
+- the cost to convert to Miller basis (or to express a random form in
+  terms of the T_j Tr^new basis)
+
+- the extra costs (extra coefficients) involved in hitting T_j Tr^new by T_p
+
+In practice, as long as p doesn't get too large (and the linear algebra
+involved in converting T_j Tr^new -> Miller basis doesn't get dominant),
+I'm not sure at all that this is the case. It also depends on how you
+get S_k^new from modular symbols when N is highly composite : kernels of
+degeneracy maps can get expensive since they apply on "huge" S_k (of
+dimension D), not "tiny" S_k^new (of dimension d).
+
+I'm *very* interested in data points if you compare the above guesstimates
+with Sage or Magma running times. :-)
+\end{verbatim}
+
+\subsection{In practice}
+
+\begin{verbatim}
+Thanks for this!  I notice that in fact you computed a lot more spaces than N*k <= 1000.  I extracted the lines with N*k <= 1000 from all.txt and sorted them by N,k,char-orbit-index (the first 3 fields in each row).  There are a total of 41265 spaces, of which 19840 are empty, and the total run time was 575275s.
+
+The Magma run has completed all the spaces with N*k <= 500, and I get an exact match with your data!
+
+I uploaded the files mfdecomp_500.m.txt and mfdecomp_500.gp.txt to your repo which contain corresponding data for the 14259 spaces with N*k <= 500, of which 6853 are non-empty.  I should note that in the magma file the timings for N=1 and N=2 are a lie, I cheated on those (basically by assuming Maeda) but my cheat exactly matches both your data and data I previously computed in magma, so I'm not worried about correctness here.  Impressively, even if I ignore N=1,2 (and N=2 is by far the most time-consuming case for magma, for k>400 and divisible by 4 each space takes more than half a day), I get a total cpuy time of 64894s for magma vs 3394 for gp, so Karim has bought as about a factor of 20 speedup.
+\end{verbatim}
+
+\section{How to deal with spaces that are too big}
+
+\begin{verbatim}
+I propose we run Magma on a range of weights, levels, and characters,
+but keeping only Hecke orbits of dimension <= 4.  The 4 is arbitrary,
+it says we'll e.g. be interested in fourfolds but not fivefolds; I
+think that's reasonable for where we're at now.  Here's what it would
+look like in pari:
+
+? for(i=1,#L, T = gettime(); Snew = mfinit([N,4,[G,L[i]]], 0); [vF,vK]
+= mfsplit(Snew, bnd); print1(mfdim(Snew)); print1(" ");
+print(gettime()/1000.);)
+
+This already seems to take forever for me in a space with N = 220; I
+think the linear algebra over cyclotomic fields has not been optimized
+in Pari.
+
+My proposed strategy, for weight k >= 3:
+  choose a large prime p split in the cyclotomic field,
+  factor a Hecke polynomial mod p,
+  for the combinations of factors that give dimension <= 4, find
+lifted polynomials that are q-Weil polynomials,
+  and for these, find the exact eigenspace, and then compute the
+remaining Hecke eigenvalues over the cyclotomic field
+
+Variant: try several large primes to find one with minimal splitting;
+or take a prime which is not necessarily split but of approximately
+the same norm.
+
+For weight k >= 3, my expectation is that there are few small
+eigenspaces, most will be discarded, and there will not be a
+combinatorial explosion in the third step.
+
+OTOH, for weight k = 2, we should instead loop over p-Weil polynomials
+with character and repeated split the space, just like Cremona does
+for elliptic curve--I would expect many eigenforms.
+\end{verbatim}
+
+\subsection{Polredabs and polredbest}
+
+Really important: take version of Pari = blank, Sage 8.3.
+
+\section{Atkin--Lehner operators}
+
+\begin{verbatim}
+JV is right, the A-L operators W_M for M||N map S_k(N,chi) to S_k(N,chi') with some explicit dependence of chi' on chi, M, N.  In general chi' is different from chi so they are no use for splitting up spaces.
+\end{verbatim}
+
+\section{CM and inner twist}
+
+\section{Questions and observations}
+
+\begin{verbatim}
+> In order to identify conjugate forms that Magma erroneously lists, I am
+> comparing absolute traces of a_n for n up to the Sturm bound.  Stupid
+> question: this is obviously necessary, but is it sufficient?  Comparing
+> minpolys would certainly be enough, and traces up to some bound is certainly
+> enough, the question is whether the Sturm bound works.  In any case
+> comparing the results with Pari should catch any problems this might cause.
+>
+> Sure, but can non-conjugate forms give rise to the same isogeny class of
+> abelian varieties over Q?  If not then there is some B such that checking
+> traces of a_n for n <= B is enough, and then the questions is whether B
+> is the Sturm bound or larger.  Or are you are telling me that non-conjugate
+> forms can define the same AV over Q (in other words, non-conjugate modular
+> AVs with isogenous restrictions of scalars)?  Do you know any examples?
+
+Sorry, no, I was trying to say that I don't see a way to use the Sturm
+bound for this purpose.
+\end{verbatim}
+
+\begin{verbatim}
+The non-empty spaces of level 2 always seem to decompose as [floor(d/2),ceil(d/2)].  I know this is true up to weight 400, and I'm guessing this is actually a theorem?
+
+I would guess this is just the Maeda conjecture in level 2 after you
+decompose the space under the Atkin-Lehner operator--so far from a
+theorem.
+
+But is it at least a theorem that
+Atkin-Lehner will split the space as evenly as possible in level 2?
+\end{verbatim}
+
+\section{Weight 1}
+
+\begin{verbatim}
+> chi := Generators(FullDirichletGroup(383))[1];
+> M := ModularForms(chi,1);
+> Dimension(M);
+190
+> HeckeOperator(M,5);
+
+>> HeckeOperator(M,5);
+                ^
+Runtime error: Hecke operator computation currently only supported for spaces 
+with a single character that takes values +/-1.
+\end{verbatim}
+
+\section{JC comments on representing newforms}
+
+\begin{verbatim}
+The following occurred to me while driving up to Scotland 10 days ago, so I hope it still makes sense.
+
+We think of each d-dimensional newform as one object f representing a Galois orbit of newforms.  We have been concentrating on how best to write such an object down, via its sequence of coefficients a_n all belonging to the Hecke field F of degree d.  The various schemes we have come up with (expressing the a_n in terms of a power basis for F, or in terms of an integral basis for some order in F) seem rather ad hoc and all about how to represent a sequence (a_n) of elements of F, regardless of the fact that these are the coefficients of a modular form.
+
+Now, f and its Galois conjugates span a d-dimensional complex vector space V_C;  also the Q-bar span of f is a d-dimensional space over Q-bar (but we don't get an F-vector space unless F is Galois).  And -- this is my point -- this space has a Q-structure too: the subset of forms in the space whose q-expansions are in Q forms a d-dimensional vector space V_Q over Q.  Moreover, if we fix a Q-basis for the field F, say beta_1,...,beta_d, and write each a_n as a Q-linear combination of the betas, then we can rearrange the q-expansion of f to express f as a linear combination with coefficients beta_1,...,beta_d of d q-expansions with rational coefficients, and these are Q-linearly independent and span the Q-vector space V_Q.  (This is easy to prove.)
+
+So that gives another view of what we have been doing.   There is a well-defined Q-vector space V_Q of dimension d, namely the subset of the d-dimensional C-vector space consisting of forms whose q-expansions are in Q[[q]].  In that space there's a Z-lattice V_Z (forms in Z[[q]]).  We can find a nice Z-basis for that lattice (LLL-reduction etc) by taking any Q-basis for F and expressing the a_n in terms of that basis, then picking out the i'th coefficients for 1<=i<=d, and doing easy algebra.   This lattice V_Z is a well-defined object whose definition does not even require us to know what the field F is.  The Hecke algebra acts on V_Q and preserves V_Z  (that takes a little thought when Q)chi) is nontrivial, but is surely true), so has an integral matrix representation.  The newform f itself is then just a simultaneous eigenvector for all these integral matrices, i.e. a non-zero element of F^d (whose algebraic Galois conjugates give the conjugate newforms, w.r.t. the same basis for V_Z).
+
+I don't think that this viewpoint helps us in our computations, but (for me at least) it helps me think about what we are storing, also perhaps what we should be displaying.  We could display the initial parts of all d integral q-expansions, as a basis for the space (so far not needing to mention F at all); then say what F is and somehow display the eigenvector in F^d and say that its coordinates are the coefficients of (one of) the newforms in the space.  The Z-basis we give would of course be primitive.  That means that the trace form would not necessarily be a basis element (e.g. when F=Q(sqrt(2)) all traces from Z[sqrt(2)] are even to the trace form is not primitive), but we could have a convention that the trace form is a multiple of the first basis q-expansion.
+
+Now I will get back to actually doing some computations!
+\end{verbatim}
+
+\section{Comments on pari}
+
+\begin{verbatim}
+> Two more things:  (1) I had been under the impression that 
+> polredbest(),
+> unlike polredabs(),  was faster because it did not need to factor any
+> discriminants.  But the documentation suggests otherwise.  the docs for
+> polredabs() at http://pari.math.u-bordeaux.fr/dochtml/html-stable/ are 
+> full
+> of warnings regarding factorization; the docs for polredbest() say 
+> nothing
+> like that but do say "This routine computes an LLL-reduced basis for 
+> the
+> ring of integers of ?[X]/(T), then ..."   which implies that the full 
+> ring
+> of integers is known along the way.  Perhaps I should ask on pari-users
+> about that?
+> 
+
+This would be interesting to know, I had always assumed it was "safe" to
+call polredbest() with a polynomial whose discriminant cannot be readily
+factored.
+\end{verbatim}
+
+\begin{thebibliography}{999}
+
+\end{thebibliography}
+
+\end{document}

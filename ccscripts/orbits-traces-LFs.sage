@@ -237,17 +237,13 @@ def CBFlistcmp(L1, L2):
     for (z1, z2) in zip(L1, L2):
         x1, y1 = z1.real(), z1.imag()
         x2, y2 = z2.real(), z2.imag()
-        if y1 < y2:
-            return -1r
-        elif y1 > y2:
-            return 1r
-
-    for (z1, z2) in zip(L1, L2):
-        x1, y1 = z1.real(), z1.imag()
-        x2, y2 = z2.real(), z2.imag()
         if x1 < x2:
             return -1r
         elif x1 > x2:
+            return 1r
+        elif y1 < y2:
+            return -1r
+        elif y1 > y2:
             return 1r
 
     return 0r
@@ -753,11 +749,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             print chi2, j, zeros[(chi2, j)]
     '''
 
-    def convert_label(label_str):
-        N, k, chi, a, n =  map(int, label_str.split("."))
-        a = cremona_letter_code(a)
-        return a, n
-
     labels = {}
     original_pair = {}
     conjugates = {}
@@ -793,36 +784,33 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 coeffs_list.sort(cmp=CBFlistcmp, key = lambda z : z[-1])
                 for k, _coeffs in enumerate(coeffs_list):
                     j = _coeffs[1]
-                    label = '{}.{}.{}.{}.{}'.format(level, weight, chi, mforbitlabel, k+1)
-                    if not selfdual:
-                        conjugate = '{}.{}.{}.{}.{}'.format(level, weight, chibar, mforbitlabel, d - k)
-                    else:
+                    sa, sn = cremona_letter_code(mforbitlabel), k+1
+                    ol = cremona_letter_code(orbit_labels[chi] - 1)
+                    if selfdual:
                         chibar = chi
-                        conjugate = label
+                        ca, cn = sa, sn
+                    else:
+                        ca, cn = sa, d - k
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
-                    sa, sn = convert_label(label)
-                    assert cremona_letter_code(mforbitlabel) == sa
-                    assert sn == k + 1
                     hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
-                    all_the_labels[(chi,j)] = ((level, weight, cremona_letter_code(orbit_labels[chi] - 1), sa), (level, weight, chi, sa, sn))
+                    all_the_labels[(chi,j)] = (level, weight, ol, sa, chi, sn)
                     converted_label = (chi, sa, sn)
                     labels[(chi, j)] = converted_label
                     original_pair[converted_label] = (chi,j)
                     selfduals[converted_label] = selfdual
-                    ca, cn = convert_label(conjugate)
                     conjugates[converted_label] = (chibar, ca, cn)
 
 #    for key, val in conjugates.iteritems():
 #        print key,"\t--c-->\t", val
 
     for key, val in all_the_labels.iteritems():
-        print key," \t--->\t" + "\t".join( map(str, [val[0],val[1],hecke_orbit_code[key]]))
+        print key," \t--->\t" + "\t".join( map(str, [val,hecke_orbit_code[key]]))
 
 
 
     def origin(chi, a, n):
-        return "ModularForm/GL2/Q/holomorphic/%d/%d/%d/%s/%d" % (level, weight, chi, a, n)
+        return "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s/%d/%d" % (level, weight, cremona_letter_code(orbit_labels[chi] - 1), a, chi, n)
 
     def rational_origin(chi, a):
         return "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, cremona_letter_code(orbit_labels[chi] - 1), a)
@@ -1064,7 +1052,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         for key, label in labels.iteritems():
             # key = (chi,j)
             # label = (chi, a, n)
-            lfuntion_label = ".".join( map(str, [level, weight] + list(label)))
+            chi, a, n = label
+            ol = cremona_letter_code(orbit_labels[chi] - 1)
+            lfuntion_label = ".".join( map(str, [level, weight] + [ol, a, chi, n]))
             hecke_cc[key] = [
                     hecke_orbit_code[key],
                     lfuntion_label, # N.k.c.x.n
