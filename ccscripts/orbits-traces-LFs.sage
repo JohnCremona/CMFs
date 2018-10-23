@@ -519,9 +519,24 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         print '{} not found'.format(Ldbinfile)
         notfound = True
 
+    if lfun_filename is None:
+        lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (level*weight**2))
+    if instances_filename is None:
+        instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (level*weight**2))
+    if hecke_filename is None:
+        hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (level*weight**2))
+    if traces_filename is None:
+        traces_filename = os.path.join(base_export, 'CMF_traces_%d.txt' % (level*weight**2))
+
+    def write_traces(traces_filename):
+        with open(traces_filename, 'a') as F:
+            for ol in orbit_labels.values():
+                F.write('{}:{}:{}:{}:{}\n'.format(level, weight, ol, degrees_sorted[ol], traces_sorted[ol]).replace(' ',''))
+
     dim = dimension_new_cusp_forms(Gamma1(level), weight)
     if notfound:
         assert  dim == 0, "dim = %s" % dim
+        write_traces(traces_filename)
         return 1
 
 
@@ -547,7 +562,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             # we are starting at 1
             orbit_labels[chi] = k + 1
     if level == 1:
+        k = 0
         orbit_labels[1] = 1
+
+    degrees_sorted = [ [] for _ in range(k + 1)]
+    traces_sorted = [ [] for _ in range(k + 1)]
 
     degree_lists = {}
     traces_lists = {}
@@ -745,13 +764,12 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     selfduals = {}
     hecke_orbit_code = {}
     all_the_labels = {}
-    decomposition = []
 
 
     for level, weight, originalchi in sorted(degree_lists.keys()):
         #toprint = '{}:{}:{}:{}'.format(level, weight, orbit_labels[originalchi], sorted(degree_lists[(level, weight, originalchi)]))
         #print ''.join(toprint.split())
-        traces_sorted = []
+        degrees_sorted[orbit_labels[originalchi]].append(sorted(degree_lists[(level, weight, originalchi)]))
         for mforbitlabel, (traces, mforbit) in enumerate(sorted(traces_lists[(level, weight, originalchi)])):
             selfdual = False
             if originalchi == 1:
@@ -765,7 +783,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             #if selfdual:
             #    print '*',
             #print mforbit, traces
-            traces_sorted.append(traces[:1000])
+            traces_sorted[orbit_labels[originalchi]].append(traces[:1000])
             chi_list = sorted(set( chi for (chi, j) in mforbit))
             for chi in chi_list:
                 j_list = [j for (_, j) in mforbit if _ == chi]
@@ -795,7 +813,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     ca, cn = convert_label(conjugate)
                     conjugates[converted_label] = (chibar, ca, cn)
 
-        decomposition.append((level, weight, orbit_labels[originalchi], sorted(degree_lists[(level, weight, originalchi)]), sorted(traces_sorted)))
 #    for key, val in conjugates.iteritems():
 #        print key,"\t--c-->\t", val
 
@@ -1066,10 +1083,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             for v in get_hecke_cc().values():
                 HF.write("\t".join(map(str,v)) + "\n")
 
-    def write_traces(traces_filename):
-        with open(traces_filename, 'a') as F:
-            for v in decomposition:
-                F.write('{}:{}:{}:{}:{}\n'.format(*v).replace(' ',''))
+    
 
 
 
@@ -1095,14 +1109,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     populate_complex_rows()
     populate_conjugates()
     populate_rational_rows()
-    if lfun_filename is None:
-        lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (level*weight**2))
-    if instances_filename is None:
-        instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (level*weight**2))
-    if hecke_filename is None:
-        hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (level*weight**2))
-    if traces_filename is None:
-        traces_filename = os.path.join(base_export, 'CMF_traces_%d.txt' % (level*weight**2))
+    
     export_complex_rows(lfun_filename, instances_filename)
     write_hecke_cc(hecke_filename)
     write_traces(traces_filename)
