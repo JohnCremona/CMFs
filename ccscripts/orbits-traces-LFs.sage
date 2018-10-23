@@ -1069,7 +1069,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     def write_traces(traces_filename):
         with open(traces_filename, 'a') as F:
             for v in decomposition:
-                F.write('{}:{}:{}:{}:{}\n'.format(v).replace(' ',''))
+                F.write('{}:{}:{}:{}:{}\n'.format(*v).replace(' ',''))
 
 
 
