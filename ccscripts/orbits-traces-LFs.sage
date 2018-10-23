@@ -501,7 +501,7 @@ def write_header_hecke_file(filename, overwrite = False):
             FILE.write("\n")
 
 
-def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None):
+def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None):
     print "N = %s, k = %s" % (level, weight)
     polyinfile = os.path.join(base_import, 'polydb/{}.{}.polydb'.format(level, weight))
     mfdbinfile = os.path.join(base_import, 'mfdb/{}.{}.mfdb'.format(level, weight))
@@ -745,6 +745,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     selfduals = {}
     hecke_orbit_code = {}
     all_the_labels = {}
+    decomposition = []
 
 
     for level, weight, originalchi in sorted(degree_lists.keys()):
@@ -763,6 +764,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             #if selfdual:
             #    print '*',
             #print mforbit, traces
+            traces_sorted.append(traces[:1000])
             chi_list = sorted(set( chi for (chi, j) in mforbit))
             for chi in chi_list:
                 j_list = [j for (_, j) in mforbit if _ == chi]
@@ -791,6 +793,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     selfduals[converted_label] = selfdual
                     ca, cn = convert_label(conjugate)
                     conjugates[converted_label] = (chibar, ca, cn)
+
+        decomposition.append((level, weight, orbit_labels[originalchi], sorted(degree_lists[(level, weight, originalchi)]), sorted(traces_sorted)))
 #    for key, val in conjugates.iteritems():
 #        print key,"\t--c-->\t", val
 
@@ -1061,6 +1065,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             for v in get_hecke_cc().values():
                 HF.write("\t".join(map(str,v)) + "\n")
 
+    def write_traces(traces_filename):
+        with open(traces_filename, 'a') as F:
+            for v in decomposition:
+                F.write('{}:{}:{}:{}:{}\n'.format(v).replace(' ',''))
+
 
 
     def export_complex_rows(lfunctions_filename, instances_filename):
@@ -1091,8 +1100,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (level*weight**2))
     if hecke_filename is None:
         hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (level*weight**2))
+    if traces_filename is None:
+        traces_filename = os.path.join(base_export, 'CMF_traces_%d.txt' % (level*weight**2))
     export_complex_rows(lfun_filename, instances_filename)
     write_hecke_cc(hecke_filename)
+    write_traces(traces_filename)
     return 0
 
 
@@ -1110,13 +1122,14 @@ def do_Nk2(Nk2):
     lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (Nk2))
     instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (Nk2))
     hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (Nk2))
-    for F in [lfun_filename, instances_filename, hecke_filename]:
+    traces_filename = os.path.join(base_export, 'CMF_traces_%d.txt' % (Nk2))
+    for F in [lfun_filename, instances_filename, hecke_filename, traces_filename]:
         if os.path.exists(F):
             os.remove(F)
     start_time = time.time()
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
-        do(N,k, lfun_filename, instances_filename, hecke_filename)
+        do(N,k, lfun_filename, instances_filename, hecke_filename, traces_filename)
         print "done, N = %s, k = %s" % (N, k)
         now = time.time()
         print "Progress: %.2f %%" % (100.*i/len(todo))
