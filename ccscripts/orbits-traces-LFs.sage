@@ -237,17 +237,13 @@ def CBFlistcmp(L1, L2):
     for (z1, z2) in zip(L1, L2):
         x1, y1 = z1.real(), z1.imag()
         x2, y2 = z2.real(), z2.imag()
-        if y1 < y2:
-            return -1r
-        elif y1 > y2:
-            return 1r
-
-    for (z1, z2) in zip(L1, L2):
-        x1, y1 = z1.real(), z1.imag()
-        x2, y2 = z2.real(), z2.imag()
         if x1 < x2:
             return -1r
         elif x1 > x2:
+            return 1r
+        elif y1 < y2:
+            return -1r
+        elif y1 > y2:
             return 1r
 
     return 0r
