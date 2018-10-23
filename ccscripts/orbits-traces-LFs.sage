@@ -488,8 +488,8 @@ def write_header(lfunctions_filename, instances_filename, overwrite = False):
 
 
 def write_header_hecke_file(filename, overwrite = False):
-    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_root_real', 'embedding_root_imag', 'an', 'angles']
-    types = ['bigint', 'text', 'integer', 'integer', 'double precision', 'double precision', 'jsonb', 'jsonb']
+    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_root_real', 'embedding_root_imag', 'an', 'first_an', 'angles', 'first_angles']
+    types = ['bigint', 'text', 'integer', 'integer', 'double precision', 'double precision', 'jsonb', 'jsonb', 'jsonb', 'jsonb']
     if not os.path.exists(filename) or overwrite:
         with open(filename, "w") as FILE:
             FILE.write("\t".join(columns) + "\n")
@@ -1063,7 +1063,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     '\N', # embedding_root_real
                     '\N', # embedding_root_imag
                     coeffs_f[key],
-                    angles[key]
+                    coeffs_f[key][:100],
+                    angles[key],
+                    angles[key][:100]
                     ]
         return hecke_cc
 
