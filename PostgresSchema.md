@@ -128,7 +128,7 @@ trace_hash | bigint | linear combination of the a_p between 2^12 and 2^13 reduce
 trace_zratio | text | proportion of zero a_p values for p <= 2^13 (rounded to three decimal places)
 trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^13 (rounded to three decimal places)
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
-isogeny_class_label | text | the isogeny class label of the corresponding elliptic curve or modular abelian variety (could be null if not yet in the database)
+related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
 is_cm | smallint | whether there is cm.  1=yes, -1=no, 0=unknown
 cm_disc | smallint | The (negative) discriminant of the order by which we have CM (1 if no CM, 0 if CM status is not known)
@@ -145,6 +145,8 @@ hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers
 qexp_display | text | latexed string for display on search page results
 trace_display | jsonb | list of traces tr(a_2), tr(a_3), tr(a_5), tr(a_7) for display on search page results
 traces | jsonb | full list of traces tr(a_n) for n from 1 to 1000
+projective_image_type | text | for weight 1 forms, one of "Dn", "A4", "S4", "A5"
+projective_image | text | for weight 1 forms, isomorphism class of project image (e.g. which Dn)
 
 Table name: `mf_newform_portraits`
 
@@ -173,6 +175,7 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
 conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
 embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
+embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`

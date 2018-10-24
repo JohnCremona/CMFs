@@ -49,9 +49,21 @@ def NewSpace(N, k, chi_number,Detail=0):
         return None
     G = pari(N).znstar(1)
     chi_sage = Chars[chi_number-1]
+    chi_order = chi_sage.multiplicative_order()
+    chi_degree = euler_phi(chi_order)
+    if Detail:
+        print("order(chi) = {}, [Q(chi):Q] = {}".format(chi_order, chi_degree))
     chi_gp = G.znconreylog(DC.number(chi_sage))
+    if Detail:
+        print("pari character = {}".format(chi_gp))
     NK = [N,k,[G,chi_gp]]
-    return NK, pari(NK).mfinit(0)
+    Snew = pari(NK).mfinit(0)
+    rel_degree = Snew.mfdim()
+    dim = chi_degree*rel_degree
+    if Detail:
+        print("Relative dimension = {}".format(rel_degree))
+        print("dim({}:{}:{}) = {}*{} = {}".format(N,k,chi_number,chi_degree,rel_degree,dim))
+    return NK, Snew
 
 def is_semisimple_modular(M, m,  nprimes=5):
     """M is a pari matrix over Q(zeta_m).  Check if M mod p has squarefree

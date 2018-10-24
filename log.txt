@@ -1,0 +1,72 @@
+JC's log of spaces computed using Sage+pari
+
+In all cases, dmax=20 and nan=1000.
+
+============================================================
+
+Weights >=2:
+
+Nk^2 <=1000 (5533 spaces) : complete in mfdata_1000.g.txt
+
+--------------------------------------------------------------------------------
+
+1000<Nk^2 <=2000 (10199 spaces) : almost complete  in
+
+t1001-1100 [923 spaces]
+t1101-1500 [3715 spaces]
+t1501-1600 [1060 spaces]
+t1601-1800 [2129 spaces]
+t1801-2000.x4 [2368/2372 spaces]
+
+4 missing (452,2,19), (471,2,23), (489,2,18), (500,2,18)
+
+dim(452:2:19) = 48*55 = 2640 = 48+2592 (dim split from AS's data)
+dim(471:2:23) = 48*51 = 2448 = 48+2400 (dim split from AS's data)
+dim(489:2:18) = 54*53 = 2862 = 54+2808 (dim split from AS's data)
+dim(500:2:18) = 40*73 = 2920 = 40+2880 (dim split from AS's data)
+
+--------------------------------------------------------------------------------
+
+2000<Nk^2 <=3000:  (12956 spaces) running
+
+2001-2100 (1136) finished in t2001-2100.x2
+                 1134 done
+                 2 missing: (501,2,5), (507,2,14)
+
+2101-2200 (1221) lehner*20, 18 finished, #14,#16 running
+                 1163 so far
+                 6 fails: (237,3,15), (535,2,7), (536,2,30), (537,2,5), (543,2,35), (548,2,15)
+
+2201-2300 (1230) galois*20, 19 finished, #13 running
+                 1227 so far
+                 0 fails
+
+2301-2400 (1293) galois*20, 17 finished, #2,#4,#11 running
+                 1245 so far
+                 2 fails: (548,2,47), (596,2,11)
+
+2401-2500 (1289) lehner*20, 15 finished, #4,#7,#8,#14,#15 running
+                 1205 so far
+                 0 fails
+
+2501-2600 (1283) atkin*20, 13 finished, #0,3,7,11,14,16,17 running
+                 1172 so far
+                 3 fails: (628,2,24), (633,2,30), (642,2,6), (642,2,6)
+
+2601-2700 (1381) not yet started
+2701-2800 (1366) not yet started
+2801-2900 (1339) not yet started
+2901-3000 (1418) not yet started
+
+============================================================
+
+Weight 1:
+
+1<=N<=1000 (26852 spaces): complete in mfdata_wt1_1000.gp.txt
+1001<=N<=2000 (47348 spaces): complete in mfdata_wt1_1001-2000.gp.txt
+
+2001<=N<=2029 (1526 spaces) complete in wt1.2001-2029
+
+2030<=N<=2100 (4040 spaces) running*5 on galois, 3405 so far, 3/5 finished
+
+2101<=N<=2200 (5770 spaces) running*5 on hecke, 2714 so far, 1/5 finished

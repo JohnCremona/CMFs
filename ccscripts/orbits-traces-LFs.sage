@@ -488,8 +488,8 @@ def write_header(lfunctions_filename, instances_filename, overwrite = False):
 
 
 def write_header_hecke_file(filename, overwrite = False):
-    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_root_real', 'embedding_root_imag', 'an', 'first_an', 'angles', 'first_angles']
-    types = ['bigint', 'text', 'integer', 'integer', 'double precision', 'double precision', 'jsonb', 'jsonb', 'jsonb', 'jsonb']
+    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_m', 'embedding_root_real', 'embedding_root_imag', 'an', 'first_an', 'angles', 'first_angles']
+    types = ['bigint', 'text', 'integer', 'integer', 'integer', 'double precision', 'double precision', 'jsonb', 'jsonb', 'jsonb', 'jsonb']
     if not os.path.exists(filename) or overwrite:
         with open(filename, "w") as FILE:
             FILE.write("\t".join(columns) + "\n")
@@ -527,7 +527,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     def write_traces(traces_filename):
         with open(traces_filename, 'a') as F:
             for ol in orbit_labels.values():
-                print ol
                 F.write('{}:{}:{}:{}:{}\n'.format(level, weight, ol, degrees_sorted[ol], traces_sorted[ol]).replace(' ',''))
 
     #level_list = set()
@@ -762,7 +761,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     selfduals = {}
     hecke_orbit_code = {}
     all_the_labels = {}
-
+    embedding_m = {}
 
     for level, weight, originalchi in sorted(degree_lists.keys()):
         #toprint = '{}:{}:{}:{}'.format(level, weight, orbit_labels[originalchi], sorted(degree_lists[(level, weight, originalchi)]))
@@ -785,6 +784,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             if only_traces:
                 continue
             chi_list = sorted(set( chi for (chi, j) in mforbit))
+            m = 1
             for chi in chi_list:
                 j_list = [j for (_, j) in mforbit if _ == chi]
                 chibar = inverse_mod(chi, level)
@@ -809,6 +809,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     original_pair[converted_label] = (chi,j)
                     selfduals[converted_label] = selfdual
                     conjugates[converted_label] = (chibar, ca, cn)
+                    embedding_m[(chi,j)] = m
+                    m += 1
     if only_traces:
         write_traces(traces_filename)
         return 0
@@ -1072,12 +1074,13 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     lfuntion_label, # N.k.c.x.n
                     label[0], # conrey_label
                     label[2], # embedding_index
+                    embedding_m[key],
                     '\N', # embedding_root_real
                     '\N', # embedding_root_imag
                     coeffs_f[key],
                     coeffs_f[key][:100],
                     angles[key],
-                    angles[key][:100]
+                    [pair for pair in angles[key] if pair[0] < 100],
                     ]
         return hecke_cc
 
@@ -1086,8 +1089,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         with open(hecke_filename, 'a') as HF:
             for v in get_hecke_cc().values():
                 HF.write("\t".join(map(str,v)) + "\n")
-
-    
 
 
 
