@@ -1158,7 +1158,7 @@ if len(sys.argv) == 2:
     do_Nk2(Nk2)
 elif len(sys.argv) == 3:
     if sys.argv[1] == 'traces':
-        Nk2 = int(sys.argv[1])
+        Nk2 = int(sys.argv[2])
         do_Nk2(Nk2, only_traces = True)
     else:
         N = int(sys.argv[1])
