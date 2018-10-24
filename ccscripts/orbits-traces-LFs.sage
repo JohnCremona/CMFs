@@ -527,6 +527,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     def write_traces(traces_filename):
         with open(traces_filename, 'a') as F:
             for ol in orbit_labels.values():
+                print ol
                 F.write('{}:{}:{}:{}:{}\n'.format(level, weight, ol, degrees_sorted[ol], traces_sorted[ol]).replace(' ',''))
 
     #level_list = set()
@@ -551,7 +552,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             orbit_labels[chi] = k + 1
     if level == 1:
         k = 0
-        orbit_labels[1] = 1
+        orbit_labels = {1:1}
 
     degrees_sorted = [ [] for _ in range(k + 2)]
     traces_sorted = [ [] for _ in range(k + 2)]
