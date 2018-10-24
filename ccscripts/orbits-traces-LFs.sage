@@ -1148,7 +1148,7 @@ def do_Nk2(Nk2, only_traces = False):
         sys.stdout.flush()
 
 
-assert len(sys.arv) >= 2
+assert len(sys.argv) >= 2
 if len(sys.argv) == 2:
     try:
         Nk2 = int(sys.argv[1])
