@@ -128,7 +128,7 @@ trace_hash | bigint | linear combination of the a_p between 2^12 and 2^13 reduce
 trace_zratio | text | proportion of zero a_p values for p <= 2^13 (rounded to three decimal places)
 trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^13 (rounded to three decimal places)
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
-friends | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
+related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
 is_cm | smallint | whether there is cm.  1=yes, -1=no, 0=unknown
 cm_disc | smallint | The (negative) discriminant of the order by which we have CM (1 if no CM, 0 if CM status is not known)
