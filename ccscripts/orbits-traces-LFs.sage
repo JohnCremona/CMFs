@@ -497,7 +497,7 @@ def write_header_hecke_file(filename, overwrite = False):
             FILE.write("\n")
 
 
-def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None):
+def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None, only_traces = False):
     print "N = %s, k = %s" % (level, weight)
     polyinfile = os.path.join(base_import, 'polydb/{}.{}.polydb'.format(level, weight))
     mfdbinfile = os.path.join(base_import, 'mfdb/{}.{}.mfdb'.format(level, weight))
@@ -641,14 +641,15 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
 
 
-    bad_euler_factors = {}
-    euler_factors = {}
-    angles = {}
-    coeffs_f = {}
+    if not only_traces:
+        bad_euler_factors = {}
+        euler_factors = {}
+        angles = {}
+        coeffs_f = {}
 
-    for key, coeff in coeffs.iteritems():
-        chi, j = key
-        coeffs_f[key], angles[key], euler_factors[key], bad_euler_factors[key] = angles_euler_factors(coeff, level, weight, chi)
+        for key, coeff in coeffs.iteritems():
+            chi, j = key
+            coeffs_f[key], angles[key], euler_factors[key], bad_euler_factors[key] = angles_euler_factors(coeff, level, weight, chi)
 
     #mforbits = {}
 
@@ -720,10 +721,15 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         Lvalues             BLOB);
     '''
 
+    if not only_traces:
     zeros = {}
     plots = {}
     Ldbresults = {}
-    for result in Ldb.execute('SELECT level, weight, chi, j, rank, zeroprec, nzeros, zeros, valuesdelta, nvalues, Lvalues, signarg from modformLfunctions'):
+    if only_traces:
+        cur = []
+    else:
+        cur = Ldb.execute('SELECT level, weight, chi, j, rank, zeroprec, nzeros, zeros, valuesdelta, nvalues, Lvalues, signarg from modformLfunctions')
+    for result in cur:
         nzeros = result['nzeros']
         prec = result['zeroprec']
         chi = result['chi']
@@ -774,7 +780,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             #if selfdual:
             #    print '*',
             #print mforbit, traces
-            traces_sorted[orbit_labels[originalchi]].append(traces[:1000])
+            traces_sorted[orbit_labels[originalchi]].append(traces[:to_store])
+            if only_traces:
+                continue
             chi_list = sorted(set( chi for (chi, j) in mforbit))
             for chi in chi_list:
                 j_list = [j for (_, j) in mforbit if _ == chi]
@@ -800,6 +808,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     original_pair[converted_label] = (chi,j)
                     selfduals[converted_label] = selfdual
                     conjugates[converted_label] = (chibar, ca, cn)
+    if only_traces:
+        write_traces(traces_filename)
+        return 0
 
 #    for key, val in conjugates.iteritems():
 #        print key,"\t--c-->\t", val
@@ -1109,7 +1120,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
 import sys, time
-def do_Nk2(Nk2):
+def do_Nk2(Nk2, only_traces = False):
     todo = []
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
@@ -1129,7 +1140,7 @@ def do_Nk2(Nk2):
     start_time = time.time()
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
-        do(N,k, lfun_filename, instances_filename, hecke_filename, traces_filename)
+        do(N,k, lfun_filename, instances_filename, hecke_filename, traces_filename, only_traces)
         print "done, N = %s, k = %s" % (N, k)
         now = time.time()
         print "Progress: %.2f %%" % (100.*i/len(todo))
@@ -1137,7 +1148,7 @@ def do_Nk2(Nk2):
         sys.stdout.flush()
 
 
-
+assert len(sys.arv) >= 2
 if len(sys.argv) == 2:
     try:
         Nk2 = int(sys.argv[1])
@@ -1145,11 +1156,14 @@ if len(sys.argv) == 2:
         print "%s is not a valid argument" % (sys.argv[1],)
         raise
     do_Nk2(Nk2)
-
 elif len(sys.argv) == 3:
-    N = int(sys.argv[1])
-    k = int(sys.argv[2])
-    do(N, k)
+    if sys.argv[1] == 'traces':
+        Nk2 = int(sys.argv[1])
+        do_Nk2(Nk2, only_traces = True)
+    else:
+        N = int(sys.argv[1])
+        k = int(sys.argv[2])
+        do(N, k)
 
 
 
