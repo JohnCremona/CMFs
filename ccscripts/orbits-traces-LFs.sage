@@ -728,6 +728,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         cur = []
     else:
         cur = Ldb.execute('SELECT level, weight, chi, j, rank, zeroprec, nzeros, zeros, valuesdelta, nvalues, Lvalues, signarg from modformLfunctions')
+
     for result in cur:
         nzeros = result['nzeros']
         prec = result['zeroprec']
