@@ -175,6 +175,7 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
 conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
 embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
+embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
