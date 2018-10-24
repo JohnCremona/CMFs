@@ -721,7 +721,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         Lvalues             BLOB);
     '''
 
-    if not only_traces:
     zeros = {}
     plots = {}
     Ldbresults = {}
