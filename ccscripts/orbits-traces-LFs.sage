@@ -766,7 +766,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     for level, weight, originalchi in sorted(degree_lists.keys()):
         #toprint = '{}:{}:{}:{}'.format(level, weight, orbit_labels[originalchi], sorted(degree_lists[(level, weight, originalchi)]))
         #print ''.join(toprint.split())
-        degrees_sorted[orbit_labels[originalchi]].append(sorted(degree_lists[(level, weight, originalchi)]))
+        degrees_sorted[orbit_labels[originalchi]] = sorted(degree_lists[(level, weight, originalchi)])
         for mforbitlabel, (traces, mforbit) in enumerate(sorted(traces_lists[(level, weight, originalchi)])):
             selfdual = False
             if originalchi == 1:
