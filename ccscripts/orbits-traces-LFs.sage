@@ -1069,7 +1069,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     coeffs_f[key],
                     coeffs_f[key][:100],
                     angles[key],
-                    angles[key][:100]
+                    [pair for pair in angles[key] if pair[0] < 100],
                     ]
         return hecke_cc
 
