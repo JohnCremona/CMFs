@@ -178,8 +178,7 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     # later compute the traces from them.  So we don't need them if
     # nnf==1 and the dimension>dmax.
 
-
-    if nnf>1 or (chi_degree*(pols[0]).poldegree())<=dmax:
+    if dmax==0 or nnf>1 or ((chi_degree*(pols[0]).poldegree())<=dmax):
         if Detail>1:
             print("...computing mfeigenbasis...")
         newforms = Snew.mfeigenbasis()
@@ -370,7 +369,7 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
     reldims = [pol.poldegree() for pol in pols]
     dims = [d*chi_degree for d in reldims]
     # We'll need the coefficients an, if any newforms have dimension >1 and <=dmax.
-    an_needed = [i for i,d in enumerate(dims) if d>1 and d<=dmax]
+    an_needed = [i for i,d in enumerate(dims) if d>1 and (dmax==0 or d<=dmax)]
     if Detail:
         print("Need to compute a_n for {} newforms: {}".format(len(an_needed), an_needed))
 
@@ -388,7 +387,7 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
             for Q,AL in zip(Qlist,ALs):
                 print("W_{}={}".format(Q[1],AL) )
 
-    if nnf==1 and dims[0]>dmax:
+    if nnf==1 and dims[0]>dmax and dmax>0:
         if Detail:
             print("Only one newform and dim={}, so use traceform to get traces".format(dims[0]))
         traces = pNK.mftraceform().mfcoefs(nan)
@@ -940,7 +939,7 @@ def bestify_newform(nf, dmax=20, Detail=0):
     if dim==1:
         nf['best_poly'] = nf['poly']
         return nf
-    if dim>dmax:
+    if dim>dmax and dmax>0:
         nf['best_poly'] = None
         return nf
     Qx = PolynomialRing(QQ,'x')
@@ -951,8 +950,6 @@ def bestify_newform(nf, dmax=20, Detail=0):
     nf['best_poly'] = best_poly = polredbest_stable(poly)
     if Detail:
         print("best_poly for {} is {}".format(Nko,best_poly))
-    if dim>dmax:
-        return nf
 
     # Now the real work starts
     Fold = NumberField(poly,'a')
@@ -979,7 +976,7 @@ def integralify_newform(nf, dmax=20, Detail=0):
     Output changes eigdata['bas'] and eigdata['ancs'] so the latter are all integral and small, when 1<dim<=dmax.
     """
     dim = nf['dim']
-    if 1<dim and  dim<=dmax:
+    if 1<dim and  (dim<=dmax or dmax==0):
         nf['eigdata'] = eigdata_reduce(nf['eigdata'], nf['SB'], Detail)
     return nf
 
@@ -1157,6 +1154,18 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
         print("Completed apart from: {}".format(failed_spaces))
     #return nspaces
 
+def OneSpace_old(N, k, char_number, dmax=20, nan=100, filename=None, Detail=0):
+    if filename==None:
+        filename = "{}.{}.{}.txt".format(N, k, char_number)
+    out = open(filename, 'w')
+    t0=time.time()
+    newforms = Newforms(N,k,char_number,dmax,nan, Detail)
+    t0=time.time()-t0
+    line = data_to_string(N,k,char_number,t0,newforms) + "\n"
+    out.write(line)
+    out.close()
+    print("{} newforms computed in {:0.3f}s.  Output written to {}".format(len(newforms),t0,filename))
+
 def OneSpace(N, k, char_number, dmax=20, nan=100, filename=None, Detail=0):
     if filename==None:
         filename = "{}.{}.{}.txt".format(N, k, char_number)
@@ -1196,6 +1205,35 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
             screen.flush()
             t0=time.time()
             newforms = NewformTraces(N,1,i+1,dmax,nan, Detail)
+            t0=time.time()-t0
+            line = data_to_string(N,1,i+1,t0,newforms) + "\n"
+            if out:
+                out.write(line)
+                out.flush()
+            else:
+                screen.write('\n')
+                screen.write(line)
+        screen.write('\n')
+        screen.flush()
+    if out:
+        out.close()
+
+def WeightOne_old(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
+# Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
+    out = open(filename, 'w') if filename else None
+    screen = sys.stdout
+    n = -1 # will increment for each (N,1,chi) in range, so we skip unless n%njobs==jobno
+    for N in range(Nmin,Nmax+1):
+        nch = NChars(N)
+        screen.write("N = {}, {} characters: ".format(N,nch))
+        for i in range(nch):
+            n += 1
+            if n%njobs!=jobno:
+                continue
+            screen.write(" (o={}) ".format(i+1))
+            screen.flush()
+            t0=time.time()
+            newforms = Newforms(N,1,i+1,dmax,nan, Detail)
             t0=time.time()-t0
             line = data_to_string(N,1,i+1,t0,newforms) + "\n"
             if out:
