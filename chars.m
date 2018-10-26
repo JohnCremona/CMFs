@@ -37,7 +37,7 @@ intrinsic CompareCharacters (chi1::GrpDrchElt,chi2::GrpDrchElt) -> RngIntElt
     N := Modulus(chi1);  assert Modulus(chi2) eq N;
     n1 := Order(chi1); n2 := Order(chi2);
     if n1 ne n2 then return n1-n2; end if;
-    // this will be very slow if characters are actually conjugate, avoid using t
+    // this will be very slow if characters are actually conjugate, avoid this use case
     for a:=2 to N-1 do
         if GCD(a,N) ne 1 then continue; end if;
         t1 := Trace(chi1(a));  t2 := Trace(chi2(a));
