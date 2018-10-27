@@ -25,12 +25,12 @@ end function;
 
 intrinsic QDimensionCuspForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
 { The Q-dimension of the space S_k(N,chi) of cuspidal modular forms of weight k, level N, and character chi, where N is the modulus of chi. }
-    return DimensionCuspForms(chi)*Degree(chi);
+    return DimensionCuspForms(chi,k)*Degree(chi);
 end intrinsic;
 
 intrinsic QDimensionNewCuspForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
 { The Q-dimension of the new subspace of cuspdial forms of weight k, level N, and character chi, where N is the modulus of chi. }
-    return DimensionNewCuspForms(chi)*Degree(chi);
+    return DimensionNewCuspForms(chi,k)*Degree(chi);
 end intrinsic;
     
 intrinsic QDimensionEisensteinForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
