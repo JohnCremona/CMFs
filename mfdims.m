@@ -43,7 +43,7 @@ intrinsic QDimensionEisensteinForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
     if k eq 2 and Order(chi) eq 1 then D -:= 1; end if;
     // As noted by Buzzard, to handle the weight 1 case, one simply divides by 2
     if k eq 1 then D := ExactQuotient(D,2); end if;
-    return D;
+    return D*Degree(chi);
 end intrinsic;
 
 intrinsic QDimensionNewEisensteinForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
@@ -56,5 +56,5 @@ intrinsic QDimensionNewEisensteinForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntE
     if k eq 2 and Order(chi) eq 1 and IsPrime(N) then D +:= 1; end if;
     // As noted by Buzzard, to handle the weight 1 case, one simply divides by 2
     if k eq 1 then D := ExactQuotient(D,2); end if;
-    return D;
+    return D*Degree(chi);
 end intrinsic;
