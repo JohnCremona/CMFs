@@ -785,16 +785,16 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             if only_traces:
                 continue
             chi_list = sorted(set( chi for (chi, j) in mforbit))
-            m = 1
+            coeffs_list = {}
             for chi in chi_list:
                 j_list = [j for (_, j) in mforbit if _ == chi]
+                coeffs_list[chi] = [(chi, j, coeffs[(chi,j)]) for j in j_list]
+                coeffs_list[chi].sort(cmp=CBFlistcmp, key = lambda z : z[-1])
+            d = len(j_list)
+            m = 1
+            for chi in chi_list:
                 chibar = inverse_mod(chi, level)
-                d = len(j_list)
-                coeffs_list = [(chi, j, coeffs[(chi,j)]) for j in j_list]
-                coeffs_list.sort(cmp=CBFlistcmp, key = lambda z : z[-1])
-                for k, _coeffs in enumerate(coeffs_list):
-                    print _coeffs[:2], map(CDF, _coeffs[2][1:3])
-                for k, _coeffs in enumerate(coeffs_list):
+                for k, _coeffs in enumerate(coeffs_list[chi]):
                     j = _coeffs[1]
                     sa, sn = cremona_letter_code(mforbitlabel), k+1
                     ol = cremona_letter_code(orbit_labels[chi] - 1)
@@ -804,16 +804,17 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                         ca, cn = sa, sn
                     else:
                         ca = sa
-                        # the conjugate is either the next or the previous one
-                        possibilities = [k - 1, k + 1]
-                        for elt in possibilities:
-                            if elt >= 0 and elt < len(coeffs_list):
-                                if coeffs_list[elt][2] == an_conjugate:
-                                    cn = elt + 1
-                                    break;
+                        # try the obvious
+                        if coeffs_list[chibar][k][2] == an_conjugate:
+                            cn = k + 1
                         else:
-                            assert False
-                    assert coeffs_list[cn - 1][2] == an_conjugate
+                            for elt in range(d):
+                                if coeffs_list[chibar][elt][2] == an_conjugate:
+                                    cn = elt + 1;
+                                    break;
+                            else:
+                                assert False
+                    assert coeffs_list[chibar][cn - 1][2] == an_conjugate
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
                     hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
