@@ -811,7 +811,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                             cn = k + 1
                         else:
                             obv = coeffs_list[chibar][k][2]
-                            print [(obv[i] - an_conjugate[i]).contains_zero() for i in range(1,3)]
+                            print [(obv[i] - an_conjugate[i]).contains_zero() for i in range(1,30)]
                             for elt in range(d):
                                 if coeffs_list[chibar][elt][2] == an_conjugate:
                                     cn = elt + 1;
