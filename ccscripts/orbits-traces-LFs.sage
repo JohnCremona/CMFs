@@ -456,7 +456,8 @@ def angles_euler_factors(coeffs, level, weight, chi):
                 charval = -1
             a = (p**(weight-1))*charval
             euler.append([c,b,a])
-            alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*a)
+            # alpha solves T^2 - a_p T + chi(p)*p^(k-1)
+            alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*c)
             theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
             if theta > 0.5:
                 theta -=1
@@ -795,11 +796,22 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     j = _coeffs[1]
                     sa, sn = cremona_letter_code(mforbitlabel), k+1
                     ol = cremona_letter_code(orbit_labels[chi] - 1)
+                    an_conjugate = [ elt.conjugate() for elt in _coeffs[2] ]
                     if selfdual:
                         chibar = chi
                         ca, cn = sa, sn
                     else:
-                        ca, cn = sa, d - k
+                        ca = sa
+                        # the conjugate is either the next or the previous one
+                        possibilities = [k - 1, k + 1]
+                        for elt in possibilities:
+                            if elt >= 0 and elt < len(coeffs_list):
+                                if coeffs_list[elt][2] == an_conjugate:
+                                    cn = elt + 1
+                                    break;
+                        else:
+                            assert False
+                    assert coeffs_list[cn - 1][2] == an_conjugate
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
                     hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
@@ -921,9 +933,17 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     def populate_conjugates():
     #    print Lhashes.keys()
+        conj = 
         for key, row in rows.iteritems():
     #        print "key = %s" % (key,)
             row[schema_lf_dict['conjugate']] = Lhashes[conjugates[key]]
+            rowconj = row[conjugates[key]]
+            central_value = row[schema_lf_dict['plot_values']][0]/row[schema_lf_dict['sign_arg']].exppii()
+            central_value_conj = rowconj[schema_lf_dict['plot_values']][0]/rowconj[schema_lf_dict['sign_arg']].exppii()
+            assert (central_value - central_value_conj).contains_zero()
+
+
+            assert CDF(exp(-pi*I*row[schema_lf_dict['sign_arg']])
 
     rational_rows = {}
     def populate_rational_rows():
