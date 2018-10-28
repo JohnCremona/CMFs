@@ -939,7 +939,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             rowconj = row[conjugates[key]]
             central_value = row[schema_lf_dict['plot_values']][0]/row[schema_lf_dict['sign_arg']].exppii()
             central_value_conj = rowconj[schema_lf_dict['plot_values']][0]/rowconj[schema_lf_dict['sign_arg']].exppii()
-            assert (central_value - central_value_conj).contains_zero()
+            assert (central_value - central_value_conj) < 1e-10
 
 
             assert CDF(exp(-pi*I*row[schema_lf_dict['sign_arg']])
