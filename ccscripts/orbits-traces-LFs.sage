@@ -812,6 +812,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                         else:
                             print possibilities
                             print an_conjugate[:10]
+                            print coeffs_list[elt][2][:10]
                             assert False
                     assert coeffs_list[cn - 1][2] == an_conjugate
                     # orbit_labels[chi] start at 1
