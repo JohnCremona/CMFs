@@ -793,7 +793,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 coeffs_list = [(chi, j, coeffs[(chi,j)]) for j in j_list]
                 coeffs_list.sort(cmp=CBFlistcmp, key = lambda z : z[-1])
                 for k, _coeffs in enumerate(coeffs_list):
-                    print _coeffs[:1], _coeffs[2][1:3]
+                    print _coeffs[:2], map(CDF, _coeffs[2][1:3])
                 for k, _coeffs in enumerate(coeffs_list):
                     j = _coeffs[1]
                     sa, sn = cremona_letter_code(mforbitlabel), k+1
@@ -812,9 +812,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                                     cn = elt + 1
                                     break;
                         else:
-                            print possibilities
-                            print an_conjugate[:10]
-                            print coeffs_list[elt][2][:10]
                             assert False
                     assert coeffs_list[cn - 1][2] == an_conjugate
                     # orbit_labels[chi] start at 1
