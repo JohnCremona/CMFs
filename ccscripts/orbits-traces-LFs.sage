@@ -790,6 +790,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 j_list = [j for (_, j) in mforbit if _ == chi]
                 coeffs_list[chi] = [(chi, j, coeffs[(chi,j)]) for j in j_list]
                 coeffs_list[chi].sort(cmp=CBFlistcmp, key = lambda z : z[-1])
+                for chi, j ,_coeffs in coeffs_list:
+                    print chi, j, map(CDF, _coeffs[1:3])
             d = len(j_list)
             m = 1
             for chi in chi_list:
