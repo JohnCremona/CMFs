@@ -181,7 +181,7 @@ embedding_root_imag | double precision | imaginary part of the root correspondin
 an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
 first_an | jsonb | an[:100]
 angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p, with `\theta_p` between -0.5 and 0.5
-first_angles | jsonb | angles[:100]
+first_angles | jsonb | prefix of angles for p < 100
 
 Dirichlet characters
 ====================
