@@ -942,8 +942,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             assert (central_value - central_value_conj) < 1e-10
 
 
-            assert CDF(exp(-pi*I*row[schema_lf_dict['sign_arg']])
-
     rational_rows = {}
     def populate_rational_rows():
         CCCx = PolynomialRing(CCC, "x")
