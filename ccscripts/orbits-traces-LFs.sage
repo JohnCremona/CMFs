@@ -933,7 +933,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     def populate_conjugates():
     #    print Lhashes.keys()
-        conj = 
         for key, row in rows.iteritems():
     #        print "key = %s" % (key,)
             row[schema_lf_dict['conjugate']] = Lhashes[conjugates[key]]
