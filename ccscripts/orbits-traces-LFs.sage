@@ -823,7 +823,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                                     break;
                             else:
                                 assert False
-                    assert coeffs_list[chibar][cn - 1][2] == an_conjugate
+                    assert CBFlisteq(coeffs_list[chibar][cn - 1][2], an_conjugate)
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
                     hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
