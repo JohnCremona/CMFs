@@ -949,8 +949,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     #        print "key = %s" % (key,)
             row[schema_lf_dict['conjugate']] = Lhashes[conjugates[key]]
             rowconj = rows[conjugates[key]]
-            central_value = row[schema_lf_dict['plot_values']][0]/row[schema_lf_dict['sign_arg']].exppii()
-            central_value_conj = rowconj[schema_lf_dict['plot_values']][0]/rowconj[schema_lf_dict['sign_arg']].exppii()
+            central_value = row[schema_lf_dict['plot_values']][0]*exp(-pi *I * row[schema_lf_dict['sign_arg']])
+            central_value_conj = rowconj[schema_lf_dict['plot_values']][0]*exp(-pi *I * rowconj[schema_lf_dict['sign_arg']])
             assert (central_value - central_value_conj) < 1e-10
 
 
