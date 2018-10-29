@@ -797,8 +797,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 j_list = [j for (_, j) in mforbit if _ == chi]
                 coeffs_list[chi] = [(chi, j, coeffs[(chi,j)]) for j in j_list]
                 coeffs_list[chi].sort(cmp=CBFlistcmp, key = lambda z : z[-1])
-                for chi, j ,_coeffs in coeffs_list[chi]:
-                    print chi, j, map(CDF, _coeffs[1:3])
             d = len(j_list)
             m = 1
             for chi in chi_list:
@@ -949,7 +947,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     #        print "key = %s" % (key,)
             row[schema_lf_dict['conjugate']] = Lhashes[conjugates[key]]
             zero_val_conj = rows[conjugates[key]][schema_lf_dict['plot_values']][0]
-            assert (row[schema_lf_dict['plot_values']][0] - zero_val_conj) < 1e-10
+            assert (row[schema_lf_dict['plot_values']][0] - zero_val_conj) < 1e-10, "%s - %s = %s" % (row[schema_lf_dict['plot_values']][0], zero_val_conj, row[schema_lf_dict['plot_values']][0]  - zero_val_conj)
 
 
     rational_rows = {}
