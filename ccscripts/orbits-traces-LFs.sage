@@ -947,9 +947,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         for key, row in rows.iteritems():
     #        print "key = %s" % (key,)
             row[schema_lf_dict['conjugate']] = Lhashes[conjugates[key]]
-            zero_val_conj = rows[conjugates[key]][schema_lf_dict['plot_values']][0]
+            row_conj = rows[conjugates[key]]
+            zero_val_conj = row_conj[schema_lf_dict['plot_values']][0]
             assert (row[schema_lf_dict['plot_values']][0] - zero_val_conj) < 1e-10, "%s, %s: %s - %s = %s" % (key,conjugates[key], row[schema_lf_dict['plot_values']][0], zero_val_conj, row[schema_lf_dict['plot_values']][0]  - zero_val_conj)
-
+            assert row[schema_lf['sign_arg']] + row_conj[schema_lf['sign_arg']]  < 1e-10
 
     rational_rows = {}
     def populate_rational_rows():
