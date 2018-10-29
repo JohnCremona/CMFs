@@ -785,6 +785,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 for z in Z:
                     if not z.imag().contains_zero():
                         selfdual = False
+                        break
             #if selfdual:
             #    print '*',
             #print mforbit, traces
@@ -811,16 +812,13 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                         ca, cn = sa, sn
                     else:
                         ca = sa
-                        # try the obvious
-                        if CBFlisteq(coeffs_list[chibar][k][2], an_conjugate):
-                            cn = k + 1
+                        # first try the obvious
+                        for elt in [k] + list(range(0,k)) + list(range(k+1,d)):
+                            if CBFlisteq(coeffs_list[chibar][elt][2], an_conjugate):
+                                cn = elt + 1;
+                                break;
                         else:
-                            for elt in range(d):
-                                if CBFlisteq(coeffs_list[chibar][elt][2], an_conjugate):
-                                    cn = elt + 1;
-                                    break;
-                            else:
-                                assert False
+                            assert False
                     assert CBFlisteq(coeffs_list[chibar][cn - 1][2], an_conjugate)
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
@@ -828,7 +826,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     all_the_labels[(chi,j)] = (level, weight, ol, sa, chi, sn)
                     converted_label = (chi, sa, sn)
                     labels[(chi, j)] = converted_label
-                    original_pair[converted_label] = (chi,j)
+                    original_pair[converted_label] = (chi, j)
                     selfduals[converted_label] = selfdual
                     conjugates[converted_label] = (chibar, ca, cn)
                     embedding_m[(chi,j)] = m
@@ -873,7 +871,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row = dict(constant_lf(level, weight, 2))
         chi = int(Ldbrow['chi'])
         j = int(Ldbrow['j'])
-        _, a, n = label(chi,j)
+        chil, a, n = label(chi,j)
+        assert chil == chi
 
         row['order_of_vanishing'] = int(Ldbrow['rank'])
         zeros_as_int = zeros[(chi,j)][row['order_of_vanishing']:]
