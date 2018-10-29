@@ -248,6 +248,13 @@ def CBFlistcmp(L1, L2):
 
     return 0r
 
+def CBFlisteq(L1, L2):
+    for (z1, z2) in zip(L1, L2):
+        if not (z1 - z2).contains_zero():
+            return False
+    return True
+
+
 def CBFcmp(z1, z2):
     x1, y1 = z1.real(), z1.imag()
     x2, y2 = z2.real(), z2.imag()
@@ -807,13 +814,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     else:
                         ca = sa
                         # try the obvious
-                        if coeffs_list[chibar][k][2] == an_conjugate:
+                        if CBFlisteq(coeffs_list[chibar][k][2], an_conjugate):
                             cn = k + 1
                         else:
-                            obv = coeffs_list[chibar][k][2]
-                            print [(obv[i] - an_conjugate[i]).contains_zero() for i in range(1,30)]
                             for elt in range(d):
-                                if coeffs_list[chibar][elt][2] == an_conjugate:
+                                if CBFlisteq(coeffs_list[chibar][elt][2], an_conjugate):
                                     cn = elt + 1;
                                     break;
                             else:
