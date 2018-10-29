@@ -804,6 +804,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 chibar = inverse_mod(chi, level)
                 for k, _coeffs in enumerate(coeffs_list[chi]):
                     j = _coeffs[1]
+                    assert chi ==  _coeffs[0]
                     sa, sn = cremona_letter_code(mforbitlabel), k+1
                     ol = cremona_letter_code(orbit_labels[chi] - 1)
                     an_conjugate = [ elt.conjugate() for elt in _coeffs[2] ]
@@ -1154,7 +1155,7 @@ def do_Nk2(Nk2, only_traces = False):
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
         if k in ZZ and k > 1:
-            if N >= 100 and k > 4 and False:
+            if (N,k) in [(780,2), (840,2)]:
                 print "skipping N = %d k = %d" % (N , k)
             else:
                 todo.append((N, k))
