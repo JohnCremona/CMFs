@@ -835,8 +835,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         write_traces(traces_filename)
         return 0
 
-#    for key, val in conjugates.iteritems():
-#        print key,"\t--c-->\t", val
+    for key, val in conjugates.iteritems():
+        print key,"\t--c-->\t", val
 
     for key, val in all_the_labels.iteritems():
         print key," \t--->\t" + "\t".join( map(str, [val,hecke_orbit_code[key]]))
