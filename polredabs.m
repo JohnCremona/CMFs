@@ -27,10 +27,18 @@ intrinsic IsPolredabsCandidate (f::RngUPolElt) -> RngUPolElt
     if Degree(f) gt 32 then return false; end if;
     n := PerfectPowerBase(Integers()!AbsoluteValue(Discriminant(f)));
     if n le 10^100 then return true; end if;
-    for e := 5 to 7 do
-        _,s := TrialDivision(n,10^e);
-        if #s eq 0 then return true; end if;
-        n := PerfectPowerBase(Max(s));
+    _,s := TrialDivision(n,10^6);
+    if #s eq 0 then return true; end if;
+    n := PerfectPowerBase(Max(s));
+    _,s := PollardRho(n);
+    if #s eq 0 then return true; end if;
+    n := PerfectPowerBase(Max(s));
+    for i:=1 to 5 do
+        d := ECM(n,10^4);
+        if d gt 0 then
+            n := ExactQuotient(n,d);
+            n := PerfectPowerBase(n);
+        end if;
     end for;
     return n le 10^100 or IsProbablePrime(n);
 end intrinsic;
