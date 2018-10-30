@@ -469,7 +469,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             for sign in [1, -1]:
                 alpha = (-b + sign * sqrt_hack(b**2 - 4*a*c))/(2*c)
                 theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
-                    if theta > 0.5:
+                if theta > 0.5:
                     theta -=1
                 elif theta <= -0.5:
                     theta +=1
