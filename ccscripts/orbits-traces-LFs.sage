@@ -1155,7 +1155,7 @@ def do_Nk2(Nk2, only_traces = False):
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
         if k in ZZ and k > 1:
-            if (N,k) in [(780,2), (840,2)]:
+            if False: # (N,k) in [(780,2), (840,2)]:
                 print "skipping N = %d k = %d" % (N , k)
             else:
                 todo.append((N, k))
