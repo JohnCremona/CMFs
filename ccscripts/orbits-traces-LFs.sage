@@ -464,14 +464,18 @@ def angles_euler_factors(coeffs, level, weight, chi):
             a = (p**(weight-1))*charval
             euler.append([c,b,a])
             # alpha solves T^2 - a_p T + chi(p)*p^(k-1)
-            alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*c)
-            theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
-            if theta > 0.5:
-                theta -=1
-            elif theta <= -0.5:
-                theta +=1
-            assert theta <= 0.5 and theta > -0.5, "%s %s %s" % (theta, arg_hack(alpha), alpha)
-            angles.append([p, theta])
+            sqrt_disc = sqrt_hack(b**2 - 4*a*c)
+            thetas = []
+            for sign in [1, -1]:
+                alpha = (-b + sign * sqrt_hack(b**2 - 4*a*c))/(2*c)
+                theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
+                    if theta > 0.5:
+                    theta -=1
+                elif theta <= -0.5:
+                    theta +=1
+                assert theta <= 0.5 and theta > -0.5, "%s %s %s" % (theta, arg_hack(alpha), alpha)
+                thetas.append(theta)
+            angles.append([p, min(thetas)])
         if len(coeffs) > p**2:
             assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
     an_f = map(CBF_to_pair, coeffs[:to_store + 1])
@@ -1106,8 +1110,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     embedding_m[key],
                     '\N', # embedding_root_real
                     '\N', # embedding_root_imag
-                    coeffs_f[key],
-                    coeffs_f[key][:100],
+                    coeffs_f[key][1:],
+                    coeffs_f[key][1:100],
                     angles[key],
                     [pair for pair in angles[key] if pair[0] < 100],
                     ]
