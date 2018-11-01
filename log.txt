@@ -35,25 +35,39 @@ running (452,2,19) on old code...found 48+2592 split.
                  1134 done
                  2 missing: (501,2,5), (507,2,14)
 
-2101-2200 (1221) lehner*20, 18 finished, #14,#16 running
-                 1163 so far
-                 6 fails: (237,3,15), (535,2,7), (536,2,30), (537,2,5), (543,2,35), (548,2,15)
+2101-2200 (1221) lehner*20, 18 finished, #14,#16 running (?) no output for a week
+                 1163 so far, 58 missing including  6 fails:
+                 (237,3,15), (535,2,7), (536,2,30), (537,2,5), (543,2,35), (548,2,15)
+                 Incomplete output in t2101-2200.x58
+                 #14: output file complete to (544,2,27)
+                 #16: output file complete to (244,3,7)
 
 2201-2300 (1230) galois*20,  finished, all  1230 done in t2201-2300
-                 0 fails
 
 2301-2400 (1293) galois*20, 17 finished, #2,#4,#11 running
-                 1245 so far
-                 2 fails: (548,2,47), (596,2,11)
+                 1245 so far with 2 fails: (548,2,47), (596,2,11)
+                 killed: #11 after (597,2,2) at (597,2,22): last output line 595:2:26
+                         #2 after (579,2,7) at (579,2,27): last output line 579:2:7
+                         #4 after (598,2,11) at (599,2,7): last output line 579:2:11 (incomplete)
 
-2401-2500 (1289) lehner*20, 16 finished, #4,#7,#8,#14 running
-                 1229 so far
-                 0 fails
+2401-2500 (1289) lehner*20, 17 finished, #4,#7,#8 running
+                 1237 so far,  52 missing, 0 fails
+                 #4: (605,2,19) last complete output (273,3,17) 7 days
+                 #7: (625,2,10) last complete output (624,2,10) 3 days
+                 #8: (625,2,11) last complete output (623,2,3)   2 days
 
-2501-2600 (1283) atkin*20, 14 finished, #0,#3,#7,#11,#14,#16 running
-                 1175 so far
-                 5 fails: (628,2,24), (633,2,30), (642,2,6),
+2501-2600 (1283) atkin*20, 14 finished, #0,#3,#7,#11,#14,#16 stopped
+                 1175 so far, 108 missing including 6 fails:
+                 (628,2,24), (633,2,30), (642,2,6),
                  (642,2,6), (644,2,20), (649,2,10)
+                 Incomplete output in t2501-2600.x108
+                 #0: (2 days) (649,2,13) last complete output (648,2,5)
+                 #3: (7 days) (634,2,4) last complete output (630,2,52)
+                 #7: (3 days) (646,2,30) last complete output (645,2,38)
+                 #11: (7 days) (628,2,18) last complete output (627,2,46)
+                 #14: (3 days) (747,2,7) last complete output (645,2,45)
+                 #16: (7 days) (636,2,15) last complete output (633,2,29)
+
 
 2601-2700 (1381) not yet started
 2701-2800 (1366) not yet started
@@ -72,10 +86,67 @@ New run (dmax=0): finished [was sticking on (751,1,2), (973,1,18), (968,1,32)]
 
 Newer run using old code: total time 56ks
 
-1001<=N<=2000 (47348 spaces): complete in mfdata_wt1_1001-2000.gp.txt
+1001<=N<=2000 (47348 spaces):
+(1) complete in mfdata_wt1_1001-2000.gp.txt (later renamed)
+(2) without dmax: complete in mfdata_wt1_1001-2000.txt
+   47348 spaces of which 2287 are nontrivial; 4309 Galois orbits.
+   4050 orbits have dimension <=20
+   largest three dimensions: [106, 112, 130]
+   Total time = 1571271.060
+   Max time =      29630.354 for space (1950, 1, 63)
 
+
+First runs >2000, superceded by later runs with no dmax:
 2001<=N<=2029 (1526 spaces) complete in wt1.2001-2029
+2030<=N<=2100 (4040 spaces) running*5 on galois, 3405 so far, 3/5
+finished -- stopping, will rerun using dmax=0 and older code
+2101<=N<=2200 (5770 spaces) running*5 on hecke, 3130 so far
+              #1 crashed (memory)  rest killed
 
-2030<=N<=2100 (4040 spaces) running*5 on galois, 3405 so far, 3/5 finished
+Runs with"old" code, no dmax:
 
-2101<=N<=2200 (5770 spaces) running*5 on hecke, 3047 so far, 1/5 finished
+2001-3000 (59850 spaces) collecting output on galois
+
+17086 wt1new.2001-2300 complete
+ 5838 wt1new.2301-2400 complete
+11805 wt1new.2401-2600 complete
+
+Above 3 merged & sorted into mfdata_wt1_2001-2600.txt
+
+sage: file_stats("mfdata_wt1_2001-2600.txt")
+Read 34729 spaces of which 1615 are nontrivial; 3391 Galois orbits.
+3131 orbits have dimension <=20
+largest three dimensions: [138, 172, 178]
+Total time = 3143147.464
+Max time = 80395.186 for space (2196, 1, 95)
+Average time (all spaces)      = 90.505
+Average time (nonzero spaces)  = 625.328
+
+
+5834 wt1new.2601-2700 complete
+6798 wt1new.2701-2800 complete
+
+Above 2 merged & sorted into mfdata_wt1_2601-2800.txt
+
+sage: file_stats("mfdata_wt1_2601-2800.txt")
+Read 12632 spaces of which 576 are nontrivial; 1194 Galois orbits.
+1084 orbits have dimension <=20
+largest three dimensions: [156, 162, 172]
+Total time = 3502140.098
+Max time = 178992.885 for space (2772, 1, 119)
+Average time (all spaces)      = 277.244
+Average time (nonzero spaces)  = 2325.750
+
+ 6110 wt1new.2801-2900 complete
+ 6379 wt1new.2901-3000 complete
+
+Above 3 merged & sorted into mfdata_wt1_2801-3000.txt
+
+sage: file_stats("mfdata_wt1_2801-3000.txt")
+Read 12489 spaces of which 591 are nontrivial; 1283 Galois orbits.
+1158 orbits have dimension <=20
+largest three dimensions: [116, 120, 132]
+Total time = 5514976.131
+Max time = 223959.730 for space (2948, 1, 37)
+Average time (all spaces)      = 441.587
+Average time (nonzero spaces)  = 3955.256
