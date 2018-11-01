@@ -248,6 +248,13 @@ def CBFlistcmp(L1, L2):
 
     return 0r
 
+def CBFlisteq(L1, L2):
+    for (z1, z2) in zip(L1, L2):
+        if not (z1 - z2).contains_zero():
+            return False
+    return True
+
+
 def CBFcmp(z1, z2):
     x1, y1 = z1.real(), z1.imag()
     x2, y2 = z2.real(), z2.imag()
@@ -456,7 +463,8 @@ def angles_euler_factors(coeffs, level, weight, chi):
                 charval = -1
             a = (p**(weight-1))*charval
             euler.append([c,b,a])
-            alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*a)
+            # alpha solves T^2 - a_p T + chi(p)*p^(k-1)
+            alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*c)
             theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
             if theta > 0.5:
                 theta -=1
@@ -497,7 +505,7 @@ def write_header_hecke_file(filename, overwrite = False):
             FILE.write("\n")
 
 
-def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None):
+def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None, only_traces = False):
     print "N = %s, k = %s" % (level, weight)
     polyinfile = os.path.join(base_import, 'polydb/{}.{}.polydb'.format(level, weight))
     mfdbinfile = os.path.join(base_import, 'mfdb/{}.{}.mfdb'.format(level, weight))
@@ -551,7 +559,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             orbit_labels[chi] = k + 1
     if level == 1:
         k = 0
-        orbit_labels[1] = 1
+        orbit_labels = {1:1}
 
     degrees_sorted = [ [] for _ in range(k + 2)]
     traces_sorted = [ [] for _ in range(k + 2)]
@@ -641,14 +649,15 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
 
 
-    bad_euler_factors = {}
-    euler_factors = {}
-    angles = {}
-    coeffs_f = {}
+    if not only_traces:
+        bad_euler_factors = {}
+        euler_factors = {}
+        angles = {}
+        coeffs_f = {}
 
-    for key, coeff in coeffs.iteritems():
-        chi, j = key
-        coeffs_f[key], angles[key], euler_factors[key], bad_euler_factors[key] = angles_euler_factors(coeff, level, weight, chi)
+        for key, coeff in coeffs.iteritems():
+            chi, j = key
+            coeffs_f[key], angles[key], euler_factors[key], bad_euler_factors[key] = angles_euler_factors(coeff, level, weight, chi)
 
     #mforbits = {}
 
@@ -723,7 +732,12 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     zeros = {}
     plots = {}
     Ldbresults = {}
-    for result in Ldb.execute('SELECT level, weight, chi, j, rank, zeroprec, nzeros, zeros, valuesdelta, nvalues, Lvalues, signarg from modformLfunctions'):
+    if only_traces:
+        cur = []
+    else:
+        cur = Ldb.execute('SELECT level, weight, chi, j, rank, zeroprec, nzeros, zeros, valuesdelta, nvalues, Lvalues, signarg from modformLfunctions')
+
+    for result in cur:
         nzeros = result['nzeros']
         prec = result['zeroprec']
         chi = result['chi']
@@ -760,7 +774,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     for level, weight, originalchi in sorted(degree_lists.keys()):
         #toprint = '{}:{}:{}:{}'.format(level, weight, orbit_labels[originalchi], sorted(degree_lists[(level, weight, originalchi)]))
         #print ''.join(toprint.split())
-        degrees_sorted[orbit_labels[originalchi]].append(sorted(degree_lists[(level, weight, originalchi)]))
+        degrees_sorted[orbit_labels[originalchi]] = sorted(degree_lists[(level, weight, originalchi)])
         for mforbitlabel, (traces, mforbit) in enumerate(sorted(traces_lists[(level, weight, originalchi)])):
             selfdual = False
             if originalchi == 1:
@@ -771,41 +785,61 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 for z in Z:
                     if not z.imag().contains_zero():
                         selfdual = False
+                        break
             #if selfdual:
             #    print '*',
             #print mforbit, traces
-            traces_sorted[orbit_labels[originalchi]].append(traces[:1000])
+            traces_sorted[orbit_labels[originalchi]].append(traces[:to_store])
+            if only_traces:
+                continue
             chi_list = sorted(set( chi for (chi, j) in mforbit))
-            m = 1
+            coeffs_list = {}
             for chi in chi_list:
                 j_list = [j for (_, j) in mforbit if _ == chi]
+                coeffs_list[chi] = [(chi, j, coeffs[(chi,j)]) for j in j_list]
+                coeffs_list[chi].sort(cmp=CBFlistcmp, key = lambda z : z[-1])
+            d = len(j_list)
+            m = 1
+            for chi in chi_list:
                 chibar = inverse_mod(chi, level)
-                d = len(j_list)
-                coeffs_list = [(chi, j, coeffs[(chi,j)]) for j in j_list]
-                coeffs_list.sort(cmp=CBFlistcmp, key = lambda z : z[-1])
-                for k, _coeffs in enumerate(coeffs_list):
+                for k, _coeffs in enumerate(coeffs_list[chi]):
                     j = _coeffs[1]
+                    assert chi ==  _coeffs[0]
                     sa, sn = cremona_letter_code(mforbitlabel), k+1
                     ol = cremona_letter_code(orbit_labels[chi] - 1)
+                    an_conjugate = [ elt.conjugate() for elt in _coeffs[2] ]
                     if selfdual:
                         chibar = chi
                         ca, cn = sa, sn
                     else:
-                        ca, cn = sa, d - k
+                        ca = sa
+                        # first try the obvious
+                        for elt in [k] + list(range(0,k)) + list(range(k+1,d)):
+                            if CBFlisteq(coeffs_list[chibar][elt][2], an_conjugate):
+                                cn = elt + 1;
+                                break;
+                        else:
+                            assert False
+                    assert CBFlisteq(coeffs_list[chibar][cn - 1][2], an_conjugate)
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
                     hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
                     all_the_labels[(chi,j)] = (level, weight, ol, sa, chi, sn)
                     converted_label = (chi, sa, sn)
                     labels[(chi, j)] = converted_label
-                    original_pair[converted_label] = (chi,j)
+                    original_pair[converted_label] = (chi, j)
                     selfduals[converted_label] = selfdual
                     conjugates[converted_label] = (chibar, ca, cn)
                     embedding_m[(chi,j)] = m
                     m += 1
+    if only_traces:
+        write_traces(traces_filename)
+        return 0
 
-#    for key, val in conjugates.iteritems():
-#        print key,"\t--c-->\t", val
+    for key, val in labels.iteritems():
+        print key,"  \t-new->\t", val
+    for key, val in conjugates.iteritems():
+        print key,"\t--c-->\t", val
 
     for key, val in all_the_labels.iteritems():
         print key," \t--->\t" + "\t".join( map(str, [val,hecke_orbit_code[key]]))
@@ -840,7 +874,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row = dict(constant_lf(level, weight, 2))
         chi = int(Ldbrow['chi'])
         j = int(Ldbrow['j'])
-        _, a, n = label(chi,j)
+        chil, a, n = label(chi,j)
+        assert chil == chi
 
         row['order_of_vanishing'] = int(Ldbrow['rank'])
         zeros_as_int = zeros[(chi,j)][row['order_of_vanishing']:]
@@ -913,6 +948,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         for key, row in rows.iteritems():
     #        print "key = %s" % (key,)
             row[schema_lf_dict['conjugate']] = Lhashes[conjugates[key]]
+            row_conj = rows[conjugates[key]]
+            zero_val_conj = row_conj[schema_lf_dict['plot_values']][0]
+            assert (row[schema_lf_dict['plot_values']][0] - zero_val_conj) < 1e-10, "%s, %s: %s - %s = %s" % (key,conjugates[key], row[schema_lf_dict['plot_values']][0], zero_val_conj, row[schema_lf_dict['plot_values']][0]  - zero_val_conj)
+            assert abs((row[schema_lf_dict['sign_arg']] + row_conj[schema_lf_dict['sign_arg']]) % 1) < 1e-10, "%s  + %s  = %s" % (row[schema_lf_dict['sign_arg']], row_conj[schema_lf_dict['sign_arg']], (row[schema_lf_dict['sign_arg']]+ row_conj[schema_lf_dict['sign_arg']]) % 1)
 
     rational_rows = {}
     def populate_rational_rows():
@@ -1111,12 +1150,12 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
 import sys, time
-def do_Nk2(Nk2):
+def do_Nk2(Nk2, only_traces = False):
     todo = []
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
         if k in ZZ and k > 1:
-            if N >= 100 and k > 4 and False:
+            if False: # (N,k) in [(780,2), (840,2)]:
                 print "skipping N = %d k = %d" % (N , k)
             else:
                 todo.append((N, k))
@@ -1131,7 +1170,7 @@ def do_Nk2(Nk2):
     start_time = time.time()
     for i, (N, k) in enumerate(todo):
         do_time = time.time()
-        do(N,k, lfun_filename, instances_filename, hecke_filename, traces_filename)
+        do(N,k, lfun_filename, instances_filename, hecke_filename, traces_filename, only_traces)
         print "done, N = %s, k = %s" % (N, k)
         now = time.time()
         print "Progress: %.2f %%" % (100.*i/len(todo))
@@ -1139,7 +1178,7 @@ def do_Nk2(Nk2):
         sys.stdout.flush()
 
 
-
+assert len(sys.argv) >= 2
 if len(sys.argv) == 2:
     try:
         Nk2 = int(sys.argv[1])
@@ -1147,11 +1186,14 @@ if len(sys.argv) == 2:
         print "%s is not a valid argument" % (sys.argv[1],)
         raise
     do_Nk2(Nk2)
-
 elif len(sys.argv) == 3:
-    N = int(sys.argv[1])
-    k = int(sys.argv[2])
-    do(N, k)
+    if sys.argv[1] == 'traces':
+        Nk2 = int(sys.argv[2])
+        do_Nk2(Nk2, only_traces = True)
+    else:
+        N = int(sys.argv[1])
+        k = int(sys.argv[2])
+        do(N, k)
 
 
 
