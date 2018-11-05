@@ -47,3 +47,23 @@ def DC_char_to_gp_char(chi, G=None):
 def GP_DirichletCharacterGaloisReps(N):
     G = pari(N).znstar(1)
     return [G.znconreylog(DC.number(chi)) for chi in DirichletCharacterGaloisReps(N)]
+
+char_table_dict = None
+
+def char_orbit_index_to_DC_number(N,o):
+    """Returns the index in the Dirichlet-Conrey numbering of one character in orbit number o"""
+    global char_table_dict
+    if not char_table_dict:
+        char_table_dict = {}
+        try:
+            chartab = open("chartab.txt")
+            for L in chartab.readlines():
+                NN, oo, nn = [int(x) for x in L.split()]
+                if not NN in char_table_dict:
+                    char_table_dict[NN] = {}
+                char_table_dict[NN][oo] = nn
+            chartab.close()
+        except IOError:
+            Chars = DirichletCharacterGaloisReps(N)
+            return DC.number(Chars[o-1])
+    return char_table_dict[N][o]

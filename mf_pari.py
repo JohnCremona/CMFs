@@ -1,7 +1,6 @@
-from char import DirichletCharacterGaloisReps, NChars
+from char import NChars, char_orbit_index_to_DC_number
 from mf_compare import polredbest_stable#, polredbest, polredabs
 
-from dirichlet_conrey import DirichletCharacter_conrey as DC
 from sage.all import pari,ZZ,QQ, Rational,RR, GF, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, Matrix, prime_range
 from sage.libs.pari.convert_sage import gen_to_sage
 from sage.libs.pari.all import PariError
@@ -43,18 +42,13 @@ def abstrace(x,deg):
         return x.trace().trace().sage()
 
 def NewSpace(N, k, chi_number,Detail=0):
-    Chars = DirichletCharacterGaloisReps(N)
-    if chi_number<1 or chi_number>len(Chars):
-        print("Character number {} out of range for N={} (should be between 1 and {})".format(chi_number,N,len(Chars)))
-        return None
     G = pari(N).znstar(1)
-    chi_sage = Chars[chi_number-1]
-    chi_order = chi_sage.multiplicative_order()
+    chi_dc = char_orbit_index_to_DC_number(N,chi_number)
+    chi_gp = G.znconreylog(chi_dc)
+    chi_order = ZZ(G.charorder(chi_gp))
     chi_degree = euler_phi(chi_order)
     if Detail:
         print("order(chi) = {}, [Q(chi):Q] = {}".format(chi_order, chi_degree))
-    chi_gp = G.znconreylog(DC.number(chi_sage))
-    if Detail:
         print("pari character = {}".format(chi_gp))
     NK = [N,k,[G,chi_gp]]
     Snew = pari(NK).mfinit(0)
@@ -97,17 +91,14 @@ def is_semisimple_modular(M, m,  nprimes=5):
             np-=1
 
 
-def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
+def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t0=time.time()
-    Chars = DirichletCharacterGaloisReps(N)
-    if chi_number<1 or chi_number>len(Chars):
-        print("Character number {} out of range for N={} (should be between 1 and {})".format(chi_number,N,len(Chars)))
-        return []
+    G = pari(N).znstar(1)
+    chi_dc = char_orbit_index_to_DC_number(N,chi_number)
+    chi_gp = G.znconreylog(chi_dc)
+    chi_order = ZZ(G.charorder(chi_gp))
     if Detail:
         print("Decomposing space {}:{}:{}".format(N,k,chi_number))
-    G = pari(N).znstar(1)
-    chi_sage = Chars[chi_number-1]
-    chi_gp = G.znconreylog(DC.number(chi_sage))
     NK = [N,k,[G,chi_gp]]
     pNK = pari(NK)
     if Detail>1:
@@ -121,7 +112,6 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
     # m'th cyclotomic polynomial and not the 2m'th (e.g. for a
     # character of order 6 it uses t^2+t+1 and not t^2-t+1).
 
-    chi_order = DC.multiplicative_order(chi_sage)
     chi_order_2 = chi_order//2 if chi_order%4==2 else chi_order
     chipoly = cyclotomic_polynomial(chi_order_2,'t')
     chi_degree = chipoly.degree()
@@ -260,17 +250,14 @@ def Newforms(N, k, chi_number, dmax=20, nan=100, Detail=0):
         print("Total time for space {}: {:0.3f}".format(Nko,t4-t0))
     return nfs
 
-def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
+def Newforms_v2(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t0=time.time()
-    Chars = DirichletCharacterGaloisReps(N)
-    if chi_number<1 or chi_number>len(Chars):
-        print("Character number {} out of range for N={} (should be between 1 and {})".format(chi_number,N,len(Chars)))
-        return []
+    G = pari(N).znstar(1)
+    chi_dc = char_orbit_index_to_DC_number(N,chi_number)
+    chi_gp = G.znconreylog(chi_dc)
+    chi_order = ZZ(G.charorder(chi_gp))
     if Detail:
         print("Decomposing space {}:{}:{}".format(N,k,chi_number))
-    G = pari(N).znstar(1)
-    chi_sage = Chars[chi_number-1]
-    chi_gp = G.znconreylog(DC.number(chi_sage))
     NK = [N,k,[G,chi_gp]]
     pNK = pari(NK)
     if Detail>1:
@@ -284,7 +271,6 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
     # m'th cyclotomic polynomial and not the 2m'th (e.g. for a
     # character of order 6 it uses t^2+t+1 and not t^2-t+1).
 
-    chi_order = DC.multiplicative_order(chi_sage)
     chi_order_2 = chi_order//2 if chi_order%4==2 else chi_order
     chipoly = cyclotomic_polynomial(chi_order_2,'t')
     chi_degree = chipoly.degree()
@@ -566,6 +552,8 @@ def NewformTraces(N, k, chi_number, dmax=20, nan=100, Detail=0):
                     print(nf['eigdata']['ancs'])
         print("Total time for space {}: {:0.3f}".format(Nko,t4-t0))
     return nfs
+
+Newforms = Newforms_v2
 
 def process_pari_nf(pari_nf, dmax=20, Detail=0):
     r"""
@@ -1114,7 +1102,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
         #level_info += "({} <=Nk^2<= {})".format(N*kmin**2,N*kmax**2)
         #screen.write(level_info)
         info_written=False
-        Chars = DirichletCharacterGaloisReps(N)
+        nchars = NChars(N)
         for k in range(kmin, kmax+1):
             if not info_written:
                 screen.write(level_info)
@@ -1123,7 +1111,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
             screen.flush()
             nspaces+=1
 
-            for i in range(len(Chars)):
+            for i in range(nchars):
                 n += 1
                 if n%njobs!=jobno:
                     continue
@@ -1132,7 +1120,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
                 screen.flush()
                 t0=time.time()
                 try:
-                    newforms = NewformTraces(N,k,i+1,dmax,nan, Detail)
+                    newforms = Newforms(N,k,i+1,dmax,nan, Detail)
                     t0=time.time()-t0
                     line = data_to_string(N,k,i+1,t0,newforms) + "\n"
                     if out:
@@ -1159,9 +1147,8 @@ def OneSpace_v1(N, k, char_number, dmax=20, nan=100, filename=None, prefix="", D
     if filename==None:
         filename = "{}{}.{}.{}.txt".format(prefix,N, k, char_number)
         append = False
-    Chars = DirichletCharacterGaloisReps(N)
     t0=time.time()
-    newforms = Newforms(N,k,char_number,dmax,nan, Detail)
+    newforms = Newforms_v1(N,k,char_number,dmax,nan, Detail)
     t0=time.time()-t0
     line = data_to_string(N,k,char_number,t0,newforms) + "\n"
     if append:
@@ -1178,9 +1165,8 @@ def OneSpace_v2(N, k, char_number, dmax=20, nan=100, filename=None, prefix="", D
     if filename==None:
         filename = "{}{}.{}.{}.txt".format(prefix,N, k, char_number)
         append = False
-    Chars = DirichletCharacterGaloisReps(N)
     t0=time.time()
-    newforms = NewformTraces(N,k,char_number,dmax,nan, Detail)
+    newforms = Newforms_v2(N,k,char_number,dmax,nan, Detail)
     t0=time.time()-t0
     line = data_to_string(N,k,char_number,t0,newforms) + "\n"
     if append:
@@ -1205,7 +1191,7 @@ def Nspaces(Nk2min,Nk2max):
         nspaces += NChars(N)*(1+kmax-kmin)
     return nspaces
 
-def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
+def WeightOne_v1(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
 # Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
     out = open(filename, 'w') if filename else None
     screen = sys.stdout
@@ -1220,7 +1206,7 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
             screen.write(" (o={}) ".format(i+1))
             screen.flush()
             t0=time.time()
-            newforms = NewformTraces(N,1,i+1,dmax,nan, Detail)
+            newforms = Newforms_v1(N,1,i+1,dmax,nan, Detail)
             t0=time.time()-t0
             line = data_to_string(N,1,i+1,t0,newforms) + "\n"
             if out:
@@ -1234,7 +1220,7 @@ def WeightOne(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
     if out:
         out.close()
 
-def WeightOne_old(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
+def WeightOne_v2(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=0):
 # Outputs N:k:i:time:dims:traces:polys with polys only for dims<=dmax
     out = open(filename, 'w') if filename else None
     screen = sys.stdout
@@ -1249,7 +1235,7 @@ def WeightOne_old(filename, Nmin, Nmax, dmax, nan=100, njobs=1, jobno=0, Detail=
             screen.write(" (o={}) ".format(i+1))
             screen.flush()
             t0=time.time()
-            newforms = Newforms(N,1,i+1,dmax,nan, Detail)
+            newforms = Newforms_v2(N,1,i+1,dmax,nan, Detail)
             t0=time.time()-t0
             line = data_to_string(N,1,i+1,t0,newforms) + "\n"
             if out:
