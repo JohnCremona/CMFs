@@ -1154,29 +1154,45 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
         print("Completed apart from: {}".format(failed_spaces))
     #return nspaces
 
-def OneSpace_old(N, k, char_number, dmax=20, nan=100, filename=None, Detail=0):
+def OneSpace_v1(N, k, char_number, dmax=20, nan=100, filename=None, prefix="", Detail=0):
+    append = True
     if filename==None:
-        filename = "{}.{}.{}.txt".format(N, k, char_number)
-    out = open(filename, 'w')
+        filename = "{}{}.{}.{}.txt".format(prefix,N, k, char_number)
+        append = False
+    Chars = DirichletCharacterGaloisReps(N)
     t0=time.time()
     newforms = Newforms(N,k,char_number,dmax,nan, Detail)
     t0=time.time()-t0
     line = data_to_string(N,k,char_number,t0,newforms) + "\n"
+    if append:
+        out = open(filename, 'a')
+    else:
+        out = open(filename, 'w')
     out.write(line)
     out.close()
-    print("{} newforms computed in {:0.3f}s.  Output written to {}".format(len(newforms),t0,filename))
+    if Detail:
+        print("{} newforms computed in {:0.3f}s.  Output written to {}".format(len(newforms),t0,filename))
 
-def OneSpace(N, k, char_number, dmax=20, nan=100, filename=None, Detail=0):
+def OneSpace_v2(N, k, char_number, dmax=20, nan=100, filename=None, prefix="", Detail=0):
+    append = True
     if filename==None:
-        filename = "{}.{}.{}.txt".format(N, k, char_number)
-    out = open(filename, 'w')
+        filename = "{}{}.{}.{}.txt".format(prefix,N, k, char_number)
+        append = False
+    Chars = DirichletCharacterGaloisReps(N)
     t0=time.time()
     newforms = NewformTraces(N,k,char_number,dmax,nan, Detail)
     t0=time.time()-t0
     line = data_to_string(N,k,char_number,t0,newforms) + "\n"
+    if append:
+        out = open(filename, 'a')
+    else:
+        out = open(filename, 'w')
     out.write(line)
     out.close()
-    print("{} newforms computed in {:0.3f}s.  Output written to {}".format(len(newforms),t0,filename))
+    if Detail:
+        print("{} newforms computed in {:0.3f}s.  Output written to {}".format(len(newforms),t0,filename))
+
+OneSpace = OneSpace_v1
 
 def Nspaces(Nk2min,Nk2max):
     Nmax = int(Nk2max/4.0)
