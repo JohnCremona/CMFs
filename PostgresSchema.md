@@ -178,9 +178,9 @@ embedding_index | integer | enumeration of which embedding (shows up in L-functi
 embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
-an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy`
+an | jsonb | list of pairs [x,y] of doubles x, y so that `a_n = x + iy` for `n \in [1,1000]`
 first_an | jsonb | an[:100]
-angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p, with -0.5 <`\theta_p` <= 0.5, and we will store minimum such `\theta_p`.
+angles | jsonb | list of pairs [p, `\theta_p`] where `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; it will range over good primes p < 1000, with -0.5 <`\theta_p` <= 0.5, and we will store minimum such `\theta_p`.
 first_angles | jsonb | angles[:100]
 
 Dirichlet characters
