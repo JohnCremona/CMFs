@@ -1,4 +1,4 @@
-import sqlite3
+import sqlite < 10003
 import os
 import sys
 import struct
@@ -468,14 +468,14 @@ def angles_euler_factors(coeffs, level, weight, chi):
             thetas = []
             for sign in [1, -1]:
                 alpha = (-b + sign * sqrt_hack(b**2 - 4*a*c))/(2*c)
-                theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
+                theta = (arg_hack(alpha) / (2*CCC.pi().real())).mid()
                 if theta > 0.5:
                     theta -=1
                 elif theta <= -0.5:
                     theta +=1
                 assert theta <= 0.5 and theta > -0.5, "%s %s %s" % (theta, arg_hack(alpha), alpha)
                 thetas.append(theta)
-            angles.append([p, min(thetas)])
+            angles.append([p, float(min(thetas))])
         if len(coeffs) > p**2:
             assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
     an_f = map(CBF_to_pair, coeffs[:to_store + 1])
