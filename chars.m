@@ -37,7 +37,7 @@ intrinsic CompareCharacters (chi1::GrpDrchElt,chi2::GrpDrchElt) -> RngIntElt
     N := Modulus(chi1);  assert Modulus(chi2) eq N;
     n1 := Order(chi1); n2 := Order(chi2);
     if n1 ne n2 then return n1-n2; end if;
-    // this will be very slow if characters are actually conjugate, avoid using t
+    // this will be very slow if characters are actually conjugate, avoid this use case
     for a:=2 to N-1 do
         if GCD(a,N) ne 1 then continue; end if;
         t1 := Trace(chi1(a));  t2 := Trace(chi2(a));
@@ -107,7 +107,7 @@ intrinsic CharacterOrbit(chi::GrpDrchElt) -> RngIntElt
 end intrinsic;
     
 intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCycElt
-{ The value of the Dirichlet character with Conry label q.n at the integer m. }
+{ The value chi_q(n,m) of the Dirichlet character with Conry label q.n at the integer m. }
     if q eq 1 then return 1; end if;
     if GCD(q,n) ne 1 or GCD(q,m) ne 1 then return 0; end if;
     if n mod q eq 1 or m mod q eq 1 then return 1; end if;
@@ -132,15 +132,15 @@ intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCyc
     end if;
 end intrinsic;
 
-intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEnum[FldCycElt]
-{ The list of values of the Dirichlet character with Conrey label q.n on the integers 1..M. }
-    if q eq 1 then return [1:i in [1..M]]; end if;
-    if GCD(q,n) ne 1 then return [0:i in [1..M]]; end if;
-    if n mod q eq 1 then return [GCD(i,q) eq 1 select 1 else 0:i in [1..M]]; end if;
+intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum[FldCycElt]
+{ The list of values of the Dirichlet character with Conrey label q.n on the integers in S. }
+    if q eq 1 then return [1:i in S]; end if;
+    if GCD(q,n) ne 1 then return [0:i in S]; end if;
+    if n mod q eq 1 then return [GCD(i,q) eq 1 select 1 else 0 : i in S]; end if;
     b,p,e:= IsPrimePower(q);
     if not b then 
-        X := [$$(a[1]^a[2],n,M):a in Factorization(q)];
-        return [&*[X[i][m]:i in [1..#X]]:m in [1..M]];
+        X := [$$(a[1]^a[2],n,S):a in Factorization(q)];
+        return [&*[X[i][j]:i in [1..#X]] : j in [1..#S]];
     end if;
     R := Integers(q);
     k := EulerPhi(q);
@@ -149,16 +149,96 @@ intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEn
         A := AssociativeArray();
         for i in [1..k] do A[r^i]:=i; end for;
         a := A[R!n];
-        return [GCD(p,m) eq 1 select RootOfUnity(k)^(a*A[R!m]) else 0 : m in [1..M]];
+        return [GCD(p,m) eq 1 select RootOfUnity(k)^(a*A[R!m]) else 0 : m in S];
     else
-        if e eq 2 then return [IsOdd(m) select (-1)^ExactQuotient(m-1,2) else 0:m in [1..M]]; end if;
+        if e eq 2 then return [IsOdd(m) select (-1)^ExactQuotient(m-1,2) else 0 : m in S]; end if;
         assert e gt 2;
         r := R!5;
         A := AssociativeArray();
         for s in [1,-1], i in [1..k] do A[s*r^i]:=<s,i>; end for;
         a := A[R!n];
-        return [GCD(p,m) eq 1 select RootOfUnity(8)^((1-a[1])*(1-b[1])) * RootOfUnity(2^(e-2))^(a[2]*b[2]) where b:=A[R!m] else 0 : m in [1..M]];
+        return [GCD(p,m) eq 1 select RootOfUnity(8)^((1-a[1])*(1-b[1])) * RootOfUnity(2^(e-2))^(a[2]*b[2]) where b:=A[R!m] else 0 : m in S];
     end if;
+end intrinsic;
+
+intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEnum[FldCycElt]
+{ The list of values of the Dirichlet character with Conrey label q.n on the integers 1..M. }
+    return ConreyCharacterValues(q,n,[1..M]);
+end intrinsic;
+
+function normalize_angle(r)
+    b:=Denominator(r); a:=Numerator(r) mod b;
+    return a eq 0 select 1 else a/b;
+end function;
+
+intrinsic ConreyCharacterAngle(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldRatElt
+{ The rational number r such that chi_q(n,m) = e(r) or 0 (returns 1 for 1 not 0). }
+    if q eq 1 then return 1; end if;
+    if GCD(q,n) ne 1 or GCD(q,m) ne 1 then return 0; end if;
+    if n mod q eq 1 or m mod q eq 1 then return 1; end if;
+    b,p,e:= IsPrimePower(q);
+    if not b then return normalize_angle(&+[$$(a[1]^a[2],n,m):a in Factorization(q)]); end if;
+    R := Integers(q);
+    k := EulerPhi(q);
+    if p gt 2 then
+        r := R!PrimitiveRoot(p);
+        A := AssociativeArray();
+        for i in [1..k] do A[r^i]:=i; end for;
+        a := A[R!n]; b:=A[R!m];
+        return normalize_angle((a*b) / k);
+    else
+        if e eq 2 then return 1/2; end if;   // must have n=m=3 since all other cases handled above
+        assert e gt 2;
+        r := R!5;
+        A := AssociativeArray();
+        for s in [1,-1], i in [1..k] do A[s*r^i]:=<s,i>; end for;
+        a := A[R!n]; b:=A[R!m];
+        return normalize_angle(((1-a[1])*(1-b[1])) / 8 + (a[2]*b[2]) / 2^(e-2));
+    end if;
+end intrinsic;
+
+intrinsic ConreyCharacterComplexValue(q::RngIntElt,n::RngIntElt,m::RngIntElt,CC::FldCom) -> FldComElt
+{ Value of chi_q(m,n) in specified complex field. }
+    return Exp(2*Pi(CC)*CC.1*ConreyCharacterAngle(q,n,m));
+end intrinsic;
+
+intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum[FldCycElt]
+{ The list of values of the Dirichlet character with Conrey label q.n on the integers in S. }
+    if q eq 1 then return [1:i in S]; end if;
+    if GCD(q,n) ne 1 then return [0:i in S]; end if;
+    if n mod q eq 1 then return [GCD(i,q) eq 1 select 1 else 0 : i in S]; end if;
+    b,p,e:= IsPrimePower(q);
+    if not b then 
+        X := [$$(a[1]^a[2],n,S):a in Factorization(q)];
+        return [GCD(S[j],q) eq 1 select normalize_angle(&+[X[i][j]:i in [1..#X]]) else 0 : j in [1..#S]];
+    end if;
+    R := Integers(q);
+    k := EulerPhi(q);
+    if p gt 2 then
+        r := R!PrimitiveRoot(p);
+        A := AssociativeArray();
+        for i in [1..k] do A[r^i]:=i; end for;
+        a := A[R!n];
+        return [GCD(m,p) eq 1 select normalize_angle((a*A[R!m])/k) else 0 : m in S];
+    else
+        if e eq 2 then return [IsOdd(m) select (IsEven(ExactQuotient(m-1,2)) select 1 else 1/2) else 0 : m in S]; end if;
+        assert e gt 2;
+        r := R!5;
+        A := AssociativeArray();
+        for s in [1,-1], i in [1..k] do A[s*r^i]:=<s,i>; end for;
+        a := A[R!n];
+        return [GCD(m,p) eq 1 select normalize_angle(((1-a[1])*(1-b[1])) / 8 + (a[2]*b[2]) / 2^(e-2)) where b:=A[R!m] else 0 : m in S];
+    end if;
+end intrinsic;
+
+intrinsic ConreyCharacterComplexValues(q::RngIntElt,n::RngIntElt,S::RngIntElt,CC::FldCom) -> SeqEnum[FldComElt]
+{ List of values of chi_q(n,m) for m in S in specified complex field. }
+    return [Exp(2*Pi(CC)*CC.1*t): t in ConreyCharacterAngles(q,n,S)];
+end intrinsic;
+    
+intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEnum[FldCycElt]
+{ The list of values of the Dirichlet character with Conrey label q.n on the integers 1..M. }
+    return ConreyCharacterAngles(q,n,[1..M]);
 end intrinsic;
 
 intrinsic ConreyCharacter(q::RngIntElt,n::RngIntElt) -> GrpDrchElt
@@ -215,3 +295,24 @@ intrinsic ConreyCharacterOrbitIndex (q::RngIntElt,n::RngIntElt) -> RngIntElt
     assert #M eq 1;
     return M[1];
 end intrinsic;
+
+// Given an nth-root of unity in a number field K return angles of conjugates (in standard order of embeddings of K)
+// This is a really stupid way to do this...
+function ConjugateAngles(z,n)
+    C := Conjugates(z);
+    CC := Parent(z[1]);
+    pi := Pi(RealField());
+    return [ normalize_angle(Round(n*Argument(c)/(2*pi))/n) : c in C];
+end function;
+
+intrinsic ConreyConjugates (chi::GrpDrchElt, phi::Map: ConreyLabelList:=ConreyLabels(chi)) -> SeqEnum[RngIntElt]
+{ Given a Dirichlet character chi and an embedding phi of Q(chi) into a number field K, returns a list of the Conrey labels corresponding to the embeddings of K in C, as ordered by Conjugates. }
+    if #ConreyLabelList eq 1 then return [ConreyLabelList[1]:i in [1..Degree(Codomain(phi))]]; end if;
+    q := Modulus(chi);  e := Order(chi);
+    S := UnitGenerators(Parent(chi));
+    T := AssociativeArray();
+    for n in ConreyLabelList do T[ConreyCharacterAngles(q,n,S)] := n; end for;
+    A := [ConjugateAngles(phi(chi(m)),e) : m in S];
+    return [T[[A[i][j] : i in [1..#S]]] : j in [1..#A[1]]];
+end intrinsic;
+

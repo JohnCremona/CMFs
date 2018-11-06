@@ -130,6 +130,51 @@ def read_dtp(fname):
     print("Average time (nonzero spaces)  = {:0.3f}".format(tot_time0/nspaces0))
     return data
 
+def file_stats(fname):
+    # read full data: N:k:i:t:dims:traces:ALs:polys:cutters:eigdata:cm:it:pra
+    data = {}
+    max_time = tot_time = tot_time0 = 0.0
+    max_space = None
+    nspaces = 0
+    nspaces0 = 0 # exclude trvial spaces
+    norbits = 0
+    n20 = 0
+    alldims = []
+    for L in open(fname).readlines():
+        L=L.replace("\n","")
+        fields = L.split(":")
+        #print(fields)
+        N=int(fields[0])
+        k=int(fields[1])
+        chi=int(fields[2])
+        key = (N,k,chi)
+        #print(key)
+        if key in data:
+            print("Duplicate data for {}".format(key))
+        t=float(fields[3])
+        if t>max_time:
+            max_time = t
+            max_space = key
+        tot_time += t
+        dims =   str_nested_list_to_nested_list(fields[4])
+        data[key] = {'dims':dims}
+        nspaces += 1
+        norbits += len(dims)
+        n20 += sum(0<d<=20 for d in dims)
+        if dims:
+            nspaces0 += 1
+            alldims += dims
+            tot_time0 += t
+    alldims=list(set(alldims))
+    alldims.sort()
+    print("Read {} spaces of which {} are nontrivial; {} Galois orbits.".format(nspaces, nspaces0, norbits))
+    print("{} orbits have dimension <=20".format(n20))
+    print("largest three dimensions: {}".format(alldims[-3:]))
+    print("Total time = {:0.3f}".format(tot_time))
+    print("Max time = {:0.3f} for space {}".format(max_time, max_space))
+    print("Average time (all spaces)      = {:0.3f}".format(tot_time/nspaces))
+    print("Average time (nonzero spaces)  = {:0.3f}".format(tot_time0/nspaces0))
+
 def bdd_dims(dims_dict, dmax=20):
     # given a dims_dict return a smaller dict of only those (N,k,chi)
     # with a dim<=dmax
