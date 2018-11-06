@@ -1111,7 +1111,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     '\N', # embedding_root_real
                     '\N', # embedding_root_imag
                     coeffs_f[key][1:],
-                    coeffs_f[key][1:100],
+                    coeffs_f[key][1:101],
                     angles[key],
                     [pair for pair in angles[key] if pair[0] < 100],
                     ]
@@ -1121,27 +1121,24 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         write_header_hecke_file(hecke_filename)
         with open(hecke_filename, 'a') as HF:
             for v in get_hecke_cc().values():
-                HF.write("\t".join(map(str,v)) + "\n")
+                HF.write("\t".join(map(json.dumps,v)) + "\n")
 
 
 
     def export_complex_rows(lfunctions_filename, instances_filename):
         write_header(lfunctions_filename, instances_filename)
-        str_parsing_lf = '\t'.join(['%s'] * len(schema_lf)) + '\n'
-        str_parsing_instances = '\t'.join(['%s'] * len(schema_instances)) + '\n'
+        #str_parsing_lf = '\t'.join(['%r'] * len(schema_lf)) + '\n'
+        #str_parsing_instances = '\t'.join(['%r'] * len(schema_instances)) + '\n'
 
         with open(lfunctions_filename, 'a') as LF:
             for key, row in rows.iteritems():
-                LF.write(str_parsing_lf % tuple(row))
+                LF.write("\t".join(map(json.dumps,row)) + "\n")
 
             for key, row in rational_rows.iteritems():
-                LF.write(str_parsing_lf % tuple(row))
+                LF.write("\t".join(map(json.dumps,row)) + "\n")
         with open(instances_filename, 'a') as IF:
             for key, row in instances.iteritems():
-                IF.write(str_parsing_instances % tuple(row))
-
-
-
+                IF.write("\t".join(map(json.dumps,row)) + "\n")
 
 
     populate_complex_rows()
