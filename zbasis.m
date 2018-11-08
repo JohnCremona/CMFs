@@ -185,9 +185,14 @@ intrinsic NFSeqIsIsomorphic (KPoly1::RngUPolElt,Seq1::SeqEnum[SeqEnum], KPoly2::
     return NFSeqIsIsomorphic(Eltseq(KPoly1),Seq1,Eltseq(KPoly2),Seq2);
 end intrinsic;        
 
-intrinsic NFSeqIsIsomorphic (K1::FldNum,Seq1::SeqEnum[FldNumElt],K2::FldNum,Seq2::SeqEnum[FldNumElt]) -> BoolElt, FldNumEltlo
+intrinsic NFSeqIsIsomorphic (Seq1::SeqEnum,Seq2::SeqEnum) -> BoolElt, FldNumElt
 { Given two sequences that both contain a basis for the same number specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If returns the image of first power basis generator in the second. }
-    b,v := NFSeqIsIsomorphic(Eltseq(DefiningPolynomial(K1)), [Eltseq(a):a in Seq1],Eltseq(DefiningPolynomial(K2)),[Eltseq(a):a in Seq2]);
+    require #Seq1 gt 0 and #Seq1 eq #Seq2: "Sequences must be non-empty and of the same length";
+    K1 := AbsoluteField(NumberField(Parent(Seq1[1])));  K2:= AbsoluteField(NumberField(Parent(Seq2[2])));
+    f1 := DefiningPolynomial(K1); f2 := DefiningPolynomial(K2);
+    if Type(f1) eq SeqEnum and #f1 eq 1 then f1 := f1[1]; end if;
+    if Type(f2) eq SeqEnum and #f2 eq 1 then f2 := f2[1]; end if;
+    b,v := NFSeqIsIsomorphic(Eltseq(f1), [Eltseq(K1!a):a in Seq1],Eltseq(f2),[Eltseq(K2!a):a in Seq2]);
     if b then return true,K2!v; else return false,_; end if;
 end intrinsic;
 
