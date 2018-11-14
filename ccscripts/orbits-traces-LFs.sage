@@ -1,4 +1,4 @@
-import sqlite3
+import sqlite < 10003
 import os
 import sys
 import struct
@@ -464,14 +464,18 @@ def angles_euler_factors(coeffs, level, weight, chi):
             a = (p**(weight-1))*charval
             euler.append([c,b,a])
             # alpha solves T^2 - a_p T + chi(p)*p^(k-1)
-            alpha = (-b + sqrt_hack(b**2 - 4*a*c))/(2*c)
-            theta = float((arg_hack(alpha) / (2*CCC.pi().real())).mid())
-            if theta > 0.5:
-                theta -=1
-            elif theta <= -0.5:
-                theta +=1
-            assert theta <= 0.5 and theta > -0.5, "%s %s %s" % (theta, arg_hack(alpha), alpha)
-            angles.append([p, theta])
+            sqrt_disc = sqrt_hack(b**2 - 4*a*c)
+            thetas = []
+            for sign in [1, -1]:
+                alpha = (-b + sign * sqrt_hack(b**2 - 4*a*c))/(2*c)
+                theta = (arg_hack(alpha) / (2*CCC.pi().real())).mid()
+                if theta > 0.5:
+                    theta -=1
+                elif theta <= -0.5:
+                    theta +=1
+                assert theta <= 0.5 and theta > -0.5, "%s %s %s" % (theta, arg_hack(alpha), alpha)
+                thetas.append(theta)
+            angles.append([p, float(min(thetas))])
         if len(coeffs) > p**2:
             assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
     an_f = map(CBF_to_pair, coeffs[:to_store + 1])
@@ -951,7 +955,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row_conj = rows[conjugates[key]]
             zero_val_conj = row_conj[schema_lf_dict['plot_values']][0]
             assert (row[schema_lf_dict['plot_values']][0] - zero_val_conj) < 1e-10, "%s, %s: %s - %s = %s" % (key,conjugates[key], row[schema_lf_dict['plot_values']][0], zero_val_conj, row[schema_lf_dict['plot_values']][0]  - zero_val_conj)
-            assert abs((row[schema_lf_dict['sign_arg']] + row_conj[schema_lf_dict['sign_arg']]) % 1) < 1e-10, "%s  + %s  = %s" % (row[schema_lf_dict['sign_arg']], row_conj[schema_lf_dict['sign_arg']], (row[schema_lf_dict['sign_arg']]+ row_conj[schema_lf_dict['sign_arg']]) % 1)
+            diff = (row[schema_lf_dict['sign_arg']] + row_conj[schema_lf_dict['sign_arg']]) % 1
+            assert  min(diff,1 - diff) < 1e-10, "%s  + %s  = %s" % (row[schema_lf_dict['sign_arg']], row_conj[schema_lf_dict['sign_arg']], diff)
 
     rational_rows = {}
     def populate_rational_rows():
@@ -1105,8 +1110,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     embedding_m[key],
                     '\N', # embedding_root_real
                     '\N', # embedding_root_imag
-                    coeffs_f[key],
-                    coeffs_f[key][:100],
+                    coeffs_f[key][1:],
+                    coeffs_f[key][1:101],
                     angles[key],
                     [pair for pair in angles[key] if pair[0] < 100],
                     ]
@@ -1116,27 +1121,24 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         write_header_hecke_file(hecke_filename)
         with open(hecke_filename, 'a') as HF:
             for v in get_hecke_cc().values():
-                HF.write("\t".join(map(str,v)) + "\n")
+                HF.write("\t".join(map(json.dumps,v)) + "\n")
 
 
 
     def export_complex_rows(lfunctions_filename, instances_filename):
         write_header(lfunctions_filename, instances_filename)
-        str_parsing_lf = '\t'.join(['%s'] * len(schema_lf)) + '\n'
-        str_parsing_instances = '\t'.join(['%s'] * len(schema_instances)) + '\n'
+        #str_parsing_lf = '\t'.join(['%r'] * len(schema_lf)) + '\n'
+        #str_parsing_instances = '\t'.join(['%r'] * len(schema_instances)) + '\n'
 
         with open(lfunctions_filename, 'a') as LF:
             for key, row in rows.iteritems():
-                LF.write(str_parsing_lf % tuple(row))
+                LF.write("\t".join(map(json.dumps,row)) + "\n")
 
             for key, row in rational_rows.iteritems():
-                LF.write(str_parsing_lf % tuple(row))
+                LF.write("\t".join(map(json.dumps,row)) + "\n")
         with open(instances_filename, 'a') as IF:
             for key, row in instances.iteritems():
-                IF.write(str_parsing_instances % tuple(row))
-
-
-
+                IF.write("\t".join(map(json.dumps,row)) + "\n")
 
 
     populate_complex_rows()
