@@ -1,17 +1,25 @@
+intrinsic Polredabs(f::SeqEnum) -> SeqEnum
+{ Computes a smallest canonical defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
+    cmd := Sprintf("{print(Vecrev(Vec(polredabs(Pol(Vecrev(%o))))))}", f);
+    s := Pipe("gp -q", cmd);
+    return [ StringToInteger(x) : x in Split(s, ", []\n") | x ne "" ];
+end intrinsic;
+
 intrinsic Polredabs(f::RngUPolElt) -> RngUPolElt
 { Computes a smallest canonical defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
-    cmd := Sprintf("{print(Vecrev(Vec(polredabs(Pol(Vecrev(%o))))))}", Coefficients(f));
+    return Parent(f)!Polredabs(Coefficients(f));
+end intrinsic;
+
+intrinsic Polredbest(f::SeqEnum) -> SeqEnum
+{ Computes a small (non-canonical) defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
+    cmd := Sprintf("{print(Vecrev(Vec(polredbest(Pol(Vecrev(%o))))))}", f);
     s := Pipe("gp -q", cmd);
-    ss := [ StringToInteger(x) : x in Split(s, ", []\n") | x ne "" ];
-    return Parent(f) ! ss;
+    return [ StringToInteger(x) : x in Split(s, ", []\n") | x ne "" ];
 end intrinsic;
 
 intrinsic Polredbest(f::RngUPolElt) -> RngUPolElt
 { Computes a small (non-canonical) defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
-    cmd := Sprintf("{print(Vecrev(Vec(polredbest(Pol(Vecrev(%o))))))}", Coefficients(f));
-    s := Pipe("gp -q", cmd);
-    ss := [ StringToInteger(x) : x in Split(s, ", []\n") | x ne "" ];
-    return Parent(f) ! ss;
+    return Parent(f)!Polredbest(Coefficients(f));
 end intrinsic;
 
 intrinsic PerfectPowerBase(n::RngIntElt) -> RngIntElt
@@ -22,9 +30,9 @@ intrinsic PerfectPowerBase(n::RngIntElt) -> RngIntElt
     return b select m else n;
 end intrinsic
 
-intrinsic IsPolredabsCandidate (f::RngUPolElt) -> RngUPolElt
+intrinsic IsPolredabsCandidate (f::RngUPolElt) -> BoolElt
 { Returns true if the polynomial looks like Polredabs can easily handle it. }
-    if Degree(f) gt 32 then return false; end if;
+    if Degree(f) gt 64 then return false; end if;
     n := PerfectPowerBase(Integers()!AbsoluteValue(Discriminant(f)));
     if n le 10^100 then return true; end if;
     _,s := TrialDivision(n,10^6);
@@ -41,6 +49,11 @@ intrinsic IsPolredabsCandidate (f::RngUPolElt) -> RngUPolElt
         end if;
     end for;
     return n le 10^100 or IsProbablePrime(n);
+end intrinsic;
+
+intrinsic IsPolredabsCandidate (f::SeqEnum) -> SeqEnum
+{ Returns true if the polynomial looks like Polredabs can easily handle it. }
+    return IsPolredabsCandidate(PolynomialRing(Integers())!f);
 end intrinsic;
 
 intrinsic Polredbestify (f::RngUPolElt) -> RngUPolElt, BoolElt
