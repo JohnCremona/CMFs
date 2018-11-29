@@ -17,6 +17,13 @@ function SturmBound (N, k)
     return Integers()!Floor(m*k/12-(m-1)/N);
 end function;
 
+function NewformSturmBound (N, k, chi)
+    m := Index(Gamma0(N));
+    M := ExactQuotient(N,Conductor(chi));
+    n := #[p:p in PrimeDivisors(N)|not IsDivisibleBy(M,p)];
+    return Integers()!Floor(m*k/(2^n*12));
+end function;
+
 function AnalyticConductor (N, k)
     return N*(2*Exp(Psi((1+k)/2)))^2;
 end function;
