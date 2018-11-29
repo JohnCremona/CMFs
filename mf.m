@@ -170,12 +170,21 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[]
     if ComputeTraces or #Set(D) ne #D then
         if #TraceHint gt 0 then
             if Detail gt 0 then printf "Computing labels for forms in space %o:%o:%o using TraceHint...",N,k,o; t:=Cputime(); end if;
-            DT := [t[1]:t in TraceHint];
-            DTM := Multiset([t[1]:t in TraceHint]);  assert Multiset(D) eq DTM;
-            F := [* (Multiplicity(DTM,D[i]) gt 1 or (ComputeEigenvalues and D[i] gt 1 and D[i] le DegreeBound)) select Eigenform(S[i],n+1) else 0 : i in [1..#S] *];
-            T := [];
+            assert Multiset([t[1]:t in TraceHint]) eq Multiset(D);
+            // For forms with dimension in (1,DegreeBound], Compute trace bound sufficient to distinguish forms (if dimension is unique, this will be 1)
+            M :=[1:d in D];
+            for i := 1 to #M do
+                if ComputeEigenvalues and D[i] gt 1 and D[i] le DegreeBound then
+                    M[i] := n;
+                else
+                    m := n; for j:=1 to n do if #{t[1..j]:t in TraceHint|t[1] eq D[i]} eq #[t:t in TraceHint|t[1] eq D[i]] then m:=j; break; end if; end for;
+                    M[i] := m;
+                end if;
+            end for;
+            F := [* M[i] gt 1 select Eigenform(S[i],M[i]+1) else 0 : i in [1..#S] *];
+            T := []; DT := [t[1] : t in TraceHint];
             for i := 1 to #S do
-                if Multiplicity(DT,D[i]) eq 1 then
+                if M[i] eq 1 then
                     ii := Index(DT,D[i]);
                     T[i] := <[Integers()|TraceHint[ii][j] : j in [1..n]],i>;
                 else
@@ -203,11 +212,15 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[]
     if Detail gt 0 and Order(chi) eq 1 then printf "Computing Atkin-Lehner signs for space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(S[i],p)),D[i])>:p in PrimeDivisors(N)]:i in [1..#S]] else [];
     if Detail gt 0 and Order(chi) eq 1 then printf "took %o secs.\n", Cputime()-t; printf "Atkin-Lehner signs %o\n", sprint(AL); end if;
-    HC:=[[]:d in D];   
-    if #D gt 1 then
-        if Detail gt 0 then printf "Computing Hecke cutters for space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
-        HC := ComputeCutters(S);
-        if Detail gt 0 then printf "cutter length %o, took %o secs\n", #HC[1], Cputime()-t; end if;
+    if #[d:d in D|d le DegreeBound] gt 0 then
+        HC:=[[]:d in D];   
+        if #D gt 1 then
+            if Detail gt 0 then printf "Computing Hecke cutters for space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
+            HC := ComputeCutters(S);
+            if Detail gt 0 then printf "cutter length %o, took %o secs\n", #HC[1], Cputime()-t; end if;
+        end if;
+    else
+        HC := [];
     end if;
     u := UnitGenerators(chi);
     HF := []; E := []; cm := []; it := []; X := [];
