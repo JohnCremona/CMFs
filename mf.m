@@ -148,7 +148,7 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[]
         assert #Set([#t:t in TraceHint]) eq 1;
         TraceHint := Sort(TraceHint);
         if #TraceHint[1] lt n then
-            print "*** Warning: ignoring TraceHint because it contains only %o < %o traces! ***", #TraceHint[1], n;
+            printf "*** Warning: ignoring TraceHint because it contains only %o < %o traces! ***", #TraceHint[1], n;
             TraceHint := [];
         end if;
         if #TraceHint eq 1 and DegreeBound gt 0 and dNS gt DegreeBound then
