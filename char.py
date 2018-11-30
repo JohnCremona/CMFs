@@ -52,6 +52,8 @@ char_table_dict = None
 
 def char_orbit_index_to_DC_number(N,o):
     """Returns the index in the Dirichlet-Conrey numbering of one character in orbit number o"""
+    if o==1:
+        return 1
     global char_table_dict
     if not char_table_dict:
         char_table_dict = {}
@@ -66,4 +68,8 @@ def char_orbit_index_to_DC_number(N,o):
         except IOError:
             Chars = DirichletCharacterGaloisReps(N)
             return DC.number(Chars[o-1])
-    return char_table_dict[N][o]
+    try:
+        return char_table_dict[N][o]
+    except KeyError: # N too big for precomputed table
+        Chars = DirichletCharacterGaloisReps(N)
+        return DC.number(Chars[o-1])
