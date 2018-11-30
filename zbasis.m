@@ -1,5 +1,33 @@
 Attach("chars.m");
 
+intrinsic NFDiscriminant (f::RngUPolElt) -> RngIntElt
+{ Given an irreducible polynomial in Q[x] returns the discriminant of the number field it defines. }
+    return Integers()!Discriminant(RingOfIntegers(NumberField(f)));
+end intrinsic;
+
+intrinsic NFDiscriminant (f::SeqEnum) -> RngIntElt
+{ Given an irreducible polynomial in Q[x] returns the discriminant of the number field it defines. }
+    return Integers()!Discriminant(RingOfIntegers(NumberField(PolynomialRing(Rationals())!f)));
+end intrinsic;
+
+intrinsic MinimalSubSibling (f::RngUPolElt:SplitDegree:=0) -> RngUPolElt
+{ Given an irreducible polynomial f in Q[x] returns a polynomial g with the same splitting field as f with both the degree of g and |disc(Q[x]/(g))| minimal among those g for which Q[x]/(g(x)) lies in Q[x]/(f(x)); this will be the minimal sibling if Q[x]/(f(x)) is Galois. }
+    if SplitDegree eq 0 then SplitDegree := #GaloisGroup(f); end if;
+    K := NumberField(f);
+    L := Sort([DefiningPolynomial(L[1]):L in Subfields(K)],func<a,b|Degree(a)-Degree(b)>);
+    h := f; dh := Degree(h); Dh := 0;
+    for g in L do
+        if Degree(g) eq dh and #GaloisGroup(g) eq SplitDegree then Dg := Abs(NFDiscriminant(g)); if Dg lt Dh then h := g; Dh := Dg; end if; end if;
+        if Degree(g) lt dh and #GaloisGroup(g) eq SplitDegree then h := g; dh := Degree(h); Dh := NFDiscriminant(h); end if;
+    end for;
+    return h;
+end intrinsic;
+
+intrinsic MinimalSubSibling (f::SeqEnum:SplitDegree:=0) -> SeqEnum
+{ Given an irreducible polynomial f in Q[x] returns a polynomial g with the same splitting field as f with both the degree of g and |disc(Q[x]/(g))| minimal among those g for which Q[x]/(g(x)) lies in Q[x]/(f(x)); this will be the minimal sibling if Q[x]/(f(x)) is Galois. }
+    return Eltseq(MinimalSubSibling(PolynomialRing(Rationals())!f:SplitDegree:=SplitDegree));
+end intrinsic;
+
 intrinsic NFPolyIsIsomorphic (f::RngUPolElt,g::RngUPolElt) -> BoolElt
 { Determines whether the specified polynomials are monic irreducible elements of Q[x] that define the same number field. }
     if Degree(f) ne Degree(g) then return false; end if;
@@ -96,12 +124,27 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:PolredabsPol
     // PO is the change of basis matrix from Magma's integral basis to the power basis
     POinv := PO^-1;
 
-    ZO := ChangeRing(Zbest*POinv,Integers());  
-
+    ZO := ChangeRing(Zbest*POinv,Integers());
+    prec := Max(100,Round(Log(10,AbsoluteValue(discOK eq 0 select Discriminant(Kbest) else discOK))));
+    retry := 0;
+    try 
     // Now compute a small basis.  Note that we need to be sure to use enough precision to guarantee we find a root of unity in Olat
     // (if we don't asserts below will fail)
-    Olat, mOlat := MinkowskiLattice(O : Precision := Max(100,Round(Log(10,AbsoluteValue(discOK eq 0 select Discriminant(Kbest) else discOK)))));
-    _, E := LLL(Olat);
+        Olat, mOlat := MinkowskiLattice(O : Precision := prec);
+        _, E := LLL(Olat);
+    catch e
+        printf "Warning, error %o caught in OptimizedOrderBasis, increasing precision from %o to %o\n", e, retry, prec, 2*prec;
+        prec := 2*prec;
+        try
+            Olat, mOlat := MinkowskiLattice(O : Precision := prec);
+            _, E := LLL(Olat);
+        catch e
+            printf "Warning, error %o caught in OptimizedOrderBasis, increasing precision from %o to %o\n", e, retry, prec, 2*prec;
+            prec := 2*prec;
+            Olat, mOlat := MinkowskiLattice(O : Precision := prec);
+            _, E := LLL(Olat);
+        end try;
+    end try;
   
     // Theorem: The shortest vectors of Olat are the roots of unity.
     // Corollary: If 1 is not in a basis of shortest vectors, then 
@@ -197,15 +240,19 @@ intrinsic NFSeqIsIsomorphic (KPoly1::RngUPolElt,Seq1::SeqEnum[SeqEnum], KPoly2::
     return NFSeqIsIsomorphic(Eltseq(KPoly1),Seq1,Eltseq(KPoly2),Seq2);
 end intrinsic;        
 
-intrinsic NFSeqIsIsomorphic (Seq1::SeqEnum,Seq2::SeqEnum) -> BoolElt, FldNumElt
+intrinsic NFSeqIsIsomorphic (Seq1::SeqEnum,Seq2::SeqEnum) -> BoolElt
 { Given two sequences that both contain a basis for the same number field specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If returns the image of first power basis generator in the second. }
     require #Seq1 gt 0 and #Seq1 eq #Seq2: "Sequences must be non-empty and of the same length";
-    K1 := AbsoluteField(NumberField(Universe(Seq1)));  K2:= AbsoluteField(NumberField(Universe(Seq2)));
+    K1 := Universe(Seq1);  F, pi := sub<K1|Seq1>; if F ne K1 then Seq1 := [Inverse(pi)(a):a in Seq1]; K1 := F; end if; 
+    K2 := Universe(Seq2);  F, pi := sub<K2|Seq2>; if F ne K2 then Seq2 := [Inverse(pi)(a):a in Seq2]; K2 := F; end if;
+    if Degree(K1) ne Degree(K2) then return false; end if;
+    if Degree(K1) eq 1 then return Seq1 eq Seq2; end if;
+    if Type(K1) eq FldCyc then L:=SimpleExtension(K1); b,pi:=IsIsomorphic(K1,L); assert b; Seq1:=[pi(x):x in Seq1]; K1:=L; end if;
+    if Type(K2) eq FldCyc then L:=SimpleExtension(K2); b,pi:=IsIsomorphic(K2,L); assert b; Seq2:=[pi(x):x in Seq2]; K2:=L; end if;
     f1 := DefiningPolynomial(K1); f2 := DefiningPolynomial(K2);
-    if Type(f1) eq SeqEnum and #f1 eq 1 then f1 := f1[1]; end if;
-    if Type(f2) eq SeqEnum and #f2 eq 1 then f2 := f2[1]; end if;
     b,v := NFSeqIsIsomorphic(Eltseq(f1), [Eltseq(K1!a):a in Seq1],Eltseq(f2),[Eltseq(K2!a):a in Seq2]);
-    if b then return true,K2!v; else return false,_; end if;
+    // don't bother trying to reconstruct the map, the caller should fix defining polynomials if they want this.
+    return b;
 end intrinsic;
 
 function CompareCCLists(a,b)
