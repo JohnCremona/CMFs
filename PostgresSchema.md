@@ -128,7 +128,7 @@ hecke_ring_index_proven | boolean | whether the index has been proven correct (c
 hecke_ring_power_basis | boolean | true if the matrix specified by hecke_ring_numerators and hecke_ring_denominators is the identity matrix
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis
 trace_hash | bigint | linear combination of the a_p between 2^12 and 2^13 reduced mod 2^61-1 as defined in BSSVY, only guaranteed for wt > 1 and dim <= 20
-trace_zratio | text | proportion of zero a_p values for p <= 2^13 (rounded to three decimal places)
+trace_zratio | double precision | proportion of zero a_p values for p <= 2^13 (rounded to three decimal places)
 trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^13 (rounded to three decimal places)
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
@@ -150,6 +150,9 @@ trace_display | jsonb | list of traces tr(a_2), tr(a_3), tr(a_5), tr(a_7) for di
 traces | jsonb | full list of traces tr(a_n) for n from 1 to 1000
 projective_image_type | text | for weight 1 forms, one of "Dn", "A4", "S4", "A5"
 projective_image | text | for weight 1 forms, isomorphism class of project image (e.g. which Dn)
+projective_field | jsonb | for weight 1 forms, list of integer coefficients of defining polynomial of the fixed field of the kernel of the projective Galois rep (subfield of the artin field fixed be the center of its Galois group)
+artin_image | jsonb | pair of integers given the small group id for the image of the Galois rep
+artin_field | jsonb | for weight 1 forms, list of integer coefficients of defining polynomial of the fixed field of the Galois rep (equivalently, a defining polynomial for the 2-dim Artin rep corresponding to this weight 1 form)
 
 Table name: `mf_newform_portraits`
 
