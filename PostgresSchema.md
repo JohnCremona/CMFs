@@ -151,8 +151,9 @@ traces | jsonb | full list of traces tr(a_n) for n from 1 to 1000
 projective_image_type | text | for weight 1 forms, one of "Dn", "A4", "S4", "A5"
 projective_image | text | for weight 1 forms, isomorphism class of project image (e.g. which Dn)
 projective_field | jsonb | for weight 1 forms, list of integer coefficients of defining polynomial of the fixed field of the kernel of the projective Galois rep (subfield of the artin field fixed be the center of its Galois group)
-artin_image | jsonb | pair of integers given the small group id for the image of the Galois rep
+artin_image | jsonb | for weight 1 forms, pair of integers given the small group id for the image of the Galois rep
 artin_field | jsonb | for weight 1 forms, list of integer coefficients of defining polynomial of the fixed field of the Galois rep (equivalently, a defining polynomial for the 2-dim Artin rep corresponding to this weight 1 form)
+artin_degree | integer | for weight 1 forms, order of the Artin image, equivalently, degree of the Artin field
 
 Table name: `mf_newform_portraits`
 
