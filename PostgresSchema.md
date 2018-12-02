@@ -134,7 +134,7 @@ qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
 is_cm | smallint | whether there is cm.  1=yes, -1=no, 0=unknown
-cm_disc | smallint | The (negative) discriminant of the order by which we have CM (1 if no CM, 0 if CM status is not known)
+cm_disc | integer | The (negative) discriminant of the order by which we have CM (1 if no CM, 0 if CM status is not known)
 cm_hecke_char | text | label for the Hecke character giving the CM
 cm_proved | boolean | whether the cm columns are provably correct
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
