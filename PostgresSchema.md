@@ -141,7 +141,7 @@ is_rm | smalling | whether the form has RM (applies only to weight 1 forms)
 is_self_twist | smallint | whether this form is a self twist.  1=yes, -1=no, 0=unknown
 self_twist_disc | integer | discriminant of the kronecker character giving the (primary) self twist (CM or RM discriminant)
 self_twist_discs | jsonb | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants, the latter only for weight one forms with D2 projective image
-self_twist_proved | boolean | whether the self twist has been proved unconditionally
+self_twist_proved | boolean | whether the self twists have been proved unconditionally
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
 is_twist_minimal | boolean |
 inner_twist | jsonb | List of integers giving the char_orbit values for the nontrivial Dirichlet characters that give inner twists
