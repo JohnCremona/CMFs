@@ -140,7 +140,7 @@ self_twist_disc | integer | discriminant of the kronecker character giving the (
 self_twist_discs | jsonb | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants (the latter only for weight one D2 forms)
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
 is_cm | smallint | whether the form has CM.  1=yes, -1=no, 0=unknown
-is_rm | smalling | whether the form has RM (applies only to weight 1 forms)
+is_rm | smallint | whether the form has RM (applies only to weight 1 forms)
 cm_hecke_char | text | label for the Hecke character giving the CM
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
 is_twist_minimal | boolean |
