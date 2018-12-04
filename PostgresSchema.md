@@ -133,10 +133,15 @@ trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
-is_cm | smallint | whether there is cm.  1=yes, -1=no, 0=unknown
-cm_disc | integer | The (negative) discriminant of the order by which we have CM (1 if no CM, 0 if CM status is not known)
+is_cm | smallint | whether the form has CM.  1=yes, -1=no, 0=unknown
+cm_disc | integer | CN discriminant (to be removed)
 cm_hecke_char | text | label for the Hecke character giving the CM
-cm_proved | boolean | whether the cm columns are provably correct
+cm_proved | boolean | whether the cm columns are provably correct (to be removed)
+is_rm | smalling | whether the form has RM (applies only to weight 1 forms)
+is_self_twist | smallint | whether this form is a self twist.  1=yes, -1=no, 0=unknown
+self_twist_disc | integer | discriminant of the kronecker character giving the (primary) self twist (CM or RM discriminant)
+self_twist_discs | jsonb | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants, the latter only for weight one forms with D2 projective image
+self_twist_proved | boolean | whether the self twist has been proved unconditionally
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
 is_twist_minimal | boolean |
 inner_twist | jsonb | List of integers giving the char_orbit values for the nontrivial Dirichlet characters that give inner twists
