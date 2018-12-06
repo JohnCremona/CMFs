@@ -17,7 +17,7 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:H:X:sd* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The  fields in each record are defined as follows:
+Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:hash:X:sd* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The  fields in each record are defined as follows:
 
  1) N = level, a positive integer
  2) k = weight, a positive integer (for .m.txt files, k > 1)
