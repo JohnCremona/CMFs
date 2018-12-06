@@ -17,7 +17,7 @@ karim.gp: Karim Belabas's original function
 Data
 -------
 
-Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mom:H:X* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The  fields in each record are defined as follows:
+Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:H:X:sd* where B is an upper bound on Nk^2.  The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).  The  fields in each record are defined as follows:
 
  1) N = level, a positive integer
  2) k = weight, a positive integer (for .m.txt files, k > 1)
@@ -38,7 +38,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mom:H:X* where B i
 12) tw = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (not rigorous!)
 13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
 14) zr = list of proportions of zero a_p over primes p < 2^13 (decimal number), one for each subspace
-15) moments = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
+15) mm = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
 16) hash = list of trace hashes (linear combination of tr(a_p) over p in [2^12,2^13] mod 2^61-1), one for each subspace of dimension up to the degree bound (not yet present for weight 1)
 17) X = list of pairs <u,v>, one for each entry in F, where u is a list of integer generators for (Z/NZ)^* and v is a list of lists of rationals specifying corresponding values of chi in the Hecke field in terms of the power basis for F[i].
 18) sd = list of boolean values (0,1), one for each subspace in D indicating whether the subspace is self-dual (meaning the a_n are real-valued)
