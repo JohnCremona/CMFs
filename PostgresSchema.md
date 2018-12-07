@@ -156,10 +156,12 @@ trace_display | jsonb | list of traces tr(a_2), tr(a_3), tr(a_5), tr(a_7) for di
 traces | jsonb | full list of traces tr(a_n) for n from 1 to 1000
 projective_image_type | text | for weight 1 forms, one of "Dn", "A4", "S4", "A5"
 projective_image | text | for weight 1 forms, isomorphism class of project image (e.g. which Dn)
-projective_field | jsonb | for weight 1 forms, list of integer coefficients of defining polynomial of the fixed field of the kernel of the projective Galois rep (subfield of the artin field fixed be the center of its Galois group)
+projective_field | jsonb | for weight 1 forms, list of integer coefficients of polynomial whose splitting field is the fixed field of the kernel of the projective Galois rep (subfield of the artin field fixed be the center of its Galois group)
+projective_field_label | text | LMFDB label of projective field (if present)
 artin_degree | integer | for weight 1 forms, order of the image of the Galois rep, equivalently, the degree of the Artin field
 artin_image | text | for weight 1 forms, small group label of the image of the Galois rep (and the Galois group of the artin field)
-artin_field | jsonb | for weight 1 forms, list of integer coefficients of defining polynomial of the fixed field of the Galois rep (equivalently, a defining polynomial for the 2-dim Artin rep corresponding to this weight 1 form)
+artin_field | jsonb | for weight 1 forms, list of integer coefficients of polynomial whose splitting field is the fixed field of the Galois rep (equivalently, a defining polynomial for the 2-dim Artin rep corresponding to this weight 1 form)
+artin_field_label | text | LMFDB label of artin field (if present)
 
 Table name: `mf_newform_portraits`
 
