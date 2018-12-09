@@ -35,7 +35,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd* where B
       4) m is a boolean (0 or 1) indicating whether or not we know that n is exactly equal to the index
       5) a is a list of lists of integers encoding eigenvalues in terms of the basis b
 11) cm = list of lists of pairs <proved,discs> where proved=0,1 and discs is a list of 0, 1, or 3 fundamental discriminants (for k > 1 there is at most 1 and it is a negative discriminant), one pair for each subspace listed in D
-12) tw = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (not rigorous!)
+12) tw = list of lists of triples <m,o,proved>, where m and o identify the orbit of a character phi of modulus m for which the corresponding form admits a self-twist by phi (so a_p(f) = chi(p)a_p(f) for all but finitley many p).  The "proved" parameter is 1 or 0 depending on whether the self-twist is proved or not (all self-twists are guaranteed to be included).
 13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
 14) zr = list of proportions of zero a_p over primes p < 2^13 (decimal number), one for each subspace
 15) mm = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
