@@ -136,6 +136,7 @@ trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
+self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
 is_self_twist | boolean | whether this form is a self twist
 is_cm | boolean | whether the form has CM
 is_rm | boolean | whether the form has RM
