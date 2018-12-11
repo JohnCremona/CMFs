@@ -28,19 +28,20 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd* where B
  7) A = Atkin-Lehner signs (empty list if chi is not the trivial character (i.e. i=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D.
  8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to the degree bound (currently 20); note that F[n] corresponds to the space D[n] but F may be shorter than D
  9) C = Hecke cutters [[<p,[g0,g1,...,1]>,...],...] list of minimal lists of coefficients of kernel polys g_p in T_p sufficient to distinguish all the subspaces listed in D (i.e. the ith form is the unique form lying in the kernel of g_p(T_p) for all the tuples <p,coeffs(g_p)> in the ith list)
-10) E = Hecke Eigenvalue data [<g,b,n,m,a>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
+10) E = Hecke Eigenvalue data [<g,b,n,m,a,x>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
       1) g is a list of coefficients of a polredbestified field poly for the Hecke field K (should match entry in F),
       2) b is a list of lists of rationals specifying a basis for the Hecke ring R:=Z[a_n] in terms of the power basis for g
       3) n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K of the Hecke field
       4) m is a boolean (0 or 1) indicating whether or not we know that n is exactly equal to the index
       5) a is a list of lists of integers encoding eigenvalues in terms of the basis b
+      6) x is a pair of lists <u,v> where u is a list of integers r generating (Z/NZ)* and v is the value of chi on r in basis
 11) cm = list of lists of pairs <proved,discs> where proved=0,1 and discs is a list of 0, 1, or 3 fundamental discriminants (for k > 1 there is at most 1 and it is a negative discriminant), one pair for each subspace listed in D
 12) tw = list of lists of quadrauples <proved,n,m,o> where proved=0,1, n >=1 is a multiplicity, and m and o identify a Galois orbit of a characters [phi] of modulus m for which the corresponding form admits n distinct non-trivial inner-twist by characters in xi in [phi] (so a_p(f) = xi(p)a_p(g) for some Galois conjugate g!=f and all but finitley many p). All self-twists are guaranteed to be included, but quadruples with proved=0 could in principal be false positives.
 13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
 14) zr = list of proportions of zero a_p over primes p < 2^13 (decimal number), one for each subspace
 15) mm = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
 16) h = list of trace hashes (linear combination of tr(a_p) over p in [2^12,2^13] mod 2^61-1), one for each subspace of dimension up to the degree bound (not yet present for weight 1)
-17) X = list of pairs <u,v>, one for each entry in F, where u is a list of integer generators for (Z/NZ)^* and v is a list of lists of rationals specifying corresponding values of chi in the Hecke field in terms of the power basis for F[i].
+17) X = list of pairs <u,v>, one for each entry in F, where u is a list of integer generators for (Z/NZ)* and v is a list of lists of rationals specifying corresponding values of chi in the Hecke field in terms of the power basis for F[i].
 18) sd = list of boolean values (0,1), one for each subspace in D indicating whether the subspace is self-dual (meaning the a_n are real-valued)
 
 Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
