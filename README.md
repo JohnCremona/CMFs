@@ -34,7 +34,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd* where B
       3) n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K of the Hecke field
       4) m is a boolean (0 or 1) indicating whether or not we know that n is exactly equal to the index
       5) a is a list of lists of integers encoding eigenvalues in terms of the basis b
-      6) x is a pair of lists <u,v> where u is a list of integers r generating (Z/NZ)* and v is the value of chi on r in basis
+      6) x is a pair <u,v> where u lists integers generating (Z/NZ)* and v lists of values of chi on u in basis b
 11) cm = list of lists of pairs <proved,discs> where proved=0,1 and discs is a list of 0, 1, or 3 fundamental discriminants (for k > 1 there is at most 1 and it is a negative discriminant), one pair for each subspace listed in D
 12) tw = list of lists of quadrauples <proved,n,m,o> where proved=0,1, n >=1 is a multiplicity, and m and o identify a Galois orbit of a characters [phi] of modulus m for which the corresponding form admits n distinct non-trivial inner-twist by characters in xi in [phi] (so a_p(f) = xi(p)a_p(g) for some Galois conjugate g!=f and all but finitley many p). All self-twists are guaranteed to be included, but quadruples with proved=0 could in principal be false positives.
 13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
