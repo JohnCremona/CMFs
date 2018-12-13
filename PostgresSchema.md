@@ -119,7 +119,7 @@ field_poly_is_real_cyclotomic | boolean | true if field_poly is the minimal poly
 field_poly_root_of_unity | integer | the value of n if either field_poly_is_cylotomic of field_poly_is_real_cyclotomic is set
 is_polredabs | boolean | whether the polynomial has been reduced by Pari's `polredabs`
 nf_label | text | LMFDB label for the corresponding number field (can be NULL)
-is_self_dual | smallint | 1 if L-func is self-dual (coeff field is totally real), -1 if not self-dual, 0 if unknown
+is_self_dual | boolean | true if L-func is self-dual (coeff field is totally real)
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
 hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
@@ -146,7 +146,7 @@ rm_discs | jsonb | list of RM discriminants (the positive discriminants listed i
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
 has_inner_twist | smallint | whether there is an inner twist.  1=yes, -1=no, 0=unknown
 is_twist_minimal | boolean |
-inner_twist | jsonb | List of triples <b,M,o> where <M,o> identifies the Galois orbit if a Dirichlet character of modulus M and b is 1 if the form provably has an inner twist by a character in this orbit and 0 if provisional.  All inner twists are guaranteed to be included in the list regardless.
+inner_twist | jsonb | List of quadruples <b,m,M,o> where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
 inner_twist_proved | boolean | whether the inner twist columns are provably correct
 atkin_lehner_eigenvals | jsonb | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
 atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
