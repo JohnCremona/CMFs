@@ -23,7 +23,8 @@ char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit | integer | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
+char_is_real | boolean | whether the character takes only real values (trivial or quadratic
+char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
 sturm_bound | integer |
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
 dim | integer | Q-dimension of this newspace
@@ -107,10 +108,10 @@ char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit_index | integer | char_orbit for the primitive version of this character
 char_order | integer | the order of the character
 char_labels | jsonb | Sorted list of Conrey indexes of characters in this Galois orbit
+char_degree | integer | Degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
-char_degree | integer | Degree of the (cyclotomic) character field
-hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
+char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
 dim | integer | the dimension of this Hecke orbit
 field_disc | numeric | discriminant of the coefficient field, if known
