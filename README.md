@@ -28,13 +28,14 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd* where B
  7) A = Atkin-Lehner signs (empty list if chi is not the trivial character (i.e. i=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D.
  8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to the degree bound (currently 20); note that F[n] corresponds to the space D[n] but F may be shorter than D
  9) C = Hecke cutters [[<p,[g0,g1,...,1]>,...],...] list of minimal lists of coefficients of kernel polys g_p in T_p sufficient to distinguish all the subspaces listed in D (i.e. the ith form is the unique form lying in the kernel of g_p(T_p) for all the tuples <p,coeffs(g_p)> in the ith list)
-10) E = Hecke Eigenvalue data [<g,b,n,m,a,x>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
+10) E = Hecke Eigenvalue data [<g,b,c,d,a,x>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
       1) g is a list of coefficients of a polredbestified field poly for the Hecke field K (should match entry in F),
       2) b is a list of lists of rationals specifying a basis for the Hecke ring R:=Z[a_n] in terms of the power basis for g
-      3) n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K of the Hecke field
-      4) m is a boolean (0 or 1) indicating whether or not we know that n is exactly equal to the index
+      3) c is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K of the Hecke field
+      4) d is a the discriminant of O_K, if known, 0 otherwise
       5) a is a list of lists of integers encoding eigenvalues in terms of the basis b
       6) x is a pair <u,v> where u lists integers generating (Z/NZ)* and v lists of values of chi on u in basis b
+      7) m is the least integer such that the coefficients a_1,...,a_m generate the Hecke ring (as a ring)
 11) cm = list of lists of pairs <proved,discs> where proved=0,1 and discs is a list of 0, 1, or 3 fundamental discriminants (for k > 1 there is at most 1 and it is a negative discriminant), one pair for each subspace listed in D
 12) tw = list of lists of quadrauples <proved,n,m,o> where proved=0,1, n >=1 is a multiplicity, and m and o identify a Galois orbit of a characters [phi] of modulus m for which the corresponding form admits n distinct non-trivial inner-twist by characters in xi in [phi] (so a_p(f) = xi(p)a_p(g) for some Galois conjugate g!=f and all but finitley many p). All self-twists are guaranteed to be included, but quadruples with proved=0 could in principal be false positives.
 13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
