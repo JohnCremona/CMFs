@@ -86,6 +86,12 @@ intrinsic CharacterOrbit(chi::GrpDrchElt) -> RngIntElt
     return M[1];
 end intrinsic;
     
+intrinsic Conjugates(chi::GrpDrchElt:RepTable:=AssociativeArray()) -> RngIntElt
+{ Returns a list of conjugate characters.  For faster performance, use optional RepTable parameter. }
+    if not IsDefined(RepTable,chi) then _,RepTable:=CharacterOrbitReps(Modulus(chi):RepTable); end if;
+    n := RepTable[chi]; return [*x:x in Keys(RepTable)|RepTable[x] eq n*];
+end intrinsic;
+
 intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCycElt
 { The value chi_q(n,m) of the Dirichlet character with Conry label q.n at the integer m. }
     require q gt 0: "Modulus q must be positive";
@@ -114,7 +120,7 @@ intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCyc
     end if;
 end intrinsic;
 
-intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum[FldCycElt]
+intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum[RntIntElt]) -> SeqEnum[FldCycElt]
 { The list of values of the Dirichlet character with Conrey label q.n on the integers in S. }
     require q gt 0: "Modulus q must be positive";
     require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
@@ -187,7 +193,7 @@ intrinsic ConreyCharacterComplexValue(q::RngIntElt,n::RngIntElt,m::RngIntElt,CC:
     return Exp(2*Pi(CC)*CC.1*ConreyCharacterAngle(q,n,m));
 end intrinsic;
 
-intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum[FldCycElt]
+intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,S::SeqEnum[RngIntElt]) -> SeqEnum[FldCycElt]
 { The list of values of the Dirichlet character with Conrey label q.n on the integers in S. }
     require q gt 0: "Modulus q must be positive";
     require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
@@ -218,7 +224,7 @@ intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum
     end if;
 end intrinsic;
 
-intrinsic ConreyCharacterComplexValues(q::RngIntElt,n::RngIntElt,S::RngIntElt,CC::FldCom) -> SeqEnum[FldComElt]
+intrinsic ConreyCharacterComplexValues(q::RngIntElt,n::RngIntElt,S::SeqEnum[RngIntElt],CC::FldCom) -> SeqEnum[FldComElt]
 { List of values of chi_q(n,m) for m in S in specified complex field. }
     return [Exp(2*Pi(CC)*CC.1*t): t in ConreyCharacterAngles(q,n,S)];
 end intrinsic;
@@ -228,7 +234,7 @@ intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEn
     return ConreyCharacterAngles(q,n,[1..M]);
 end intrinsic;
 
-intrinsic ConreyCharacter(q::RngIntElt,n::RngIntElt) -> GrpDrchElt
+intrinsic CyclotomicConreyCharacter(q::RngIntElt,n::RngIntElt) -> GrpDrchElt
 { The Dirichlet character with Conrey label q.n. }
     require q gt 0: "Modulus q must be positive";
     require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
@@ -239,6 +245,18 @@ intrinsic ConreyCharacter(q::RngIntElt,n::RngIntElt) -> GrpDrchElt
     M := [chi: chi in H | Order(chi) eq m and [Evaluate(chi,pi(g)):g in S] eq v];
     assert #M eq 1;
     return M[1];
+end intrinsic;
+
+intrinsic ComplexConreyCharacter(q::RngIntElt,n::RngIntElt,CC::FldCom) -> Map
+{ The Dirichlet character with Conrey label q.n. }
+    chi := CyclotomicConreyCharacter(q,n);
+    F := Codomain(chi);
+    phi := hom<F->CC|Conjugates(F.1:Precision:=Precision(CC))[1]>;
+    xi := map<Integers()->CC|n:->phi(chi(n))>;
+    U := UnitGenerators(chi);
+    V := ConreyCharacterComplexValues(q,n,U,CC);
+    assert &and[Abs(xi(U[i])-V[i]) lt 10.0^-(Precision(CC)-1):i in [1..#U]];
+    return xi;
 end intrinsic;
 
 intrinsic ConreyTraces(q::RngIntElt,n::RngIntElt) -> SeqEnum[RngIntElt]
@@ -308,7 +326,14 @@ intrinsic ConreyConjugates (chi::GrpDrchElt, xi::Map: ConreyLabelList:=ConreyLab
     return [T[[A[i][j] : i in [1..#S]]] : j in [1..#A[1]]];
 end intrinsic;
 
-intrinsic CharacterFromValues (N::RngIntElt,u::SeqEnum,v::SeqEnum:Orbit:=false) -> Map
+intrinsic DirichletCharacterFromValues (N::RngIntElt,n::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum[RngIntElt]) -> GrpDrchElt
+{ Given a modulus N, a positive integer n, a list of integers u giving standard generates for (Z/NZ)*, and a suitable list of integers v, returns the Dirichlet character with values in Q(zeta_n) mapping u[i] to zeta_n^v[i]. }
+    if u ne UnitGenerators(DirichletGroup(N)) then error Sprintf("Specified generators %o do not match Magma's generators %o", u, UnitGenerators(DirichletGroup(N))); end if;
+    F := CyclotomicField(n);
+    return DirichletCharacterFromValuesOnUnitGenerators(DirichletGroup(N,F),[F|F.1^n:n in v]);
+end intrinsic;
+
+intrinsic CharacterFromValues (N::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum:Orbit:=false) -> Map
 { Given a modulus N, a list of generators of (Z/NZ)*, and a corresponding list of roots of unity in a number/cyclotomic field K, returns a map ZZ -> K for the Dirichlet character. }
     require N gt 0: "Modulus must be a positive integer";
     require #u eq #v: "List of unit generators and values must be lists of the same length";
@@ -330,22 +355,27 @@ intrinsic CharacterFromValues (N::RngIntElt,u::SeqEnum,v::SeqEnum:Orbit:=false) 
 end intrinsic;
 
 intrinsic Order (xi::Map, N::RngIntElt) -> RngIntElt
-{ Given a map ZZ -> K that is a Dirichlet character of modulus N, returns its order. }
+{ Given a map xi:ZZ -> K that is a Dirichlet character of modulus N, returns its order (results are undefined if xi is not of modulus N). }
     e := Exponent(MultiplicativeGroup(Integers(N)));
     U := UnitGenerators(DirichletGroup(N));
     return LCM([Min([d: d in Divisors(e)|a^d eq 1]) where a:=xi(u) : u in U]);
 end intrinsic;
 
 intrinsic Conductor (xi::Map, N::RngIntElt) -> RngIntElt
-{ Given a map ZZ -> K that is a Dirichlet character of modulus N, returns its conductor. }
+{ Given a map ZZ -> K that is a Dirichlet character of modulus N, returns its conductor (results are undefined if xi is not of modulus N). }
     U := UnitGenerators(DirichletGroup(N));
-    M := Min([M : M in Divisors(N) | &and[xi(u) eq xi(u mod M):u in U]]);
-    return M;
+    V := [xi(u):u in U];
+    if Set(V) eq {1} then return 1; end if;
+    if IsPrime(N) then return N; end if;
+    return Min([M : M in Divisors(N) | M gt 2 and &and[&and[xi(u) eq xi(u+r*M):r in [1..ExactQuotient(N,M)-1]]:u in U]]);
 end intrinsic;
 
 intrinsic Degree (xi::Map, N::RngIntElt) -> RngIntElt
 { Given a map ZZ -> K that is a Dirichlet character of modulus N, returns the degree of the (cyclotomic) subfield of K generated by its image. }
-    return Degree(sub<Codomain(xi) | [xi(u) : u in UnitGenerators(DirichletGroup(N))]>);
+    U := UnitGenerators(DirichletGroup(N));
+    if #U eq 0 then return 1; end if;
+    if Codomain(xi) eq Rationals() then return {xi(u):u in U} eq {1} select 1 else 2; end if;
+    return Degree(sub<Codomain(xi) | [xi(u) : u in U]>);
 end intrinsic;
 
 intrinsic Parity (xi::Map) -> RngIntElt
