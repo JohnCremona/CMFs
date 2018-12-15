@@ -84,23 +84,40 @@ function MinimizeCutters (HC)
     assert #Set(HC) eq num;
 end function;
 
-// Given a list of ap's for primes p up to at least 2^13 for a motive of weight w (where w=k-1 for modular forms)
-// returns the trace zero density, a list of trace moments, and the trash hash (as defined in https://doi.org/10.1112/S146115701600019X)
-function TraceStats(aplist, w : Moments:= 6)
-    assert #aplist ge 1028;  // need at least the 1028 primes up to 2^13
-    h := TraceHash(aplist);
-    z := 1.0*#[a:a in aplist|a eq 0]/#aplist;
-    // normalize traces
-    P := PrimesInInterval(1,NthPrime(#aplist));
-    e := w/2;
-    a := [aplist[i]/P[i]^e:i in [1..#aplist]];
-    m := [&+[t^n:t in a]/#a:n in [1..Moments]];
-    return z,m,h;
+// Determines whether newform of character chi, dimension d, with rational traces t and Hecke field defined by f for modular symbol space S is self dual or not
+function IsSelfDual (chi,d,t,f,S)
+    // trivial character -> totally real coeff field -> self dual (see Ribet's Galreps attached to eigenforms with nebentypus in Antwerp V, Prop 3.2)
+    if Order(chi) eq 1 then return true; end if;
+    // Otherwise the coeff field is totally imaginary unless the char_order is 2 and chi(p)a_p=a_p for all p
+    if Order(chi) gt 2 then return false; end if;
+    // if the coeff field has odd degree then it is totally real because it cannot be a cm field (by Ribet Prop 3.2)
+    if IsOdd(d) then return true; end if;
+    // check if we know that tr(a_p)'s is nonzero at primes where chi(p) is not 1 (is so, cannot be self-dual by Ribet Prop 3.3)
+    if not &and[t[p] eq 0:p in PrimesInInterval(1,#t)|chi(p) ne 1] then return false; end if;
+    if #f eq 0 then
+        printf "Unable to determine whether form of dimension %o is self dual or not, Hecke field unspecified, so computing Hecke field...\n", d;
+        t := Cputime();
+        F:=Eigenform(S,50);
+        f:=CoefficientFieldPoly(F,d);  // will fail if 50 is not big enough
+        "Computed hecke_field of degree %o in %.3os\n", d, Cputime()-t;
+    else
+        assert #f eq d+1;
+    end if;
+    return IsTotallyReal(NumberField(PolynomialRing(Rationals())!f));
+end function;
+
+// Given a list of a_n for a newform of character chi and weight k returns a list of quadruples <b,n,M,i> where b=0,1 indicates proven results, n is a multiplicity,
+// and M,i identifies a Galois orbit [M.i] of primitive characters of modulus M for which the newform admits n distinct inner twists by characters in [M.i]
+function InnerTwistData (a,chi,k:CharTable:=AssociativeArray())
+    xi,B := InnerTwists(a,chi,k);
+    for x in xi do M := Modulus(x); if not IsDefined(CharTable,M) then G,T := CharacterOrbitReps(M:RepTable); CharTable[M] := <G,T>; end if; end for;
+    xi := Sort([<M,CharTable[M][2][x],B[j] le #a select 1 else 0> where M:=Modulus(x) where x := xi[j] : j in [1..#xi]]);
+    return [<x[3],Multiplicity(Multiset(xi),x),x[1],x[2]> : x in Set(xi)];
 end function;
     
 /*
-Format of mfdata_B.m.txt is N:k:i:t:D:T:A:F:C:E:cm:itwists:ispolredabs:zratios:zmoments:tracehashes where B is an upper bound on Nk^2.
-The data depends on a degree bound (currently 20), and a coefficient index bound (currently 1000).
+Format of data is N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd
+The data depends on a degree bound and a coefficient count (number of a_n to compute)
 
 N = level, a positive integer
 k = weight, a positive integer (for .m.txt files, k > 1)
@@ -117,23 +134,26 @@ E = Hecke Eigenvalue data [<g,b,n,m,e>,...] list of tuples <g,b,n,m,e> of Hecke 
     n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K
     m is a boolean (0 or 1) indicating whether or not we know that n is maximal, i.e. n = [Z(f):O_{Q(f)}]
     e is a list of eigenvalues specified in terms of the basis b (list of deg(f) integers for each a_n)
+    x is a pair <u,v> where u is a list of integers generating Z/NZ* and v is a list of values of chi on u in written in the basis b
 cm = list of cm discriminants, one for each subspace listed in D up to the degree bound, 0 indicates non-CM forms (rigorous)
-itwists = list of lists of char orbits of non-trivial inner twists for spaces of dimension up to the degree bound (not rigorous!)
-ispolredabs = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
-zratios = list of proportions of zero a_p over primes p < 2^13 (decimal number), one for each subspace
-zmoments = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
-tracehashes = list of trace hashes (linear combination of tr(a_p) over p in [2^12,2^13] mod 2^61-1), one for subspace
+tw = list of lists of quadruples <b,n,m,i> identifying char orbits m.i of non-trivial inner twists with multiplicity n, b=0,1 indicates proved or not
+pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
+zr = list of proportions of zero a_p over primes p < 2^13 (decimal number), one for each subspace
+mm = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
+h = list of trace hashes (linear combination of tr(a_p) over p in [2^12,2^13] mod 2^61-1), one for subspace
+X = list of pairs <u,v> one for each entry in F where u is a list of integers r generating Z/NZ* and v is a list of values of chi on r in power basis defined by corresponding entry in F
+sd = list of booleans, one for each entry in D, indicating whether newform is self dual or not (i.e. a_n are real)
 */
 
-function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[], NoCM:=false,
-                       ComputeTraces:=false, ComputeEigenvalues:=false, ComputeTraceStats:=false, NumberOfCoefficients:=0, DegreeBound:=0, Detail:=0)
-    st := Cputime();
-    chi := G[o];  N := Modulus(chi);
+function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], DimensionsOnly:=false, ComputeTraces:=false, ComputeEigenvalues:=false, ComputeTraceStats:=false,
+                       NumberOfCoefficients:=0, DegreeBound:=0, Detail:=0)
+    start := Cputime();
+    N := Modulus(chi);
     dNS := QDimensionNewCuspForms(chi,k);
     if dNS eq 0 then
         if Detail gt 0 then printf "The space %o:%o:%o is empty\n",N,k,o; end if;
-        s := Sprintf("%o:%o:%o:%o:%o:[]:[]:[]:[]:[]:[]:[]:[]", N, k, o, Cputime()-st, []);
-        if ComputeTraceStats then s cat:= ":[]:[]:[]"; end if;
+        s := Sprintf("%o:%o:%o:%o:[]", N, k, o, Cputime()-start);
+        if not DimensionsOnly then s cat:= ":[]:[]:[]:[]:[]:[]:[]:[]:[]:[]:[]:[]:[]"; end if;
         return strip(s);
     end if;
     if ComputeEigenvalues then ComputeTraces := true; end if;
@@ -142,10 +162,13 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[]
     NS := NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1)));
     if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
     n := Max(HeckeBound(NS)+10,NumberOfCoefficients);
-    assert dNS eq Degree(chi)*Dimension(NS);
+    assert QDimension(NS) eq dNS;
     if #TraceHint gt 0 then
         assert &and[t[1] ge 1:t in TraceHint] and &+[t[1]:t in TraceHint] eq dNS;
         assert #Set([#t:t in TraceHint]) eq 1;
+        if #TraceHint eq 1 and DimensionsOnly then
+            return strip(Sprintf("%o:%o:%o:%o:%o:", N, k, o, Cputime()-start, [TraceHint[1][1]]));
+        end if;
         TraceHint := Sort(TraceHint);
         if #TraceHint[1] lt n then
             printf "*** Warning: ignoring TraceHint because it contains only %o < %o traces! ***", #TraceHint[1], n;
@@ -156,15 +179,21 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[]
             if Detail gt 0 and Order(chi) eq 1 then printf "Computing Atkin-Lehner signs for space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
             AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(NS,p)),dNS)>:p in PrimeDivisors(N)]] else [];
             if Detail gt 0 and Order(chi) eq 1 then printf "took %o secs.\n", Cputime()-t; printf "Atkin-Lehner signs %o\n", sprint(AL); end if;
-            s := Sprintf("%o:%o:%o:%o:%o:%o:%o:[]:[[]]:[]:[]:[]:[]", N, k, o, Cputime()-st, [dNS], TraceHint, AL);
-            if ComputeTraceStats then s cat:= ":[]:[]:[]"; end if;
+            if Detail gt 0 then printf "Checking whether single form in space %o:%o:%o has CM...", N,k,o; t:=Cputime(); end if;
+            cm := [<1,SelfTwists([],NS)>]; // always proved
+            if Detail gt 0 then printf "took %o secs.\n", Cputime()-t; printf "CM: %o\n", cm; end if;
+            s := Sprintf("%o:%o:%o:%o:%o:%o:%o:[]:[[]]:[]:%o:[]:[]", N, k, o, Cputime()-start, [dNS], TraceHint, AL, cm);
+            s cat:= Sprintf(":[]:[]:[]:[]:[%o]",IsSelfDual(chi,dNS,TraceHint,[],NS) select 1 else 0);
             return strip(s);
         end if;
     end if;
     if Detail gt 0 then printf "Decomposing space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     S := NewformDecomposition(NS);
     if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
-    D := [Degree(chi)*Dimension(S[i]): i in [1..#S]];
+    D := [QDimension(S[i]): i in [1..#S]];
+    if DimensionsOnly then
+        return strip(Sprintf("%o:%o:%o:%o:%o:", N, k, o, Cputime()-start, D));
+    end if;
     if DegreeBound eq 0 then DegreeBound := Max(D); end if;
     if Detail gt 0 then printf "dims = %o\n", sprint(D); end if;
     if ComputeTraces or #Set(D) ne #D then
@@ -222,35 +251,59 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[]
     else
         HC := [];
     end if;
+    // Deal with 1-dimensional forms first
+    HF := [[0,1]:d in D|d eq 1];
+    pra:=[1:i in [1..#HF]];
     u := UnitGenerators(chi);
-    HF := []; E := []; cm := []; it := []; X := [];
+    X := [<u,[Eltseq(v):v in ValuesOnUnitGenerators(chi)]>:i in [1..#HF]];
+    cm := []; it := [];
+    for i:=1 to #HF do
+        if Detail gt 0 then printf "Computing self twists for form %o:%o:%o%o of dimension 1...",N,k,o,i; t:=Cputime(); end if;
+        cm[i] := <1,SelfTwists(T[i],S[i])>; // always proved
+        if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
+        if Detail gt 0 then printf "Computing self twists for form %o:%o:%o%o of dimension 1...",N,k,o,i; t:=Cputime(); end if;
+        it[i] := InnerTwistData(T[i],chi,k:CharTable:=CharTable);
+        if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
+    end for;
+    // Now deal with forms of dimension 2 to DegreeBound
+    E := [];
     if ComputeEigenvalues then
         R<x> := PolynomialRing(Rationals());
-        HF := [[0,1]:d in D|d eq 1]; pra:=[1:i in [1..#HF]];
-        X := [<u,[Eltseq(v):v in ValuesOnUnitGenerators(chi)]>:d in D|d eq 1];
-        if #[d:d in D|d gt 1 and d le DegreeBound] gt 0 then
-            if Detail gt 0 then printf "Computing %o exact Hecke eigenvalues with degreebound %o for space %o:%o:%o...",n,DegreeBound,N,k,o; t:=Cputime(); end if;
-            for i:=1 to #F do
-                if D[i] gt 1 and D[i] le DegreeBound then
-                    K := AbsoluteField(BaseRing(Parent(F[i])));
-                    f,b,a,c,d,pr := OptimizedOrderBasis(Eltseq(MinimalPolynomial(K.1)),[Eltseq(K!Coefficient(F[i],j)) : j in [1..n]]);
-                    v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,a))] else [];
-                    w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
-                    Append(~E,<f,b,c,d eq 0 select 0 else 1,a,<u,w>>);  Append(~pra,pr select 1 else 0);  Append(~HF,f);  Append(~X,<u,v>);
-                end if;
-            end for;
+        for i:=#HF+1 to #F do
+            if D[i] gt DegreeBound then break; end if;
+            if Detail gt 0 then printf "Computing %o exact Hecke eigenvalues form %o:%o:%o:%o of dimension %o...",n,DegreeBound,N,k,o,i,D[i]; t:=Cputime(); end if;
+            K := AbsoluteField(BaseRing(Parent(F[i])));
+            f,b,a,c,d,pr,m := OptimizedOrderBasis(Eltseq(MinimalPolynomial(K.1)),[Eltseq(K!Coefficient(F[i],j)) : j in [1..n]]);
+            aa := NFSeq(f,b,a);
+            v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,aa)] else [];
+            w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
+            Append(~E,<f,b,c,d,a,<u,w>,m>);  Append(~pra,pr select 1 else 0);  Append(~HF,f);  Append(~X,<u,v>);
             if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
-        end if;
-        if not NoCM then
-            if Detail gt 0 then printf "Finding CM forms in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
-            cm := [a select b else 0 where a,b:=IsCM(S[i]:Proof:=true):i in [1..#S]|D[i] le DegreeBound];
-            if Detail gt 0 then printf "took %o secs\n", Cputime()-t; printf "CM discriminants: %o\n", sprint(cm); end if;
-            if Detail gt 0 then printf "Finding inner twists in space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
-            if #Keys(OrbitRepTable) eq 0 then _,OrbitRepTable := CharacterOrbitReps (N:RepTable:=true); end if;
-            it := [cm[i] eq 0 select [OrbitRepTable[chi]:chi in t|Order(chi) gt 1] where t:= InnerTwists(S[i]) else [] :i in [1..#S]|D[i] le DegreeBound];
-            if Detail gt 0 then printf "took %o secs\n", Cputime()-t; printf "Inner twists: %o\n", sprint(it); end if;
-        end if;
+            if Detail gt 0 then printf "Computing self twists for form %o:%o:%o%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+            cm[i] := <1,SelfTwists(aa,S[i])>; // always proved
+            if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
+            if Detail gt 0 then printf "Computing self twists for form %o:%o:%o%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+            it[i] := InnerTwistData(aa,chi,k:CharTable:=CharTable);
+            if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
+        end for;
+    else
+        for i:=#HF+1 to #F do
+            a := [Coefficient(F[i],j):j in [1..n]];
+            if Detail gt 0 then printf "Computing self twists for form %o:%o:%o%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+            cm[i] := <1,SelfTwists(a,S[i])>; // always proved
+            if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
+            if Detail gt 0 then printf "Computing self twists for form %o:%o:%o%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+            it[i] := InnerTwistData(a,chi,k:CharTable:=CharTable);
+            if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
+        end for;
     end if;
+    // Compute self twist data for remaining forms
+    for i := #cm+1 to #F do
+        if Detail gt 0 then printf "Computing self twists for form %o:%o:%o%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+        a := [Coefficient(F[i],j):j in [1..n]];
+        cm[i] := <1,SelfTwists(a,S[i])>; // always proved
+        if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
+    end for;
     if ComputeTraceStats then
         Z := []; M := []; H:=[];
         for i:=1 to #D do
@@ -262,14 +315,16 @@ function NewspaceData (G, k, o: OrbitRepTable:=AssociativeArray(), TraceHint:=[]
             if Detail gt 0 then printf "took %o secs\n", Cputime()-t; printf "trace hash: %o\n", h; end if;
         end for;
     end if;
-    s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-st, D);
+    s := Sprintf("%o:%o:%o:%o:%o", N, k, o, Cputime()-start, D);
     s cat:= Sprintf(":%o:%o:%o:%o",T,AL,HF,HC);
     if ComputeEigenvalues then s cat:= Sprintf(":%o:%o:%o:%o",E,cm,it,pra); else s cat:= ":[]:[]:[]:[]"; end if;
     if ComputeTraceStats then s cat:= Sprintf(":%o:%o:%o", Z, M, H); else s cat:= ":[]:[]:[]"; end if;
     s cat:= Sprintf(":%o",X);
+    if ComputeEigenvalues then s cat:= Sprintf(":%o",[IsSelfDual(chi,D[i],T[i],#HF ge i select HF[i] else [],S[i]) select 1 else 0:i in [1..#D]]); else s cat:= ":[]"; end if;
     return strip(s);
 end function;
 
+// TODO update this to handle new self-twist and inner-twists formats
 procedure ValidateSpaceData (s:Coeffs:=1000,DegBound:=20,CharTable:=[])
     assert Coeffs gt 0;
     R<x>:=PolynomialRing(Integers());
@@ -303,7 +358,8 @@ procedure ValidateSpaceData (s:Coeffs:=1000,DegBound:=20,CharTable:=[])
     // Check that HC is a list of lists of tuples <p,[g0,g1,...]>, one for each entry in D, where each list of tuples projects to the same list of primes and g0,g1,...,1 encode irreducible monic polys
     // Also check that HC distiniughes ever form and that it is minimal in the sense that each additional entry increases the number of distinct lists, and that e
     assert Type(HC) eq SeqEnum;
-    assert (k eq 1 and #HC eq 0) or (#HC eq #D and #Set(HC) eq #D);
+    assert (k eq 1 and #HC eq 0) or (#HC eq #D and #Set(HC) eq #D) or (#[d:d in D|d le DegBound] eq 0 and #HC eq 0);
+    if #D gt 0 and #HC eq 0 and #[d:d in D|d le DegBound] eq 0 then printf "Ignoring missing Hecke cutters in space with no forms below degree bound %o\n", DegBound; end if;
     if #HC gt 0 then
         assert Type(HC[1]) eq SeqEnum; assert #{[a[1]:a in c]:c in HC} eq 1; assert &and[IsPrime(c[1]):c in HC[1]];
         assert &and[&and[Type(a[2]) eq SeqEnum and Type(a[2][1]) eq RngIntElt and a[2][#a[2]] eq 1 and IsIrreducible(R!a[2]):a in c]:c in HC];
@@ -370,8 +426,104 @@ procedure ValidateDataFile (infile:Quiet:=false,Jobs:=1,JobId:=0)
     printf "Validated %o data records in %o secs\n", n, Cputime()-start;
 end procedure;
 
-// Decompose spaces S_k(N,chi)^new into Galois stable subspaces for k*N <= B
-procedure DecomposeSpaces (outfile,B:TodoFile:="",Quiet:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,TrivialCharOnly:=false,TraceStats:=false,Jobs:=1,JobId:=0)
+// given strings s1 and s2 containing data for a new space (tuples of length at least 5 and at most 18), returns the index of the first entry where they disagree, or zero if they are isomorphic
+function CompareSpaceData (s1,s2:DoNotCheck:=[])
+    assert Set(DoNotCheck) subset Set([4] cat [6..18]);
+    r1 := Split(strip(s1),":");
+    r2 := Split(strip(s2),":");
+    assert #r1 ge 5 and #r2 ge 5 and #r1 le 18 and #r2 le 18;
+    if r1[1] ne r2[1] then return 1; end if;
+    if r1[2] ne r2[2] then return 2; end if;
+    if r1[3] ne r2[3] then return 3; end if;
+    if r1[5] ne r2[5] then return 5; end if;
+    mm := Min(#r1,#r2);
+    n := 5;
+    while n lt mm do
+        n +:= 1;
+        if n in DoNotCheck then continue; end if;
+        if r1[n] eq r2[n] then continue; end if;
+        if n in {6,7,9,14,15,16,18} then
+            if r1[n] ne r2[n] then return n; end if;
+        end if;
+        if n eq 8 then
+            HF1 := eval(r1[n]); HF2 := eval(r2[n]);
+            if #HF1 ne #HF2 then return n; end if;
+            for i:=1 to #HF1 do if not NFPolyIsIsomorphic(HF1[i],HF2[i]) then return n; end if; end for;
+        end if;
+        if n eq 10 then
+            E1 := eval(r1[n]); E2 := eval(r2[n]);
+            if #E1 ne #E2 then return n; end if;
+            for i:=1 to #E1 do
+                if not NFPolyIsIsomorphic(E1[i][1],E2[i][1]) then return n; end if;
+                C1 := [Eltseq(r) : r in Rows(Matrix(Rationals(),E1[i][5])*Matrix(Rationals(),E1[i][2]))];
+                C2 := [Eltseq(r) : r in Rows(Matrix(Rationals(),E2[i][5])*Matrix(Rationals(),E2[i][2]))];
+                if #C1 ne #C2 then printf "%o:%o:%o: warning, different number %o != %o of eigenvalues in entry %o of eigenvalue data\n", r1[1],r1[2],r1[3], #C1, #C2, i; end if;
+                m := Min(#C1,#C2); C1 := [C1[j]:j in [1..m]]; C2 := [C2[j]:j in [1..m]];
+                if #E1[i] ge 6 and #E2[i] ge 6 then
+                    if E1[i][6][1] ne E2[i][6][1] then return n; end if;
+                    if #E1[i][6][2] ne #E2[i][6][2] then return n; end if;
+                    if #E1[i][6][2] gt 0 then
+                        C1 cat:= [Eltseq(r) : r in Rows(Matrix(Rationals(),E1[i][6][2])*Matrix(Rationals(),E1[i][2]))];
+                        C2 cat:= [Eltseq(r) : r in Rows(Matrix(Rationals(),E2[i][6][2])*Matrix(Rationals(),E2[i][2]))];
+                    end if;
+                end if;
+                if E1[i][1] eq E2[i][1] then
+                    if C1 ne C2 then printf "%o:%o:%o: error, eigenvalue mismatch for entry %o of eigenvalue data\n", r1[1],r1[2],r1[3],i; return n; end if;
+                else
+                    if not NFSeqIsIsomorphic(E1[i][1],C1,E2[i][1],C2) then printf "%o:%o:%o: error, eigenvalue mismatch for entry %o of eigenvalue data\n", r1[1],r1[2],r1[3],i; return n; end if;
+                end if;
+                if #E1[i] ge 7 and #E2[i] ge 7 then
+                    if #E1[i][7] ne #E2[i][7] then printf "%o:%o:%o: error, coefficient ring generator nbound mismatch for entry %o of eigenvalue data\n", r1[1], r1[2], r1[3], i; return n; end if;
+                end if;
+            end for;
+        end if;
+        if n eq 11 then
+            cm1 := eval(r1[n]); cm2 := eval(r2[n]);
+            if #cm1 ne #cm2 or not &and[Set(cm1[i][2]) eq Set(cm2[i][2]): i in [1..#cm1]] then return n; end if;
+        end if;
+        if n eq 12 then
+            tw1 := eval(r1[n]); tw2 := eval(r2[n]);
+            if not #tw1 eq #tw2 or not &and[Set([tw1[i][j]:j in [2..4]]) eq Set([tw2[i][j]:j in [2..4]]): i in [1..#tw1]] then return n; end if;
+        end if;
+        if n eq 13 then
+            pra1 := eval(r1[n]);  pra2 := eval(r2[n]);
+            if #pra1 ne #pra2 then return n; end if;
+        end if;
+        if n eq 17 then
+            HF1 := eval(r1[8]); HF2 := eval(r2[8]);
+            x1 := eval(r1[n]);  x2 := eval(r2[n]);
+            if #x1 ne #x2 or not &and[x1[i][1] eq x2[i][1]:i in [1..#r1[n]]] or not &and[NFSeqIsIsomorphic(HF1[i],x1[i][2],HF2[i],x2[i][2]):i in [1..#x1]] then return n; end if;
+        end if;
+    end while;
+    return #r1 eq #r2 select 0 else mm+1;
+end function;
+
+
+function CompareDataFiles (infile1,infile2:DoNotCheck:=[],Quiet:=false,Jobs:=1,JobId:=0)
+    start := Cputime();
+    S1 := Split(Read(infile1),"\n");
+    S2 := Split(Read(infile2),"\n");
+    if not Quiet then printf "Loaded %o records from file %o and %o records from file %o in %o secs\n", #S1, infile1, #S2, infile2, Cputime()-start; end if;
+    if #S1 ne #S2 then printf "Files %o and %o do not have the same number of records: %o vs %o\n", infile1, infile2, #S1, #S2; return false; end if;
+    start := Cputime();
+    cnt := 0;
+    for i:=1 to #S1 do
+        if ((i-JobId) mod Jobs) eq 0 then
+            cnt +:= 1;
+            if S1[i] eq S2[i] then continue; end if;
+            if not Quiet then printf "Checking records at line %o...", i; t := Cputime(); end if;
+            j := CompareSpaceData (S1[i],S2[i]:DoNotCheck:=DoNotCheck);
+            if j gt 0 then printf "Error, mismatch at column %o for records at line %o\n", j, i; return false; end if;
+            if not Quiet then printf "success in %o secs\n", Cputime()-t; end if;
+        end if;
+    end for;
+    printf "Succesfully matched %o of %o lines from files %o and %o in %o secs\n", cnt, #S1, infile1, infile2, Cputime()-start;
+    return true;
+end function;
+
+
+// Decompose spaces S_k(N,chi)^new into Galois stable subspaces for B0 < k^2*N <= B and k > 1.
+procedure DecomposeSpaces (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,TrivialCharOnly:=false,TraceStats:=false,Jobs:=1,JobId:=0)
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
     if TodoFile ne "" then
         TodoList := AssociativeArray();
@@ -387,23 +539,34 @@ procedure DecomposeSpaces (outfile,B:TodoFile:="",Quiet:=false,DimensionsOnly:=f
     st := Cputime();
     n := 0; cnt:=0;
     fp := Open(outfile,"w");
+    A := AssociativeArray();
     for N:=1 to Floor(B/4) do
         if #L gt 0 and not N in L then continue; end if;
-        if not Quiet then printf "Constructing character group data for modulus %o...", N; t:=Cputime(); end if;
-        G, T := CharacterOrbitReps(N:RepTable);
-        if not Quiet then printf "took %o secs\n",Cputime()-t; end if;
-        for k := 2 to Floor(Sqrt(B/N)) do
-            for o in [1..#G] do
-                if o gt 1 and TrivialCharOnly then break; end if;
+        if DimensionsOnly then
+            if not TrivialCharOnly then
+                if not Quiet then printf "Constructing character orbit table for modulus %o...", N; t:=Cputime(); end if;
+                G, T := CharacterOrbitReps(N:RepTable); A[N] := <G,T>;
+                if not Quiet then printf "took %o secs\n",Cputime()-t; end if;
+            else
+                A[N] := <[DirichletGroup(N)!1]>;
+            end if;
+        else
+            if not Quiet then printf "Constructing character orbit table for modulus %o and its divisors...", N; t:=Cputime(); end if;
+            for M in Divisors(N) do if not IsDefined(A,M) then G, T := CharacterOrbitReps(M:RepTable); A[M] := <G,T>; end if; end for;
+            if not Quiet then printf "took %o secs\n",Cputime()-t; end if;
+        end if;
+        for k := Max(2,Floor(Sqrt(B0/N))+1) to Floor(Sqrt(B/N)) do
+            for o in [1..#A[N][1]] do
                 if #L gt 0 and not IsDefined(TodoList,[N,k,o]) then continue; end if;
                 hint := #L gt 0 select TodoList[[N,k,o]] else [];
+                chi := A[N][1][o];
                 n +:= 1;
                 if ((n-JobId) mod Jobs) eq 0 then
                     if DimensionsOnly then
-                        str := NewspaceData(G,k,o:OrbitRepTable:=T,Detail:=Quiet select 0 else 1);
+                        str := NewspaceData(chi,k,o:DimensionsOnly:=true,Detail:=Quiet select 0 else 1);
                     else
-                        if not Quiet then printf "Processing space %o:%o:%o with coeffs %o, deg-bound %o\n", N,k,o, Coeffs, DegBound; t:=Cputime(); end if;
-                        str := NewspaceData(G,k,o:OrbitRepTable:=T,TraceHint:=hint,ComputeTraces,NumberOfCoefficients:=Coeffs,ComputeEigenvalues,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
+                        if not Quiet then printf "\nProcessing space %o:%o:%o with Coeffs=%o, DegBound=%o\n", N,k,o, Coeffs, DegBound; t:=Cputime(); end if;
+                        str := NewspaceData(chi,k,o:CharTable:=A,TraceHint:=hint,ComputeTraces,NumberOfCoefficients:=Coeffs,ComputeEigenvalues,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
                         if not Quiet then printf "Total time for space %o:%o:%o was %os\n", N,k,o,Cputime()-t; end if;
                     end if;
                     Puts(fp,str);
@@ -440,37 +603,102 @@ procedure DecomposeSpacesFixedLevelWeight (outfile,N,k:Quiet:=false,NoCM:=false,
     printf "Wrote %o records to %o using %os of CPU time.\n", cnt, outfile, Cputime()-st;
 end procedure;
 
+procedure OptimizeCoefficients (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0)
+    if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
+    S:=Split(Read(infile),"\n");
+    if not Quiet then printf "Loaded %o records from %o\n", #S, infile; end if;
+    fp := Open(outfile,"w");
+    n := 0; cnt := 0;
+    T := AssociativeArray(Integers());
+    for s in S do
+        n +:= 1;
+        if ((n-JobId) mod Jobs) eq 0 then
+            t := Cputime();
+            r := Split(s,":");
+            N := StringToInteger(r[1]);
+            k := StringToInteger(r[2]);
+            o := StringToInteger(r[3]);
+            D := eval(r[5]);
+            HF := eval(r[8]);
+            inE := eval(r[10]);
+            pra := eval(r[13]);
+            d1 := #[d:d in D|d eq 1];
+            if #D gt 0 then
+                if not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
+                chi := T[N][o];
+                u := UnitGenerators(chi);
+            end if;
+            E := [];
+            for i:=1 to #inE do
+                e := inE[i];
+                assert e[1] eq HF[d1+i];
+                aa := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
+                f,b,a,c,d,pr,m := OptimizedOrderBasis([Rationals()!a:a in e[1]],aa:KBestPoly:=e[1],KBestIsPolredabs:=pra[d1+i] eq 1 select true else false,Verbose);
+                v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,a))] else [];
+                w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
+                E[i] := <f,b,c,d,a,<u,w>,m>;
+                ee := E[i];
+                assert e[1] eq ee[1];
+                bb := [Eltseq(b):b in Rows(Matrix(Rationals(),ee[5])*Matrix(Rationals(),ee[2]))];
+                assert aa eq bb;
+                assert #sprint(ee) le 1.05*(#sprint(e)+100);
+            end for;
+            r[10] := sprint(E);
+            Puts(fp,Join(r,":"));
+            Flush(fp);
+            cnt +:= 1;
+            if not Quiet and #D gt 0 then printf "%o:%o:%o:%o (%.3os)\n",r[1],r[2],r[3],r[5],Cputime()-t; end if;
+        end if;
+    end for;
+    if not Quiet then printf "Wrote %o of %o records to %\o\n", cnt, #S, outfile; end if;
+end procedure;
+
 procedure ProcessPariGPData (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0)
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
     S:=Split(Read(infile),"\n");
     if not Quiet then printf "Loaded %o records from %o\n", #S, infile; end if;
     fp := Open(outfile,"w");
     n := 0; cnt := 0;
+    T := AssociativeArray(Integers());
     for s in S do
         n +:= 1;
         if ((n-JobId) mod Jobs) eq 0 then
+            t := Cputime();
             r := Split(s,":");
+            N := StringToInteger(r[1]);
+            k := StringToInteger(r[2]);
+            o := StringToInteger(r[3]);
             D := eval(r[5]);
             inE := eval(r[10]);
             inHF := eval(r[8]);
             HF:=[[0,1]:i in [1..#D]|D[i] eq 1];  E:=[];  pra:=[1:i in [1..#HF]];
+            if #D gt 0 then
+                if not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
+                chi := T[N][o];
+                u := UnitGenerators(chi);
+            end if;
+            X := [<u,[Eltseq(v):v in ValuesOnUnitGenerators(chi)]>:d in D|d eq 1];
             for e in inE do
-                c := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
-                f,b,c,u,d,pr := OptimizedOrderBasis([Rationals()!a:a in e[1]],c);
-                Append(~E,<f,b,u,d eq 0 select 0 else 1,c>);  Append(~pra,pr select 1 else 0);  Append(~HF,f);
+                aa := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
+                f,b,a,c,d,pr := OptimizedOrderBasis([Rationals()!a:a in e[1]],aa);
+                v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,a))] else [];
+                w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
+                Append(~E,<f,b,c,d eq 0 select 0 else 1,a,<u,w>>);  Append(~pra,pr select 1 else 0);  Append(~HF,f); Append(~X,<u,v>);
             end for;
             assert #E eq #inE;
-            assert #HF eq #pra;
-            Puts(fp,strip(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:[]:[]:[]",r[1],r[2],r[3],r[4],r[5],r[6],r[7],HF,r[9],E,r[11],r[12],pra)));
+            assert #pra eq #HF;
+            assert #X eq #HF;
+            Puts(fp,strip(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:%o:[]:[]:[]:%o",r[1],r[2],r[3],r[4],r[5],r[6],r[7],HF,r[9],E,r[11],r[12],pra,X)));
             Flush(fp);
             cnt +:= 1;
-            if not Quiet then printf "%o:%o:%o:%o\n",r[1],r[2],r[3],r[5]; end if;
+            if not Quiet and #D gt 0 then printf "%o:%o:%o:%o (%.3os)\n",r[1],r[2],r[3],r[5],Cputime()-t; end if;
         end if;
     end for;
-    if not Quiet then printf "Wrote %o records to %\o\n", #S, outfile; end if;
+    if not Quiet then printf "Wrote %o of %o records to %\o\n", cnt, #S, outfile; end if;
 end procedure;
 
 procedure PolredabsFixup (infile,polredabsfile,outfile,noprafile)
+    R := PolynomialRing(Rationals());
     S := [Split(r,":"):r in Split(Read(polredabsfile),"\n")];
     A:=AssociativeArray();
     for s in S do A[eval(s[1])] := eval(s[2]); end for;
@@ -481,6 +709,7 @@ procedure PolredabsFixup (infile,polredabsfile,outfile,noprafile)
     start := Cputime();
     fp := Open(outfile,"w");
     noprafp := Open(noprafile,"w");
+    T := AssociativeArray();
     B := {};
     m := 0; n := 0;
     for s in S do
@@ -488,13 +717,19 @@ procedure PolredabsFixup (infile,polredabsfile,outfile,noprafile)
         if r[13] eq "[]" then n +:= 1; Puts(fp,s); continue; end if;
         pra := eval(r[13]);
         if not 0 in pra then n +:= 1; Puts(fp,s); continue; end if;
+        N := StringToInteger(r[1]);
+        k := StringToInteger(r[2]);
+        o := StringToInteger(r[3]);
         D := eval(r[5]);
         F := eval(r[8]);
         E := eval(r[10]);
+        X := eval(r[17]);
+        for i:=1 to #F do assert {#x+1:x in X[i][2]} eq {#F[i]}; end for;
         off := #[d:d in D|d eq 1];
         update := false;
         for i in [1..#pra] do
             if pra[i] eq 0 then
+                assert i ge off;
                 if IsDefined(A,F[i]) then
                     newf := A[F[i]];
                     if newf eq F[i] then
@@ -504,14 +739,22 @@ procedure PolredabsFixup (infile,polredabsfile,outfile,noprafile)
                         continue;
                     end if;
                     printf "Updating data for %o:%o:%o:%o...\n", r[1],r[2],r[3],i;  t:=Cputime();
+                    if not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
+                    chi := T[N][o];
+                    u := UnitGenerators(chi);
                     e := E[i-off];
                     assert e[1] eq F[i];
-                    c := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
-                    f,b,c,u,d,pr := OptimizedOrderBasis([Rationals()!a:a in e[1]],c:PolredabsPoly:=newf);
+                    aa := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
+                    f,b,a,c,d,pr := OptimizedOrderBasis([Rationals()!x:x in e[1]],aa:PolredabsPoly:=newf);
+                    v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,a))] else [];
+                    w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
                     assert f eq newf and pr;
-                    assert NFSeqIsIsomorphic(NFSeq(e[1],e[2],e[5]),NFSeq(f,b,c));
+                    assert NFSeqIsIsomorphic(NFSeq(e[1],e[2],e[5]),NFSeq(f,b,a));
+                    assert n eq o where _,n := CharacterFromValues(N,u,NFSeq(f,b,w):Orbit);
+                    assert n eq o where _,n := CharacterFromValues (N,u,[K|x:x in v]:Orbit) where K:=NumberField(R!f);
                     F[i] := f;
-                    E[i-off] := <f,b,u,d eq 0 select 0 else 1,c>;
+                    E[i-off] := <f,b,c,d eq 0 select 0 else 1,a,<u,w>>;
+                    X[i] := <u,v>;
                     pra[i] := 1;
                     printf "Update took %o secs\n", Cputime()-t;
                     update := true;
@@ -529,6 +772,7 @@ procedure PolredabsFixup (infile,polredabsfile,outfile,noprafile)
             r[8] := sprint(F);
             r[10] := sprint(E);
             r[13] := sprint(pra);
+            r[17] := sprint(X);
             Puts(fp,Join(r,":"));
         else
             Puts(fp,s);
@@ -551,6 +795,8 @@ procedure AddCharacterValues (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0)
         if ((n-JobId) mod Jobs) eq 0 then
             t := Cputime();
             r := Split(s,":");
+            assert #r le 17;
+            if #r eq 17 then Puts(fp,s); continue; end if;
             if r[5] eq "[]" then Puts(fp,s cat ":[]"); continue; end if;
             N := StringToInteger(r[1]);
             if not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
@@ -581,78 +827,23 @@ procedure AddCharacterValues (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0)
     if not Quiet then printf "Wrote %o records to %\o in %o secs\n", cnt, outfile, Cputime()-start; end if;
 end procedure;
 
-function CompareRecords(s1,s2:TracesOnly:=false)
-    r1 := Split(strip(s1),":"); r2 := Split(strip(s2),":");
-    if #r1 eq #r2 and [r1[i]:i in [1..#r1]|i ne 4] eq [r2[i]:i in [1..#r2]|i ne 4] then return true; end if;
-    minfields := TracesOnly select 6 else 10;
-    if #r1 lt minfields then printf "Only %o fields in r1, expected at least %o!\n", #r1, minfields; return false; end if;
-    if #r2 lt minfields then printf "Only %o fields in r2, expected at least %o!\n", #r2, minfields; return false; end if;
-    if r1[1] ne r2[1] then printf "Level %o != %o\n", r1[1], r2[1]; return false; end if;
-    if r1[2] ne r2[2] then printf "Weight %o != %o\n", r1[2], r2[2]; return false; end if;
-    if r1[3] ne r2[3] then printf "CharOrbit %o != %o\n", r1[3], r2[3]; return false; end if;
-    if r1[5] ne r2[5] then printf "Dimensions %o != %o\n", r1[5], r2[5]; return false; end if;
-    if r1[6] ne r2[6] then
-        traces1 := eval(r1[6]); traces2 := eval(r2[6]);
-        if #traces1 ne #traces2 then printf "Number of trace vectors %o != %o\n", #traces1, #traces2; return false; end if;
-        if [#t:t in traces1] ne [#t:t in traces2] then "Number of traces %o != %o\n", [#t:t in traces1], [#t:t in traces2]; return false; end if;
-        for i:= 1 to #traces1 do
-            for j:=1 to #traces1[i] do
-                if traces1[i][j] ne traces2[i][j] then printf "Traces %o != %o disagree for a_%o in trace vector %o\n", traces1[i][j], traces2[i][j], j, i; return false; end if;
-            end for;
-        end for;
-        printf "Wierdness! Trace mismatch!\n"; return false;
-    end if;
-    if TracesOnly then return true; end if;
-    if r1[7] ne r2[7] then printf "Atkin-Lehner signs %o != %o\n", r1[7], r2[7]; return false; end if;
-    if r1[8] ne r2[8] then
-        f1 := eval(r1[8]); f2 := eval(r2[8]);
-        if #f1 ne #f2 then printf "Different number of field polys\n"; return false; end if;
-        for i:=1 to #f1 do
-            if not NFPolyIsIsomorphic(f1[i],f2[i]) then printf "Coefficient field polys %o != %o do not define the same field\n", f1[i], f2[i]; return false; end if;
-        end for;
-    end if;
-    if r1[10] ne r2[10] then
-        E1 := eval(r1[10]); E2 := eval(r2[10]);
-        if #E1 ne #E2 then printf "Number of eigenvalue vectors %o != %o\n", #E1, #E2; return false; end if;
-        for i:=1 to #E1 do
-//t := Cputime();
-//printf "Checking eigenvalues for %o:%o:%o:%o:[%o] (current memory %o MB)...\n", r1[1],r1[2],r1[3],i,#E1[i][1]-1,Round(GetMemoryUsage()/2^20);
-            if not NFPolyIsIsomorphic(E1[i][1],E2[i][1]) then printf "Coefficient field polys %o != %o do not define the same field\n", E1[i][1], E2[i][1]; return false; end if;
-            C1 := [Eltseq(r) : r in Rows(Matrix(Rationals(),E1[i][5])*Matrix(Rationals(),E1[i][2]))];
-            C2 := [Eltseq(r) : r in Rows(Matrix(Rationals(),E2[i][5])*Matrix(Rationals(),E2[i][2]))];
-            if #C1 ne #C2 then printf "Different number %o != %o of eigenvalues in entry %o\n", #C1, #C2, i; end if;
-            m := Min(#C1,#C2); C1 := [C1[j]:j in [1..m]]; C2 := [C2[j]:j in [1..m]];
-            if not NFSeqIsIsomorphic(E1[i][1],C1,E2[i][1],C2) then printf "Eigenvalue mismatch for entry %o\n", i; return false; end if;
-//printf "Checked eigenvalues for %o:%o:%o:%o:[%o] using %o secs (current memory %o MB)\n", r1[1],r1[2],r1[3],i,#E1[i][1]-1,Cputime()-t,Round(GetMemoryUsage()/2^20);
-            if #E1[i] gt 5 and #E2[i] gt 5 then
-                C1 := [Eltseq(r) : r in Rows(Matrix(Rationals(),E1[i][5])*Matrix(Rationals(),E1[i][6][2]))];
-                C2 := [Eltseq(r) : r in Rows(Matrix(Rationals(),E2[i][5])*Matrix(Rationals(),E2[i][6][2]))];
-                if not NFSeqIsIsomorphic(E1[i][1],C1,E2[i][1],C2) then printf "Character value mismatch for entry %o\n", i; return false; end if;
-            end if;
-        end for;
-    end if;
-    return true;
-end function;
-            
-function CompareDataFiles (infile1,infile2:TracesOnly:=false,Quiet:=false,Jobs:=1,JobId:=0)
-    start := Cputime();
-    S1 := Split(Read(infile1),"\n");
-    S2 := Split(Read(infile2),"\n");
-    if not Quiet then printf "Loaded %o records from file %o and %o records from file %o in %o secs\n", #S1, infile1, #S2, infile2, Cputime()-start; end if;
-    if #S1 ne #S2 then printf "Warning files %o and %o do not have the same number of records: %o vs %o\n", infile1, infile2, #S1, #S2; end if;
-    start := Cputime();
-    n := Min(#S1,#S2);
-    cnt := 0;
-    for i:=1 to n do
-        if ((i-JobId) mod Jobs) eq 0 then
-            cnt +:= 1;
-            if S1[i] eq S2[i] then continue; end if;
-            t := Cputime();
-            if not CompareRecords (S1[i],S2[i]:TracesOnly:=TracesOnly) then print "Mismatch for records at line %o\n", i; return false; end if;
-            if not Quiet and Cputime()-t gt 0.1 then printf "Successfully matched distinct records at line %o in %o secs\n", i, Cputime()-t; end if;
-        end if;
+// merges infile and repfile into outfile with repfile taking precedence (every space in repfile must be already be present in infile)
+procedure ReplaceRecords (infile,repfile,outfile)
+    S := Split(Read(infile),"\n");
+    T := Split(Read(repfile),"\n");
+    A := AssociativeArray();
+    for r in T do rr := Split(r,":"); A[[StringToInteger(rr[1]),StringToInteger(rr[2]),StringToInteger(rr[3])]] := r; end for;
+    fp := Open(outfile,"w");
+    keys := [];
+    for r in S do
+        rr := Split(r,":");
+        key := [StringToInteger(rr[1]),StringToInteger(rr[2]),StringToInteger(rr[3])];
+        Append(~keys,key);
+        if IsDefined(A,key) then Puts(fp,A[key]); Remove(~A,key); printf "Replaced record %o:%o:%o\n",key[1],key[2],key[3]; else Puts(fp,r); end if;
     end for;
-    printf "Succesfully matched %o of %o lines from files %o and %o in %o secs\n", cnt, n, infile1, infile2, Cputime()-start;
-    return true;
-end function;
-        
+    assert #keys eq #Set(keys);
+    assert #Keys(A) eq 0;
+    Flush(fp);
+    printf "Write %o records to %o\n", #keys, outfile;
+end procedure;
+

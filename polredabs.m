@@ -75,6 +75,7 @@ intrinsic PolredbestWithRoot(f::RngUPolElt) -> RngUPolElt, SeqEnum
     sroot := s[c+1..#s-1];
     sspol := [ StringToInteger(x) : x in Split(spol, ", []\n") | x ne "" ];
     ssroot := [ StringToRational(x) : x in Split(sroot, ", []\n") | x ne "" ];
+    ssroot cat:= [0 : i in [1..Degree(f)-#ssroot]];
     return Parent(f) ! sspol, ssroot;
 end intrinsic;
 
@@ -87,6 +88,7 @@ intrinsic PolredabsWithRoot(f::RngUPolElt) -> RngUPolElt, SeqEnum
     sroot := s[c+1..#s-1];
     sspol := [ StringToInteger(x) : x in Split(spol, ", []\n") | x ne "" ];
     ssroot := [ StringToRational(x) : x in Split(sroot, ", []\n") | x ne "" ];
+    ssroot cat:= [0 : i in [1..Degree(f)-#ssroot]];
     return Parent(f) ! sspol, ssroot;
 end intrinsic;
 
@@ -109,7 +111,6 @@ intrinsic PolredbestifyWithRoot(f::RngUPolElt) -> RngUPolElt, SeqEnum, BoolElt
             end if;
         end if;
         Kbest := NumberField(fbest);
-        fbestroot := fbestroot cat [0 : i in [1..Degree(fbest)-#fbestroot]];
         iota := iota*hom<Kfront -> Kbest | fbestroot>;
         Kfront := Kbest;
         ffront := fbest; 
