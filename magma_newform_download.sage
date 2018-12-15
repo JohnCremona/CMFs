@@ -12,6 +12,7 @@ def magma_newform_code_string(r):
     s += "    return DirichletCharacterFromValuesOnUnitGenerators(DirichletGroup(N,F),[F|F.1^n:n in v]);\n"
     s += "end function;\n\n"
     s += "function make_newform_%s()\n"%(r["label"].replace(".","_"))
+    s += "    R<x> := PolynomialRing(Rationals());\n"
     s += "    return Kernel(%s,NewSubspace(CuspidalSubspace(ModularSymbols(make_character_%d_%s(),%d,-1))));\n"%(cutters,N,o,k)
     s += "end function;\n\n"
     return s
