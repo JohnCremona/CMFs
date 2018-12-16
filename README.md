@@ -44,6 +44,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd* where B
 16) h = list of trace hashes (linear combination of tr(a_p) over p in [2^12,2^13] mod 2^61-1), one for each subspace of dimension up to the degree bound (not yet present for weight 1)
 17) X = list of pairs <u,v>, one for each entry in F, where u is a list of integer generators for (Z/NZ)* and v is a list of lists of rationals specifying corresponding values of chi in the Hecke field in terms of the power basis for F[i].
 18) sd = list of boolean values (0,1), one for each subspace in D indicating whether the subspace is self-dual (meaning the a_n are real-valued)
+19) eap = list of lists of lists of embedded ap's, one for each subspace in D of dimension greater than the degree bound, currently only used for trivial character (so embedded ap's are real numbers) and Nk^2 > 4000.  For each subspace of dimension d there are d lists of embedded ap's [a_2,a_3,...] (for p < 3000 when 4000 < Nk^2 <= 40000)
 
 Format of mfdecomp_xxx_m.txt and mfdecomp_xxx_gp.txt files is N:k:i:t:D where N is the level, k is the weight, i is the index of the Dicihlet character orbit (sorted in reverse lex order of trace value vectors), t is cpu-time, and D=[n1,n2,...] is a sorted list of Q-dimensions of the minimal Galois stable subspaces of S_k^new(N,chi).
 
