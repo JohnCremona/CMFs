@@ -176,6 +176,7 @@ Column | Type | Notes
 -------|------|------
 label | text | label of modular form (N.k.i.x)
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
+field_poly | jsonb | list of integers of defining polynomial for Hecke field
 hecke_ring_rank | integer | rank of Hecke ring as a free Z-module (same as dimension of form, degree of field_poly)
 hecke_ring_power_basis | boolean | if true the chanage of basis matrix is the (implicit) identity matrix, in which case hecke_ring_numerators, ..., hecke_ring_inverse_denominators are set to null
 hecke_ring_cyclotomic_generator | integer | either zero or an integer m such that the an and ap are encoded as sparse integer polynomials in zeta_m
