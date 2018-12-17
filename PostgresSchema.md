@@ -176,16 +176,17 @@ Column | Type | Notes
 -------|------|------
 label | text | label of modular form (N.k.i.x)
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
-hecke_ring_power_basis | boolean | true if the matrix specified by hecke_ring_numerators and hecke_ring_denominators is the identity matrix
-hecke_ring_cyclotomic_generator | integer | true if elements of the hecke ring are specified as sums of powers of zeta_n of degree up to n-1
+hecke_ring_rank | integer | rank of Hecke ring as a free Z-module (same as dimension of form, degree of field_poly)
+hecke_ring_power_basis | boolean | if true the chanage of basis matrix is the (implicit) identity matrix, in which case hecke_ring_numerators, ..., hecke_ring_inverse_denominators are set to null
+hecke_ring_cyclotomic_generator | integer | either zero or an integer m such that the an and ap are encoded as sparse integer polynomials in zeta_m
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
 hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | jsonb | List of integers, giving the denominators of the inverse basis
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis or in cyclotomic representation
 pmax | integer | largest prime p for which ap is stored
-an | array[numeric] | list of 100 lists of integers expressing a_n in Hecke ring basis
-ap | array[numeric] | list of lists of integers expressing a_p in Hecke ring basis for p=2,3,5,...,pmax
+an | array[numeric] | list of a1,...,a100, either in hecke_ring_basis (in which case each an is a list of hecke_ring_rank integers) or sparse cyclotomic representation (in which case each an is a list of pairs [[c1,e1],...,[cr,er]] encoding an = c1*zeta_m^e1 + ... + cr*zeta_m^er
+ap | array[numeric] | list of lists of integers expressing a_p for p=2,3,5,...,pmax in same form as an
 
 Table name: `mf_hecke_traces`
 
