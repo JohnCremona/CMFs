@@ -177,7 +177,7 @@ Column | Type | Notes
 label | text | label of modular form (N.k.i.x)
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 hecke_ring_power_basis | boolean | true if the matrix specified by hecke_ring_numerators and hecke_ring_denominators is the identity matrix
-hecke_ring_cyclotomic_representation | boolean | true if elements of the hecke ring are specified as sums of powers of zeta_n of degree up to n-1
+hecke_ring_cyclotomic_generator | integer | true if elements of the hecke ring are specified as sums of powers of zeta_n of degree up to n-1
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
 hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
