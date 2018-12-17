@@ -52,7 +52,6 @@ char_table_dict = None
 
 def char_orbit_index_to_DC_number(N,o):
     """Returns the index in the Dirichlet-Conrey numbering of one character in orbit number o"""
-    #print("N = {}, o = {}".format(N,o))
     if o==1:
         return 1
     global char_table_dict
