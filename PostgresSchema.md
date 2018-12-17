@@ -177,11 +177,11 @@ Column | Type | Notes
 label | text | label of modular form (N.k.i.x)
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 hecke_ring_power_basis | boolean | true if the matrix specified by hecke_ring_numerators and hecke_ring_denominators is the identity matrix
+hecke_ring_cyclotomic_representation | boolean | true if elements of the hecke ring are specified as sums of powers of zeta_n of degree up to n-1
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
 hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | jsonb | List of integers, giving the denominators of the inverse basis
-hecke_ring_cyclotomic_representation | boolean | true if elements of the hecke ring are specified as sums of powers of zeta_n of degree up to n-1
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis or in cyclotomic representation
 pmax | integer | largest prime p for which ap is stored
 an | array[numeric] | list of 100 lists of integers expressing a_n in Hecke ring basis
