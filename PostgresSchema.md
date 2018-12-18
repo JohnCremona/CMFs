@@ -185,9 +185,9 @@ hecke_ring_denominators | jsonb | List of integers, giving the denominators of t
 hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | jsonb | List of integers, giving the denominators of the inverse basis
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis or in cyclotomic representation [[c,e]] encoding c x zeta_m^e where m is hecke_ring_cyclotomic_generator
-pmax | integer | largest prime p for which ap is stored
 an | numeric[] | list of a1,...,a100, where each an is either a list of integers encoding an in the Hecke ring basis described above or a list of pairs [[c1,e1],...,[cr,er]] encoding an = c1 x zeta_m^e1 + ... + cr x zeta_m^er, where m is the value of hecke_ring_cyclotomic_generator (if nonzero)
 ap | numeric[] | list of lists of integers expressing a_p for p=2,3,5,...,pmax in same format as an
+maxp | integer | largest prime p for which ap is stored
 
 Table name: `mf_hecke_traces`
 
