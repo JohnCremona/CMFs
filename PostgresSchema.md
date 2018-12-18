@@ -23,7 +23,7 @@ char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit | integer | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | boolean | whether the character takes only real values (trivial or quadratic
+char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
 sturm_bound | integer |
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
@@ -132,7 +132,7 @@ trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
-analyitc_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
+analytic_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
 self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
 is_self_twist | boolean | whether this form is a self twist
 is_cm | boolean | whether the form has CM
@@ -185,9 +185,9 @@ hecke_ring_denominators | jsonb | List of integers, giving the denominators of t
 hecke_ring_inverse_numerators | jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | jsonb | List of integers, giving the denominators of the inverse basis
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis or in cyclotomic representation [[c,e]] encoding c x zeta_m^e where m is hecke_ring_cyclotomic_generator
-pmax | integer | largest prime p for which ap is stored
 an | numeric[] | list of a1,...,a100, where each an is either a list of integers encoding an in the Hecke ring basis described above or a list of pairs [[c1,e1],...,[cr,er]] encoding an = c1 x zeta_m^e1 + ... + cr x zeta_m^er, where m is the value of hecke_ring_cyclotomic_generator (if nonzero)
 ap | numeric[] | list of lists of integers expressing a_p for p=2,3,5,...,pmax in same format as an
+maxp | integer | largest prime p for which ap is stored
 
 Table name: `mf_hecke_traces`
 
