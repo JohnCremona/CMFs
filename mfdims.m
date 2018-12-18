@@ -1,3 +1,6 @@
+// dependencies
+// Attach("chars.m");
+
 function prod(a) return #a gt 0 select &*a else 1; end function;
 
 // Function defined on page 72 of https://doi.org/10.1007/BFb0065297 (Cohen-Oesterle article Dimensions des espaces de formes modulaires in Modular Functions of One Variable VI)
@@ -23,13 +26,20 @@ function new_lambda(r,s,p)
     return r eq 2 select p-2 else (p-1)^2*p^(ExactQuotient(r,2)-2);
 end function;
 
+intrinsic QDimension (S::ModSym) ->RngIntElt
+{ Q-dimension of the space of modular forms. }
+    return Dimension(S)*Degree(DirichletCharacter(S));
+end intrinsic;
+    
 intrinsic QDimensionCuspForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
 { The Q-dimension of the space S_k(N,chi) of cuspidal modular forms of weight k, level N, and character chi, where N is the modulus of chi. }
+    require k gt 1: "Weight k must be greater than 1";
     return DimensionCuspForms(chi,k)*Degree(chi);
 end intrinsic;
 
 intrinsic QDimensionNewCuspForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
 { The Q-dimension of the new subspace of cuspdial forms of weight k, level N, and character chi, where N is the modulus of chi. }
+    require k gt 1: "Weight k must be greater than 1";
     return DimensionNewCuspForms(chi,k)*Degree(chi);
 end intrinsic;
     
@@ -57,4 +67,14 @@ intrinsic QDimensionNewEisensteinForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntE
     // As noted by Buzzard, to handle the weight 1 case, one simply divides by 2
     if k eq 1 then D := ExactQuotient(D,2); end if;
     return D*Degree(chi);
+end intrinsic;
+
+intrinsic NumberOfGamma1CuspSpaces (B::RngIntElt) -> RngIntElt
+{ The number of spaces S_k(N,chi) with N*k^2 <= B (includes spaces that are emptry because parity(k) != parity(chi). }
+    return &+[NumberOfCharacterOrbits(N)*Floor(Sqrt(B/N)):N in [1..B]];
+end intrinsic;
+
+intrinsic NumberOfGamma0CuspSpaces (B::RngIntElt) -> RngIntElt
+{ The number of spaces S_k(N,chi) with N*k^2 <= B (includes spaces that are emptry because parity(k) != parity(chi). }
+    return &+[Floor(Sqrt(B/N)):N in [1..B]];
 end intrinsic;

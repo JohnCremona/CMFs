@@ -34,7 +34,7 @@ intrinsic IsPolredabsCandidate (f::RngUPolElt) -> BoolElt
 { Returns true if the polynomial looks like Polredabs can easily handle it. }
     if Degree(f) gt 64 then return false; end if;
     n := PerfectPowerBase(Integers()!AbsoluteValue(Discriminant(f)));
-    if n le 10^100 then return true; end if;
+    if n le 10^80 then return true; end if;
     _,s := TrialDivision(n,10^6);
     if #s eq 0 then return true; end if;
     n := PerfectPowerBase(Max(s));
@@ -48,7 +48,7 @@ intrinsic IsPolredabsCandidate (f::RngUPolElt) -> BoolElt
             n := PerfectPowerBase(n);
         end if;
     end for;
-    return n le 10^100 or IsProbablePrime(n);
+    return n le 10^80 or IsProbablePrime(n);
 end intrinsic;
 
 intrinsic IsPolredabsCandidate (f::SeqEnum) -> SeqEnum
