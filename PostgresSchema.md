@@ -23,7 +23,7 @@ char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit | integer | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
-char_is_real | boolean | whether the character takes only real values (trivial or quadratic
+char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
 sturm_bound | integer |
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
@@ -132,7 +132,7 @@ trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^
 qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
-analyitc_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
+analytic_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
 self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
 is_self_twist | boolean | whether this form is a self twist
 is_cm | boolean | whether the form has CM
