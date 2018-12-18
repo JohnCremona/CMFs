@@ -182,7 +182,7 @@ hecke_ring_power_basis | boolean | if true the chanage of basis matrix is the (i
 hecke_ring_cyclotomic_generator | integer | either zero or an integer m such that the an and ap are encoded as sparse integer polynomials in zeta_m (typically same as field_poly_root_of_unity but this is not required)
 hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
-hecke_ring_inverse_numerators| jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
+hecke_ring_inverse_numerators | jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | jsonb | List of integers, giving the denominators of the inverse basis
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis or in cyclotomic representation [[c,e]] encoding c x zeta_m^e where m is hecke_ring_cyclotomic_generator
 pmax | integer | largest prime p for which ap is stored
