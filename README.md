@@ -32,7 +32,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd* where B
       1) g is a list of coefficients of a polredbestified field poly for the Hecke field K (should match entry in F),
       2) b is a list of lists of rationals specifying a basis for the Hecke ring R:=Z[a_n] in terms of the power basis for g
       3) c is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K of the Hecke field
-      4) d is a the discriminant of O_K, if known, 0 otherwise
+      4) d is a pair <disc,fac> where disc is the discriminant of O_K (0 if not known) and fac=[<p,e>,...] is its factorization.
       5) a is a list of lists of integers encoding eigenvalues in terms of the basis b
       6) x is a pair <u,v> where u lists integers generating (Z/NZ)* and v lists of values of chi on u in basis b
       7) m is the least integer such that the coefficients a_1,...,a_m generate the Hecke ring (as a ring)
