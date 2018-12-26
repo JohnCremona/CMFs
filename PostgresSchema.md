@@ -217,11 +217,11 @@ Table name: `char_dir_orbits`
 
 Column | Type | Notes
 -------|------|------
-orbit_label | text | (N.i)
+orbit_label | text | (N.i), where N is the modulus and i is the orbit index
 orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
 modulus | smallint
 conductor | smallint
-prim_orbit_index | smallint | Index for the primitive version of this conductor
+prim_orbit_index | smallint | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
 order | smallint
 parity | smallint
 galois_orbit | jsonb | sorted list of conrey_labels in the same galois orbit
