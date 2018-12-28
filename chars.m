@@ -52,18 +52,20 @@ intrinsic CompareCharacters (chi1::GrpDrchElt,chi2::GrpDrchElt) -> RngIntElt
     return 0;
 end intrinsic;
 
-intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false) -> List, Assoc
+intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false,OrderBound:=0) -> List, Assoc
 { The list of Galois orbit representatives of the full Dirichlet group of modulus N with minimal codomains sorted by order and trace vectors.
   If the optional boolean argument RepTable is set then a table mapping Dirichlet characters to indexes in this list is also returned. }
     require N gt 0: "Modulus N must be a positive integer";
+    if OrderBound eq 1 then chi1:=DirichletGroup(N)!1; if RepTable then T:=AssociativeArray(Parent(chi1)); T[chi1]:=1; return [chi1],T; else return [chi1]; end if; end if;
     G := [* MinimalBaseRingCharacter(chi): chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N)) *];
     X := [i:i in [1..#G]];
     X := Sort(X,func<i,j|CompareCharacters(G[i],G[j])>);
-    G := [* G[i] : i in X *];
+    G := OrderBound eq 0 select [* G[i] : i in X *] else [* G[i] : i in X | Order(G[i]) le OrderBound *];
     if not RepTable then return G; end if;
     A := AssociativeArray();
     for i:=1 to #G do v:=[OrderOfRootOfUnity(a,Order(G[i])):a in ValuesOnUnitGenerators(G[i])]; if IsDefined(A,v) then Append(~A[v],i); else A[v]:=[i]; end if; end for;
     H := Elements(FullDirichletGroup(N));
+    if OrderBound gt 0 then H := [chi : chi in H | Order(chi) le OrderBound]; end if;
     T := AssociativeArray(Parent(H[1]));
     for h in H do
         v := [OrderOfRootOfUnity(a,Order(h)):a in ValuesOnUnitGenerators(h)];
@@ -79,8 +81,10 @@ end intrinsic;
 
 intrinsic CharacterOrbit(chi::GrpDrchElt) -> RngIntElt
 { The index of the orbit of the specified Dirichlet character in the list of orbit representatives returned by CharacterOrbitReps (this can also be determined using the RepTable parameter). }
+    m := Order(chi);
+    if m eq 1 then return 1; end if;
+    v := [Trace(z):z in ValueList(MinimalBaseRingCharacter(chi))];
     G := CharacterOrbitReps(Modulus(chi));
-    m := Order(chi); v := [Trace(z):z in ValueList(MinimalBaseRingCharacter(chi))];
     M := [i : i in [1..#G] | Order(G[i]) eq m and [Trace(z):z in ValueList(G[i])] eq v];
     assert #M eq 1;
     return M[1];

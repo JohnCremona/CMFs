@@ -57,7 +57,7 @@ weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
 char_orbit_index | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
 char_orbit_label | text | base-26 encoding (1='a') of index i of the character orbit that appears in label
 char_labels | jsonb | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
-dim | integer | dimension of `S_k(N, [\psi])`
+dim | integer | dimension of `S_k(N, [\chi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit_index | integer | index j of `[\psi]` in sorted list of character orbits of modulus M
@@ -129,7 +129,6 @@ hecke_ring_index_proved | boolean | whether the index has been proved correct (c
 trace_hash | bigint | linear combination of the a_p between 2^12 and 2^13 reduced mod 2^61-1 as defined in BSSVY, only guaranteed for wt > 1 and dim <= 20
 trace_zratio | double precision | proportion of zero a_p values for p <= 2^13 (rounded to three decimal places)
 trace_moments | jsonb | list of moments of a_p/p^((k-1)/2) computed over p <= 2^13 (rounded to three decimal places)
-qexp_prec | smallint | n so that q-expansion is known to precision O(q^n).
 related_objects | jsonb | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
 analytic_rank | smallint |
 analytic_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
@@ -218,11 +217,11 @@ Table name: `char_dir_orbits`
 
 Column | Type | Notes
 -------|------|------
-orbit_label | text | (N.i)
+orbit_label | text | (N.i), where N is the modulus and i is the orbit index
 orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
 modulus | smallint
 conductor | smallint
-prim_orbit_index | smallint | Index for the primitive version of this conductor
+prim_orbit_index | smallint | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
 order | smallint
 parity | smallint
 galois_orbit | jsonb | sorted list of conrey_labels in the same galois orbit
