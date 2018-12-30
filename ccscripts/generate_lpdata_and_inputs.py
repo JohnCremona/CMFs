@@ -18,9 +18,11 @@ def generate_lpdata_and_inputs(filename, prec=default_prec, check_for_lpdata = T
     CCC = ComplexBallField(prec)
     def print_RRR(elt):
         if elt.contains_integer():
-            return "%d" % ZZ(elt)
-        else:
-            return elt.mid().str(truncate=False)
+            try:
+                return "%d" % ZZ(elt)
+            except ValueError:
+                pass
+        return elt.mid().str(truncate=False)
 
     def print_CCC(elt):
         elt = CCC(elt)
