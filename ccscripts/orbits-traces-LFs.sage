@@ -34,7 +34,7 @@ def index_above(n, k ,c):
     if c == n - 1 and  (n % 2 == 1 or n % 4 == 0):
         return n**k, n**k - 1
     else:
-        # DirichletGroup_conrey is to slow!
+        # DirichletGroup_conrey is too slow!
         return n, c
 
 import subprocess
@@ -121,7 +121,7 @@ schema_lf = [
         'credit', # empty string
         'gamma_factors', # jsonb,
         'values', # special values, format???
-        'dirichlet_coefficients', # the ap traces as algebraic numbers
+        'dirichlet_coefficients', # the ap as algebraic numbers or complex
         'coefficient_field', # the label of the Hecke field
         'trace_hash'
         ]
@@ -347,6 +347,7 @@ def prod_plot_values(factor_plot_deltas, factor_values):
 
 def rational_euler_factors(traces, euler_factors_cc, level, weight):
     dirichlet = [1]*11
+    dirichlet[0] = 0
     euler_factors = []
     bad_lfactors = []
     halfdegree = len(euler_factors_cc)
