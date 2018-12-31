@@ -513,9 +513,6 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
 
         euler_factors = [euler_factors_cc[elt] for elt in labels]
         row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(euler_factors, level, weight)
-        #handling Nones
-        row['euler_factors'] = json.dumps(row['euler_factors'])
-        row['bad_lfactors'] = json.dumps(row['bad_lfactors'])
 
         # fill in ai
         for i, ai in enumerate(dirichlet):
@@ -577,6 +574,7 @@ def write_header(lfunctions_filename, instances_filename, overwrite = True):
             F.write("\n")
 
 def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, instances_filename):
+    print "Writing to %s and %s" % (lfunctions_filename, instances_filename)
     write_header(lfunctions_filename, instances_filename)
     #str_parsing_lf = '\t'.join(['%r'] * len(schema_lf)) + '\n'
     #str_parsing_instances = '\t'.join(['%r'] * len(schema_instances)) + '\n'
@@ -589,10 +587,10 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
         return json.dumps(elt)
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
-            LF.write("\t".join([json_hack(i, elt) for i, elt in enumerate(row)]) + "\n")
+            LF.write("\t".join([json_hack(i, elt) for i, elt in enumerate(row)]).replace("null",'\N') + "\n")
 
         for key, row in rational_rows.iteritems():
-            LF.write("\t".join(map(json.dumps,row)) + "\n")
+            LF.write("\t".join([json_hack(i, elt) for i, elt in enumerate(row)]).replace("null",'\N') + "\n")
 
     with open(instances_filename, 'a') as IF:
         for key, row in instances.iteritems():
