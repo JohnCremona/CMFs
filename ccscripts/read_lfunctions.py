@@ -17,29 +17,29 @@ default_type = 'CMF'
 def constant_lf(level, weight, degree):
     assert degree % 2 == 0
     output =  {
-        'primitive' : 't' if degree == 2 else 'f', 
+        'primitive' :  degree == 2,
         'conductor' : level**(degree//2),
         'load_key' : 'CMFs-workshop',
         'motivic_weight': weight - 1,
         'types': str([default_type]).replace("'","\""),
-        'symmetry_type': '\N',
+        'symmetry_type': None,
         'group' : 'GL2',
         'degree' : degree,
-        'st_group' : '\N',
-        'selfdual': '\N',
+        'st_group' : None,
+        'selfdual': None,
         'analytic_normalization': float(weight - 1)/2,
-        'precision': '\N',
+        'precision': None,
         'algebraic': 't',
-        'coeff_info': '\N', 
-        'credit' : '\N',
-        'values': '\N', # no special values at the moment
+        'coeff_info': None, 
+        'credit' : None,
+        'values': None, # no special values at the moment
         'gamma_factors': [[], [0]*(degree//2)],
-        'coefficient_field': '\N', # the label of the Hecke field, we set as \N as start
-        'dirichlet_coefficients' : '\N', # we already store a2 .. a10
-        'trace_hash': '\N'
+        'coefficient_field': None, # the label of the Hecke field, we set as \N as start
+        'dirichlet_coefficients' : None, # we already store a2 .. a10
+        'trace_hash': None
         }
     for i in range(2,11):
-        output['A' + str(i)] = '\N'
+        output['A' + str(i)] = None
 
     return output
 
@@ -464,7 +464,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
         row = constant_lf(level, weight, degree)
         row['origin'] = "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, char_orbit, hecke_orbit)
         row['self_dual'] = 't'
-        row['conjugate'] = '\N'
+        row['conjugate'] = None
         row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in labels])
         row['accuracy'] = min([rows[elt][accuracy] for elt in labels])
 
@@ -505,7 +505,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
         deltas = [rows[elt][plot_delta] for elt in labels]
         values = [rows[elt][plot_values] for elt in labels]
         row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
-        row['leading_term'] = '\N'
+        row['leading_term'] = None
         row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
         row['coefficient_field'] = '1.1.1.1'
 
@@ -681,7 +681,7 @@ def read_all(filename, skip_missing = False):
                 row[key] = val
 
             if row['self_dual']:
-                row['conjugate'] = '\N'
+                row['conjugate'] = None
             else:
                 lfconjfilename=  os.path.join(lfun_dir, label + ".lpdata.conj.lfunction")
                 assert os.path.exists(lfconjfilename)
