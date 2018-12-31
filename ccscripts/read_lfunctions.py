@@ -29,7 +29,7 @@ def constant_lf(level, weight, degree):
         'selfdual': None,
         'analytic_normalization': float(weight - 1)/2,
         'precision': None,
-        'algebraic': 't',
+        'algebraic': True,
         'coeff_info': None, 
         'credit' : None,
         'values': None, # no special values at the moment
