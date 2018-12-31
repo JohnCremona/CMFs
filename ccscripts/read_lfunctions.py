@@ -570,7 +570,7 @@ def write_header(lfunctions_filename, instances_filename, overwrite = True):
             F.write(str_parsing_lf % tuple([schema_lf_types[key] for key in schema_lf]))
             F.write("\n")
 
-    if not os.path.exists(instances_filename):
+    if not os.path.exists(instances_filename) or overwrite:
         with open(instances_filename, "w") as F:
             F.write(str_parsing_instances % tuple(schema_instances))
             F.write(str_parsing_instances % tuple([schema_instances_types[key] for key in schema_instances]))
