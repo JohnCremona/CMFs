@@ -580,10 +580,10 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     write_header(lfunctions_filename, instances_filename)
     #str_parsing_lf = '\t'.join(['%r'] * len(schema_lf)) + '\n'
     #str_parsing_instances = '\t'.join(['%r'] * len(schema_instances)) + '\n'
-
+    positive_zeros = schema_lf_dict['positive_zeros']
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
-            LF.write("\t".join(map(json.dumps,row)) + "\n")
+            LF.write("\t".join([json.dumps(elt) if i != positive_zeros else elt for i, elt in enumerate(row))) + "\n")
 
         for key, row in rational_rows.iteritems():
             LF.write("\t".join(map(json.dumps,row)) + "\n")
