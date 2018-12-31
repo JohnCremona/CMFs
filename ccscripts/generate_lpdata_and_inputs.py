@@ -42,7 +42,6 @@ def generate_lpdata_and_inputs(filename, prec=default_prec, check_for_lpdata = T
     real_filename = os.path.abspath(filename).split('/')[-1]
     lfun_dir = os.path.join(base_dir, 'lfun')
     inputs_dir = os.path.join(base_dir, 'inputs')
-    print inputs_dir
     for d in [inputs_dir, lfun_dir]:
         if not os.path.exists(d):
             os.mkdir(d)
@@ -54,7 +53,7 @@ def generate_lpdata_and_inputs(filename, prec=default_prec, check_for_lpdata = T
             hoc, label, conrey_label, embedding_index, embedding_m, ap_txt = linesplit
             lpfilename = os.path.join(lfun_dir, label + ".lpdata")
             lfunctionfilename = os.path.join(lfun_dir, label + ".lpdata.lfunction")
-            
+
             level, weight, char_orbit, hecke_orbit, conrey_label_again, embedding = label.split('.')
             assert conrey_label_again == conrey_label
             level = int(level)
@@ -84,18 +83,24 @@ def generate_lpdata_and_inputs(filename, prec=default_prec, check_for_lpdata = T
                 inputs[weight].append("%d %d %d %s %s" % (weight, self_dual(char, ap_list) , level, label, lpfilename))
             k += 1
             if (k % (linecount//10)) == 0:
-                print "%.2f%% done" % (k*100./linecount)
-    for weight, lines in inputs.iteritems():
-        if chunk is None:
-            chunked_lines = [lines]
-        else:
-            chunked_lines = [ lines[i:i+chunk] for i in range(0, len(lines), chunk)]
-        assert sum(map(len, chunked_lines)) == len(lines), "%d != %d" % (sum(map(len, chunked_lines)), len(lines))
-        for i, line_block in enumerate(chunked_lines):
-            inputsfilename = os.path.join(inputs_dir, real_filename + '_wt%d_%d.input' % (weight, i))
-            with open(inputsfilename , 'w') as W:
-                W.write('\n'.join(line_block) + '\n')
-                print "wrote %d lines to %s" % (len(line_block), inputsfilename)
+                print "generate_lpdata_and_inputs %.2f%% done" % (k*100./linecount)
+    parallel_inputs = os.path.join(base_dir, real_filename + '.tsv')
+    with open(parallel_inputs, 'w') as I:
+        for weight, lines in inputs.iteritems():
+            if chunk is None:
+                chunked_lines = [lines]
+            else:
+                chunked_lines = [ lines[i:i+chunk] for i in range(0, len(lines), chunk)]
+            assert sum(map(len, chunked_lines)) == len(lines), "%d != %d" % (sum(map(len, chunked_lines)), len(lines))
+            for i, line_block in enumerate(chunked_lines):
+                inputsfilename = os.path.join(inputs_dir, real_filename + '_wt%d_%d.input' % (weight, i))
+                with open(inputsfilename , 'w') as W:
+                    W.write('\n'.join(line_block) + '\n')
+                    #print "wrote %d lines to %s" % (len(line_block), inputsfilename)
+                I.write("%d\t%s\n" % (weight, inputsfilename))
+
+    print "now set LFUNCTIONS and run:"
+    print r"""parallel -a %s  --colsep '\t' --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
 
 
 generate_lpdata_and_inputs(sys.argv[1])

@@ -211,7 +211,7 @@ def read_lfunction_file(filename):
             accuracy = int(l) - 1;
             output['accuracy'] = accuracy;
             two_power = 2 ** output['accuracy'];
-            CCC = ComplexIntervalField(accuracy+1)
+            CCC = ComplexIntervalField(accuracy)
         elif i == 1:
             root_number  = CCC(*map(ZZ, l.split(" ")))/two_power;
             if (root_number - 1).contains_zero():
@@ -221,7 +221,7 @@ def read_lfunction_file(filename):
                 root_number = "-1";
                 sign_arg = 0.5
             else:
-                assert (root_number.abs() - 1).contains_zero()
+                assert (root_number.abs() - 1).contains_zero(), "%s, %s" % (filename, root_number.abs() )
                 sign_arg = float(root_number.arg())
                 root_number = root_number.str(style="question").replace('?', '')
             output['root_number'] = root_number;
@@ -453,6 +453,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
     plot_values = schema_lf_dict['plot_values']
     central_character = schema_lf_dict['central_character']
     posistive_zeros = schema_lf_dict['positive_zeros']
+    k = 0
     for mf_orbit_label, labels in orbits.iteritems():
         level, weight, char_orbit, hecke_orbit = mf_orbit_label.split(".")
         level, weight = map(int, [level, weight])
@@ -462,7 +463,6 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
         degree = 2*len(labels)
         row = constant_lf(level, weight, degree)
         row['origin'] = "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, char_orbit, hecke_orbit)
-        print row['origin']
         row['self_dual'] = 't'
         row['conjugate'] = '\N'
         row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in labels])
@@ -539,6 +539,13 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             rows.pop(labels[0])
             instances.pop(labels[0])
 
+
+        k += 1
+        if (k % (len(orbits)//10)) == 0:
+            print "populate_rational_rows %.2f%% done" % (k*100./len(orbits))
+
+
+
     return rational_rows
 
 def self_dual(char, aps):
@@ -586,6 +593,35 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
             IF.write("\t".join(map(json.dumps,row)) + "\n")
 
 
+def line_count(filename):
+    i = 0
+    with open(filename, 'r') as F:
+        for _ in F:
+            i += 1
+    return i
+
+def check_all_files(filename, linecount):
+    k = 0
+    missing = []
+    base_dir = os.path.dirname(os.path.abspath(filename))
+    lfun_dir = os.path.join(base_dir, 'lfun')
+    with open(filename, 'r') as F:
+        for line in F:
+            linesplit = line[:-1].split(':')
+            hoc, label, conrey_label_tmp, embedding_index_tmp, embedding_m, ap_txt = linesplit
+            lpfilename = os.path.join(lfun_dir, label + ".lpdata")
+            lffilename = os.path.join(lfun_dir, label + ".lpdata.lfunction")
+
+            if not all(map(os.path.exists, [lpfilename, lffilename])):
+                print "missing files for label = %s" % label
+                print "[lpfilename, lffilename] = %s" % (map(os.path.exists, [lpfilename, lffilename]),)
+                missing += [[label,line]]
+
+            k += 1
+            if (k % (linecount//10)) == 0:
+                print "check_all_files %.2f%% done" % (k*100./linecount)
+
+    return missing
 
 def read_all(filename, skip_missing = False):
     # label -> [p, Lp]
@@ -598,10 +634,16 @@ def read_all(filename, skip_missing = False):
     rows = {}
     instances = {}
 
-    missing = []
 
     base_dir = os.path.dirname(os.path.abspath(filename))
     lfun_dir = os.path.join(base_dir, 'lfun')
+    linecount = line_count(filename)
+    missing = check_all_files(filename, linecount)
+    if not skip_missing and len(missing) > 0:
+        print "There are missing files"
+        return 1
+
+    k = 0
     with open(filename, 'r') as F:
         for line in F:
             linesplit = line[:-1].split(':')
@@ -617,14 +659,7 @@ def read_all(filename, skip_missing = False):
             lffilename = os.path.join(lfun_dir, label + ".lpdata.lfunction")
 
             if not all(map(os.path.exists, [lpfilename, lffilename])):
-                print "missing files for label = %s" % label
-                print "[lpfilename, lffilename] = %s" % (map(os.path.exists, [lpfilename, lffilename]),)
-                if skip_missing:
-                    missing += [[label,line]]
-                else:
-                    assert False
-
-
+                continue
 
             mf_orbit_label = ".".join([level, weight, char_orbit, hecke_orbit])
             if mf_orbit_label not in orbits:
@@ -672,6 +707,9 @@ def read_all(filename, skip_missing = False):
             assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
             rows[label] = [row[key] for key in schema_lf]
             instances[label] = (row['origin'], row['Lhash'], 'CMF')
+            k += 1
+            if (k % (linecount//10)) == 0:
+                print "read_all %.2f%% done" % (k*100./linecount)
 
     rational_rows = populate_rational_rows(orbits, euler_factors_cc, rows, instances)
     
@@ -681,6 +719,7 @@ def read_all(filename, skip_missing = False):
     lfun_filename = filename + ".lfunctions"
     instances_filename = filename + ".instances"
     export_lfunctions(rows, rational_rows, instances, lfun_filename, instances_filename)
+    return 0
 
 
 
