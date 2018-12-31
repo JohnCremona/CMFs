@@ -583,7 +583,7 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     positive_zeros = schema_lf_dict['positive_zeros']
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
-            LF.write("\t".join([json.dumps(elt) if i != positive_zeros else elt for i, elt in enumerate(row))) + "\n")
+            LF.write("\t".join([json.dumps(elt) if i != positive_zeros else elt for i, elt in enumerate(row)]) + "\n")
 
         for key, row in rational_rows.iteritems():
             LF.write("\t".join(map(json.dumps,row)) + "\n")
