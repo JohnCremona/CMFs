@@ -580,9 +580,9 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     write_header(lfunctions_filename, instances_filename)
     #str_parsing_lf = '\t'.join(['%r'] * len(schema_lf)) + '\n'
     #str_parsing_instances = '\t'.join(['%r'] * len(schema_instances)) + '\n'
-    positive_zeros = schema_lf_dict['positive_zeros']
+    plain = [schema_lf_dict['positive_zeros'], schema_lf_dict['z1'], schema_lf_dict['z2'], schema_lf_dict['z3']]
     def json_hack(i, elt):
-        if i == positive_zeros:
+        if i in plain:
             return elt
         if elt is None:
             return '\N'
