@@ -463,7 +463,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
         degree = 2*len(labels)
         row = constant_lf(level, weight, degree)
         row['origin'] = "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, char_orbit, hecke_orbit)
-        row['self_dual'] = 't'
+        row['self_dual'] = True
         row['conjugate'] = None
         row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in labels])
         row['accuracy'] = min([rows[elt][accuracy] for elt in labels])
@@ -583,7 +583,7 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     positive_zeros = schema_lf_dict['positive_zeros']
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
-            LF.write("\t".join([json.dumps(elt) if i != positive_zeros else elt for i, elt in enumerate(row)]) + "\n")
+            LF.write("\t".join(['\N' if elt is None else (json.dumps(elt) if i != positive_zeros else elt) for i, elt in enumerate(row)]) + "\n")
 
         for key, row in rational_rows.iteritems():
             LF.write("\t".join(map(json.dumps,row)) + "\n")
