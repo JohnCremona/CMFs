@@ -21,7 +21,7 @@ def constant_lf(level, weight, degree):
         'conductor' : level**(degree//2),
         'load_key' : 'CMFs-workshop',
         'motivic_weight': weight - 1,
-        'types': str([default_type]).replace("'","\""),
+        'types': [default_type],
         'symmetry_type': None,
         'group' : 'GL2',
         'degree' : degree,
