@@ -1,11 +1,41 @@
-from sage.all import ComplexIntervalField, RealNumber, ZZ, CDF, prime_pi, prime_divisors, ComplexBallField, RealIntervalField, RR, QQ, prime_powers, PowerSeriesRing, PolynomialRing, prod, spline, srange, gcd, primes_first_n, exp, pi, I
+from sage.all import ComplexIntervalField, RealNumber, ZZ, CDF, prime_pi, prime_divisors, ComplexBallField, RealIntervalField, RR, QQ, prime_powers, PowerSeriesRing, PolynomialRing, prod, spline, srange, gcd, primes_first_n, exp, pi, I, next_prime
 import os, sys, json
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
 
 # 265 = 80 digits
-default_prec = 265
+default_prec = 300
 CCC = ComplexBallField(default_prec)
 RRR = RealIntervalField(default_prec)
+def toRRR(elt):
+    if "." in elt and len(elt) > 70:
+        # drop the last digit and convert it to an unkown
+        if 'E' in elt:
+            begin, end = elt.split("E")
+        elif 'e' in elt:
+            begin, end = elt.split("E")
+        else:
+            begin = elt
+            end = "0"
+        begin = begin[:-1] # drop the last digit
+        return RRR(begin + "0e" + end, begin + "9e" + end)
+    else:
+        return RRR(elt)
+        
+def toCCC(r, i):
+    return CCC(toRRR(r)) + CCC.gens()[0]*CCC(toRRR(i))
+
+
+def print_RRR(elt):
+        if elt.contains_integer():
+            try:
+                return "%d" % ZZ(elt)
+            except ValueError:
+                pass
+        return RRR(elt).str(style="question").replace('?', '')
+
+def print_CCC(elt):
+    elt = CCC(elt)
+    return "[ %s, %s]" % tuple(map(print_RRR, [elt.real(), elt.imag()]))
 
 ####################
 # postgres stuff
@@ -211,9 +241,9 @@ def read_lfunction_file(filename):
             accuracy = int(l) - 1;
             output['accuracy'] = accuracy;
             two_power = 2 ** output['accuracy'];
-            CCC = ComplexIntervalField(accuracy)
+            R = ComplexIntervalField(accuracy)
         elif i == 1:
-            root_number  = CCC(*map(ZZ, l.split(" ")))/two_power;
+            root_number  = R(*map(ZZ, l.split(" ")))/two_power;
             if (root_number - 1).contains_zero():
                 root_number = "1";
                 sign_arg = 0;
@@ -227,7 +257,7 @@ def read_lfunction_file(filename):
             output['root_number'] = root_number;
             output['sign_arg'] = sign_arg;
         elif i == 2:
-            output['leading_term'] = (CCC(ZZ(l))/two_power).str(style="question").replace('?', '');
+            output['leading_term'] = (R(ZZ(l))/two_power).str(style="question").replace('?', '');
         elif i == 3:
             output['order_of_vanishing'] = int(l);
         elif i == 4:
@@ -277,48 +307,60 @@ def extend_multiplicatively(Z):
             if gcd(k, pp) == 1:
                 Z[pp*k] = Z[pp]*Z[k]
 
+def dirichlet(R, euler_factors):
+    PS = PowerSeriesRing(R)
+    pef = zip(primes_first_n(len(euler_factors)), euler_factors)
+    an_list_bound = next_prime(pef[-1][0])
+    res = [1]*an_list_bound
+    for p, ef in pef:
+        k = RR(an_list_bound).log(p).floor()+1
+        foo = (1/PS(ef)).padded_list(k)
+        for i in range(1, k):
+            res[p**i] = foo[i]
+    extend_multiplicatively(res)
+    return res
 
 
-def read_euler_factors(filename, prec = default_prec, number_of_euler_factors = 30, an_list_bound = 11):
-    CCC = ComplexBallField(prec)
-    PS = PowerSeriesRing(CCC)
-    def read_euler_factor_CC_line(line):
-        #expects p, [[1,0], [a1.re, a1.imag],...] per line
-        line = line.replace(" ", "")
-        p, euler = line.split(',',1)
-        p = int(p)
-        euler_factor = [CCC(*elt.split(',')) for elt in line.split(',',1)[1].replace(" ", "").rstrip(']]').lstrip('[[').split('],[')]
-        # try to round integers
-        euler_factor = [elt.round() if elt.contains_integer() else elt for elt in euler_factor]
-        assert euler_factor[0] == 1
-        return p, euler_factor
-
-    euler_factors = []
-    bad_euler_factors = []
-
-
-
-    dirichlet = [1]*an_list_bound
-    lpdata_file = open(filename, "r");
-    for l in lpdata_file:
-        p, lp = read_euler_factor_CC_line(l);
-        if len(lp) <= 2:
-            bad_euler_factors += [[p, lp]]
-        if len(euler_factors) < number_of_euler_factors:
-            euler_factors += [lp]
-
-        if p < an_list_bound:
-            k = RR(an_list_bound).log(p).floor()+1
-            foo = (1/PS(lp)).padded_list(k)
-            for i in range(1, k):
-                dirichlet[p**i] = foo[i]
-        if len(euler_factors) == number_of_euler_factors:
-            break
-
-    assert number_of_euler_factors == len(euler_factors)
-    extend_multiplicatively(dirichlet)
-
-    return euler_factors, bad_euler_factors, dirichlet
+#def read_euler_factors(filename, prec = default_prec, number_of_euler_factors = 30, an_list_bound = 11):
+#    CCC = ComplexBallField(prec)
+#    PS = PowerSeriesRing(CCC)
+#    def read_euler_factor_CC_line(line):
+#        #expects p, [[1,0], [a1.re, a1.imag],...] per line
+#        line = line.replace(" ", "")
+#        p, euler = line.split(',',1)
+#        p = int(p)
+#        euler_factor = [CCC(*elt.split(',')) for elt in line.split(',',1)[1].replace(" ", "").rstrip(']]').lstrip('[[').split('],[')]
+#        # try to round integers
+#        euler_factor = [elt.round() if elt.contains_integer() else elt for elt in euler_factor]
+#        assert euler_factor[0] == 1
+#        return p, euler_factor
+#
+#    euler_factors = []
+#    bad_euler_factors = []
+#
+#
+#
+#    dirichlet = [1]*an_list_bound
+#    lpdata_file = open(filename, "r");
+#    for l in lpdata_file:
+#        p, lp = read_euler_factor_CC_line(l);
+#        if len(lp) <= 2:
+#            bad_euler_factors += [[p, lp]]
+#        if len(euler_factors) < number_of_euler_factors:
+#            euler_factors += [lp]
+#
+#        if p < an_list_bound:
+#            k = RR(an_list_bound).log(p).floor()+1
+#            foo = (1/PS(lp)).padded_list(k)
+#            for i in range(1, k):
+#                dirichlet[p**i] = foo[i]
+#        if len(euler_factors) == number_of_euler_factors:
+#            break
+#
+#    assert number_of_euler_factors == len(euler_factors)
+#    extend_multiplicatively(dirichlet)
+#
+#    return euler_factors, bad_euler_factors, dirichlet
 
 
 
@@ -402,13 +444,18 @@ def rational_euler_factors(euler_factors_cc, level, weight, an_list_bound = 11):
         ef = prod([CCCx(lf[p_index]) for lf in euler_factors_cc])
         for j, elt in enumerate(ef.list()[:len(partial_efzz)]):
             try:
-                efj = RRR(elt.real()).unique_integer()
+                efj = int(RRR(elt.real()).unique_integer())
             except ValueError:
+                #print j
+                #print RRR(elt.real())
+                #print p
+                #print "[%s]" % (", ".join(["[%s]" % (", ".join(map(print_CCC, lf[p_index]))) for ef in euler_factors_cc]))
+                #assert False
                 break;
             assert efj == efzz[j]
 
 
-        if level % p != 0:
+        if (level % p) != 0:
             sign = RRR(ef.list()[-1].real()/p**((halfdegree)*(weight - 1))).unique_integer()
             assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p**((halfdegree)*(weight - 1)))
             efzz2 = [None] * halfdegree
@@ -538,8 +585,9 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
 
 
         k += 1
-        if (k % (len(orbits)//10)) == 0:
-            print "populate_rational_rows %.2f%% done" % (k*100./len(orbits))
+        if len(orbits) > 10:
+            if (k % (len(orbits)//10)) == 0:
+                print "populate_rational_rows %.2f%% done" % (k*100./len(orbits))
 
 
 
@@ -576,15 +624,16 @@ def write_header(lfunctions_filename, instances_filename, overwrite = True):
 def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, instances_filename):
     print "Writing to %s and %s" % (lfunctions_filename, instances_filename)
     write_header(lfunctions_filename, instances_filename)
-    #str_parsing_lf = '\t'.join(['%r'] * len(schema_lf)) + '\n'
-    #str_parsing_instances = '\t'.join(['%r'] * len(schema_instances)) + '\n'
     plain = [schema_lf_dict['positive_zeros'], schema_lf_dict['z1'], schema_lf_dict['z2'], schema_lf_dict['z3']]
     def json_hack(i, elt):
         if i in plain:
             return elt
-        if elt is None:
-            return '\N'
-        return json.dumps(elt)
+        try:
+            return json.dumps(elt)
+        except TypeError:
+            print schema_lf[i], elt
+            raise
+    assert len(rows) + len(rational_rows) == len(instances)
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
             LF.write("\t".join([json_hack(i, elt) for i, elt in enumerate(row)]).replace("null",'\N') + "\n")
@@ -622,8 +671,9 @@ def check_all_files(filename, linecount):
                 missing += [[label,line]]
 
             k += 1
-            if (k % (linecount//10)) == 0:
-                print "check_all_files %.2f%% done" % (k*100./linecount)
+            if linecount > 10:
+                if (k % (linecount//10)) == 0:
+                    print "check_all_files %.2f%% done" % (k*100./linecount)
 
     return missing
 
@@ -655,8 +705,12 @@ def read_all(filename, skip_missing = False):
             level, weight, char_orbit, hecke_orbit, conrey_label, embedding_index = label.split(".")
             assert conrey_label_tmp == conrey_label
             assert embedding_index_tmp == embedding_index
+            mf_orbit_label = ".".join([level, weight, char_orbit, hecke_orbit])
+            if mf_orbit_label not in orbits:
+                orbits[mf_orbit_label] = []
+            orbits[mf_orbit_label].append(label)
 
-            ap_list = [ CCC(*elt.split(',')) for elt in ap_txt[2:-2].split('],[')]
+            ap_list = [ toCCC(*elt.split(',')) for elt in ap_txt[2:-2].split('],[')]
             ap_list = zip(primes_first_n(len(ap_list)),ap_list)
 
             lpfilename = os.path.join(lfun_dir, label + ".lpdata")
@@ -665,10 +719,6 @@ def read_all(filename, skip_missing = False):
             if not all(map(os.path.exists, [lpfilename, lffilename])):
                 continue
 
-            mf_orbit_label = ".".join([level, weight, char_orbit, hecke_orbit])
-            if mf_orbit_label not in orbits:
-                orbits[mf_orbit_label] = []
-            orbits[mf_orbit_label].append(label)
             level, weight, conrey_label, embedding_index = map(int, [level, weight, conrey_label, embedding_index])
 
             G = DirichletGroup_conrey(level, CCC)
@@ -692,14 +742,23 @@ def read_all(filename, skip_missing = False):
                 row['conjugate'] = read_lfunction_file(lfconjfilename)['Lhash']
 
 
-
-            euler_factors, bad_euler_factors, dirichelet = read_euler_factors(lpfilename, number_of_euler_factors = max(30, prime_pi(max(prime_divisors(level)))))
+            def euler_factor(p, ap):
+                if p.divides(level):
+                    return [1, -ap]
+                charval = CCC(2*char.logvalue(p)).exppii()
+                if charval.contains_exact(ZZ(1)):
+                    charval = 1
+                elif charval.contains_exact(ZZ(-1)):
+                    charval = -1
+                return [1, -ap, (p**(weight-1))*charval]
+            euler_factors = [ euler_factor(*elt) for elt in ap_list[:max(30, prime_pi(max(prime_divisors(level))))] ]
+            bad_euler_factors = [ [elt[0], euler_factor(*elt)] for elt in ap_list if elt[0].divides(level)]
 
             euler_factors_cc[label] = euler_factors
             row['euler_factors'] = map( lambda x : map(CBF_to_pair, x), euler_factors)
-            row['bad_lfactors'] =  map( lambda x: [x[0], map(CBF_to_pair, x[1])], bad_euler_factors)
+            row['bad_lfactors'] =  map( lambda x: [int(x[0]), map(CBF_to_pair, x[1])], bad_euler_factors)
             row['coefficient_field'] = 'CDF'
-            for i, ai in enumerate(dirichelet[2:12]):
+            for i, ai in enumerate(dirichlet(CCC, euler_factors[:11])[2:12]):
                 ai = CDF(ai)
                 ai_jsonb = [float(ai.real_part()), float(ai.imag_part())]
                 if i + 2 <= 10:
@@ -712,8 +771,9 @@ def read_all(filename, skip_missing = False):
             rows[label] = [row[key] for key in schema_lf]
             instances[label] = (row['origin'], row['Lhash'], 'CMF')
             k += 1
-            if (k % (linecount//10)) == 0:
-                print "read_all %.2f%% done" % (k*100./linecount)
+            if linecount > 10:
+                if (k % (linecount//10)) == 0:
+                    print "read_all %.2f%% done" % (k*100./linecount)
 
     rational_rows = populate_rational_rows(orbits, euler_factors_cc, rows, instances)
     
