@@ -626,7 +626,7 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     write_header(lfunctions_filename, instances_filename)
     plain = [schema_lf_dict['positive_zeros'], schema_lf_dict['z1'], schema_lf_dict['z2'], schema_lf_dict['z3']]
     def json_hack(i, elt):
-        if i in plain:
+        if i in plain or isinstance(elt, str):
             return elt
         try:
             return json.dumps(elt)
