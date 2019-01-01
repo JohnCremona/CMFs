@@ -625,25 +625,22 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     print "Writing to %s and %s" % (lfunctions_filename, instances_filename)
     write_header(lfunctions_filename, instances_filename)
     plain = [schema_lf_dict['positive_zeros'], schema_lf_dict['z1'], schema_lf_dict['z2'], schema_lf_dict['z3']]
-    def json_hack(i, elt):
-        if i in plain or isinstance(elt, str):
+    def json_hack(elt):
+        if isinstance(elt, str):
             return elt
-        try:
+        else:
             return json.dumps(elt)
-        except TypeError:
-            print schema_lf[i], elt
-            raise
     assert len(rows) + len(rational_rows) == len(instances)
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
-            LF.write("\t".join([json_hack(i, elt) for i, elt in enumerate(row)]).replace("null",'\N') + "\n")
+            LF.write("\t".join(map(json_hack,row)).replace("null",'\N') + "\n")
 
         for key, row in rational_rows.iteritems():
-            LF.write("\t".join([json_hack(i, elt) for i, elt in enumerate(row)]).replace("null",'\N') + "\n")
+            LF.write("\t".join(map(json_hack,row)).replace("null",'\N') + "\n")
 
     with open(instances_filename, 'a') as IF:
         for key, row in instances.iteritems():
-            IF.write("\t".join(map(json.dumps,row)) + "\n")
+            IF.write("\t".join(map(json_hack,row)).replace("null",'\N') + "\n")
 
 
 def line_count(filename):
