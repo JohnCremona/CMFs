@@ -650,11 +650,12 @@ def line_count(filename):
             i += 1
     return i
 
-def check_all_files(filename, linecount):
+def check_all_files(filename, linecount, chunk = 100):
     k = 0
     missing = []
     base_dir = os.path.dirname(os.path.abspath(filename))
     lfun_dir = os.path.join(base_dir, 'lfun')
+    inputs = {}
     with open(filename, 'r') as F:
         for line in F:
             linesplit = line[:-1].split(':')
@@ -662,15 +663,42 @@ def check_all_files(filename, linecount):
             lpfilename = os.path.join(lfun_dir, label + ".lpdata")
             lffilename = os.path.join(lfun_dir, label + ".lpdata.lfunction")
 
-            if not all(map(os.path.exists, [lpfilename, lffilename])):
-                print "missing files for label = %s" % label
-                print "[lpfilename, lffilename] = %s" % (map(os.path.exists, [lpfilename, lffilename]),)
-                missing += [[label,line]]
-
+            if os.path.exists(lpfilename):
+                print "Missing lpdata file for %s" % label
+                print "Use generate_lpdata_and_inputs.py to generate those files"
+                sys.exit(1)
+            if os.path.exists(lffilename):
+                print "Missing lfunction file for %s" % label
+                # needed for self_dual
+                ap_list = [ toCCC(*elt.split(',')) for elt in ap_txt[2:-2].split('],[')]
+                ap_list = zip(primes_first_n(len(ap_list)),ap_list)
+                G = DirichletGroup_conrey(level, CCC)
+                char = DirichletCharacter_conrey(G, conrey_label)
+                if weight not in inputs:
+                    inputs[weight] = []
+                inputs[weight].append("%d %d %d %s %s" % (weight, self_dual(char, ap_list) , level, label, lpfilename))
             k += 1
             if linecount > 10:
                 if (k % (linecount//10)) == 0:
                     print "check_all_files %.2f%% done" % (k*100./linecount)
+    real_filename = os.path.abspath(filename).split('/')[-1]
+    parallel_inputs = os.path.join(base_dir, real_filename + '.tsv.missing')
+    with open(parallel_inputs, 'w') as I:
+        for weight, lines in inputs.iteritems():
+            if chunk is None:
+                chunked_lines = [lines]
+            else:
+                chunked_lines = [ lines[i:i+chunk] for i in range(0, len(lines), chunk)]
+            assert sum(map(len, chunked_lines)) == len(lines), "%d != %d" % (sum(map(len, chunked_lines)), len(lines))
+            for i, line_block in enumerate(chunked_lines):
+                inputsfilename = os.path.join(inputs_dir, real_filename + '_wt%d_%d.missing.input' % (weight, i))
+                with open(inputsfilename , 'w') as W:
+                    W.write('\n'.join(line_block) + '\n')
+                    #print "wrote %d lines to %s" % (len(line_block), inputsfilename)
+                I.write("%d\t%s\n" % (weight, inputsfilename))
+    print "There were some missing lfunction files!"
+    print "please set LFUNCTIONS and run:"
+    print r"""parallel -a %s  --colsep '\t' --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
 
     return missing
 
