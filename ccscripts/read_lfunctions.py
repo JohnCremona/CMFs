@@ -670,7 +670,8 @@ def check_all_files(filename, linecount, chunk = 100):
                 sys.exit(1)
             if not os.path.exists(lfunfilename):
                 print "%s\tMissing lfunction file: for %s" % (label, lfunfilename)
-                # needed for self_dual
+                # reading the line
+                level, weight, char_orbit, hecke_orbit, conrey_label, embedding_index = label.split(".")
                 level, weight, conrey_label, embedding_index = map(int, [level, weight, conrey_label, embedding_index])
                 ap_list = [ toCCC(*elt.split(',')) for elt in ap_txt[2:-2].split('],[')]
                 ap_list = zip(primes_first_n(len(ap_list)),ap_list)
