@@ -28,7 +28,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd* where B
  7) A = Atkin-Lehner signs (empty list if chi is not the trivial character (i.e. i=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D.
  8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to the degree bound (currently 20); note that F[n] corresponds to the space D[n] but F may be shorter than D
  9) C = Hecke cutters [[<p,[g0,g1,...,1]>,...],...] list of minimal lists of coefficients of kernel polys g_p in T_p sufficient to distinguish all the subspaces listed in D (i.e. the ith form is the unique form lying in the kernel of g_p(T_p) for all the tuples <p,coeffs(g_p)> in the ith list)
-10) E = Hecke Eigenvalue data [<g,b,c,d,a,x>,...] list of tuples <g,b,n,m,e> of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
+10) E = Hecke Eigenvalue data [<g,b,c,d,a,x,m>,...] list of 7-tuples of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
       1) g is a list of coefficients of a polredbestified field poly for the Hecke field K (should match entry in F),
       2) b is a list of lists of rationals specifying a basis for the Hecke ring R:=Z[a_n] in terms of the power basis for g
       3) c is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K of the Hecke field
