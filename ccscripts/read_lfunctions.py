@@ -652,7 +652,6 @@ def line_count(filename):
 
 def check_all_files(filename, linecount, chunk = 100):
     k = 0
-    missing = []
     base_dir = os.path.dirname(os.path.abspath(filename))
     lfun_dir = os.path.join(base_dir, 'lfun')
     inputs_dir = os.path.join(base_dir, 'inputs')
@@ -709,7 +708,7 @@ def check_all_files(filename, linecount, chunk = 100):
 
     return None
 
-def read_all(filename, skip_missing = False):
+def read_all(filename):
     # label -> [p, Lp]
     euler_factors_cc = {}
     # label -> labels
@@ -724,10 +723,7 @@ def read_all(filename, skip_missing = False):
     base_dir = os.path.dirname(os.path.abspath(filename))
     lfun_dir = os.path.join(base_dir, 'lfun')
     linecount = line_count(filename)
-    missing = check_all_files(filename, linecount)
-    if not skip_missing and len(missing) > 0:
-        print "There are missing files"
-        return 1
+    check_all_files(filename, linecount)
 
     k = 0
     with open(filename, 'r') as F:
