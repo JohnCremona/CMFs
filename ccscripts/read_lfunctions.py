@@ -664,11 +664,12 @@ def check_all_files(filename, linecount, chunk = 100):
             lffilename = os.path.join(lfun_dir, label + ".lpdata.lfunction")
 
             if os.path.exists(lpfilename):
-                print "Missing lpdata file for %s" % label
+                print "%s\tMissing lpdata file: %s" % (label, lffilename)
+
                 print "Use generate_lpdata_and_inputs.py to generate those files"
                 sys.exit(1)
             if os.path.exists(lffilename):
-                print "Missing lfunction file for %s" % label
+                print "%s\tMissing lfunction file: for %s" % (label, lffilename)
                 # needed for self_dual
                 ap_list = [ toCCC(*elt.split(',')) for elt in ap_txt[2:-2].split('],[')]
                 ap_list = zip(primes_first_n(len(ap_list)),ap_list)
