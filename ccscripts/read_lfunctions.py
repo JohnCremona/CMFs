@@ -679,7 +679,7 @@ def check_all_files(filename, linecount, chunk = 100):
                 char = DirichletCharacter_conrey(G, conrey_label)
                 if weight not in inputs:
                     inputs[weight] = []
-                inputs[weight].append("%d %d %d %s %s" % (weight, self_dual(char, ap_list) , level, label, lpfilename))
+                inputs[weight].append("%d %d %d %s %s" % (weight, self_dual(char, ap_list) , level, label, lpdatafilename))
             k += 1
             if linecount > 10:
                 if (k % (linecount//10)) == 0:
