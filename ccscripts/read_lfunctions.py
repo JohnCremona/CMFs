@@ -660,16 +660,16 @@ def check_all_files(filename, linecount, chunk = 100):
         for line in F:
             linesplit = line[:-1].split(':')
             hoc, label, conrey_label_tmp, embedding_index_tmp, embedding_m, ap_txt = linesplit
-            lpfilename = os.path.join(lfun_dir, label + ".lpdata")
-            lffilename = os.path.join(lfun_dir, label + ".lpdata.lfunction")
+            lpdatafilename = os.path.join(lfun_dir, label + ".lpdata")
+            lfunfilename = os.path.join(lfun_dir, label + ".lpdata.lfunction")
 
-            if os.path.exists(lpfilename):
-                print "%s\tMissing lpdata file: %s" % (label, lffilename)
+            if os.path.exists(lpdatafilename):
+                print "%s\tMissing lpdata file: %s" % (label, lpdatafilename)
 
                 print "Use generate_lpdata_and_inputs.py to generate those files"
                 sys.exit(1)
-            if os.path.exists(lffilename):
-                print "%s\tMissing lfunction file: for %s" % (label, lffilename)
+            if os.path.exists(lfunfilename):
+                print "%s\tMissing lfunction file: for %s" % (label, lfunfilename)
                 # needed for self_dual
                 ap_list = [ toCCC(*elt.split(',')) for elt in ap_txt[2:-2].split('],[')]
                 ap_list = zip(primes_first_n(len(ap_list)),ap_list)
