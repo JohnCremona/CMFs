@@ -655,6 +655,7 @@ def check_all_files(filename, linecount, chunk = 100):
     missing = []
     base_dir = os.path.dirname(os.path.abspath(filename))
     lfun_dir = os.path.join(base_dir, 'lfun')
+    inputs_dir = os.path.join(base_dir, 'inputs')
     inputs = {}
     with open(filename, 'r') as F:
         for line in F:
@@ -684,26 +685,29 @@ def check_all_files(filename, linecount, chunk = 100):
             if linecount > 10:
                 if (k % (linecount//10)) == 0:
                     print "check_all_files %.2f%% done" % (k*100./linecount)
-    real_filename = os.path.abspath(filename).split('/')[-1]
-    parallel_inputs = os.path.join(base_dir, real_filename + '.tsv.missing')
-    with open(parallel_inputs, 'w') as I:
-        for weight, lines in inputs.iteritems():
-            if chunk is None:
-                chunked_lines = [lines]
-            else:
-                chunked_lines = [ lines[i:i+chunk] for i in range(0, len(lines), chunk)]
-            assert sum(map(len, chunked_lines)) == len(lines), "%d != %d" % (sum(map(len, chunked_lines)), len(lines))
-            for i, line_block in enumerate(chunked_lines):
-                inputsfilename = os.path.join(inputs_dir, real_filename + '_wt%d_%d.missing.input' % (weight, i))
-                with open(inputsfilename , 'w') as W:
-                    W.write('\n'.join(line_block) + '\n')
-                    #print "wrote %d lines to %s" % (len(line_block), inputsfilename)
-                I.write("%d\t%s\n" % (weight, inputsfilename))
-    print "There were some missing lfunction files!"
-    print "please set LFUNCTIONS and run:"
-    print r"""parallel -a %s  --colsep '\t' --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
+    if len(inputs) > 0:
+        real_filename = os.path.abspath(filename).split('/')[-1]
+        parallel_inputs = os.path.join(base_dir, real_filename + '.tsv.missing')
+        with open(parallel_inputs, 'w') as I:
+            for weight, lines in inputs.iteritems():
+                if chunk is None:
+                    chunked_lines = [lines]
+                else:
+                    chunked_lines = [ lines[i:i+chunk] for i in range(0, len(lines), chunk)]
+                assert sum(map(len, chunked_lines)) == len(lines), "%d != %d" % (sum(map(len, chunked_lines)), len(lines))
+                for i, line_block in enumerate(chunked_lines):
+                    inputsfilename = os.path.join(inputs_dir, real_filename + '_wt%d_%d.missing.input' % (weight, i))
+                    with open(inputsfilename , 'w') as W:
+                        W.write('\n'.join(line_block) + '\n')
+                        #print "wrote %d lines to %s" % (len(line_block), inputsfilename)
+                    I.write("%d\t%s\n" % (weight, inputsfilename))
+        print "There were some missing lfunction files!"
+        print "please set LFUNCTIONS and run:"
+        print r"""parallel -a %s  --colsep '\t' --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
+        sys.exit(1)
 
-    return missing
+
+    return None
 
 def read_all(filename, skip_missing = False):
     # label -> [p, Lp]
