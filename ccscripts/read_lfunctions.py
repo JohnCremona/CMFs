@@ -269,12 +269,12 @@ def read_lfunction_file(filename):
             int_zero = ZZ(int_zero);
             zero = RealNumber(int_zero.str()+".")/two_power;
             zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
-            assert double_zero == zero;
+            assert double_zero == zero, "%s, %s != %s" % (filename, double_zero, zero)
             assert zero_after_string  == int_zero, "zero_after_field = %s\nint_zero = %s" % (zero_after_string, int_zero,)
             if int_zero == 0:
-                assert 5 +  output['order_of_vanishing'] > i, "%s < %s" % ( 5 +  output['order_of_vanishing'], i);
+                assert 5 +  output['order_of_vanishing'] > i, "%s, %s < %s" % (filename, 5 +  output['order_of_vanishing'], i);
             else:
-                assert 5 +  output['order_of_vanishing'] <= i,  "%s >= %s" % ( 5 +  output['order_of_vanishing'], i);
+                assert 5 +  output['order_of_vanishing'] <= i,  "%s, %s >= %s" % (filename, 5 +  output['order_of_vanishing'], i);
 
                 # they will be converted to strings later on
                 # during populate_rational_rows
@@ -292,10 +292,10 @@ def read_lfunction_file(filename):
         elif i >  6 + number_of_zeros:
             output['plot_values'] += [float(l)];
 
-    assert len(output['plot_values']) == len_plot_values;
-    assert len(output['positive_zeros']) ==  number_of_zeros - output['order_of_vanishing'], "%s != %s" % ( len(output['positive_zeros']),  output['number_of_zeros'] - output['order_of_vanishing']) ;
+    assert len(output['plot_values']) == len_plot_values, "%s, %s != %s" % (filename, len(output['plot_values']), len_plot_values)
+    assert len(output['positive_zeros']) ==  number_of_zeros - output['order_of_vanishing'], "%s, %s != %s" % (filename, len(output['positive_zeros']),  output['number_of_zeros'] - output['order_of_vanishing']) ;
 
-    assert 'Lhash' in output
+    assert 'Lhash' in output, "%s" % filename
     for i in range(0,3):
         output['z' + str(i + 1)] = str(output['positive_zeros'][i])
 
@@ -423,7 +423,7 @@ def rational_euler_factors(euler_factors_cc, level, weight, an_list_bound = 11):
             todo.append((p_index, p))
     for p_index, p in todo:
         if p_index > len(euler_factors_cc[0]):
-            assert level % p == 0
+            assert level % p == 0, "%s, %s, %s"  % (level, weight, len(euler_factors_cc))
             bad_lfactors.append([int(p), [int(1)] + [None]*halfdegree])
             continue
 
@@ -452,7 +452,7 @@ def rational_euler_factors(euler_factors_cc, level, weight, an_list_bound = 11):
                 #print "[%s]" % (", ".join(["[%s]" % (", ".join(map(print_CCC, lf[p_index]))) for ef in euler_factors_cc]))
                 #assert False
                 break;
-            assert efj == efzz[j]
+            assert efj == efzz[j], "%s, %s, %s, %s != %s"  % (level, weight, len(euler_factors_cc), efj, efzz[j])
 
 
         if (level % p) != 0:
@@ -483,14 +483,13 @@ def rational_euler_factors(euler_factors_cc, level, weight, an_list_bound = 11):
 
     extend_multiplicatively(dirichlet)
 
-    assert len(euler_factors) == 30
+    assert len(euler_factors) == 30, "%s, %s, %s, %s != 30"  % (level, weight, len(euler_factors_cc), len(euler_factors))
 
     return euler_factors, bad_lfactors, dirichlet
 
 
 def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
     rational_rows = {}
-    CCCx = PolynomialRing(CCC, "x")
     order_of_vanishing = schema_lf_dict['order_of_vanishing']
     accuracy = schema_lf_dict['accuracy']
     positive_zeros = schema_lf_dict['positive_zeros']
@@ -624,7 +623,6 @@ def write_header(lfunctions_filename, instances_filename, overwrite = True):
 def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, instances_filename):
     print "Writing to %s and %s" % (lfunctions_filename, instances_filename)
     write_header(lfunctions_filename, instances_filename)
-    plain = [schema_lf_dict['positive_zeros'], schema_lf_dict['z1'], schema_lf_dict['z2'], schema_lf_dict['z3']]
     def json_hack(elt):
         if isinstance(elt, str):
             return elt
@@ -713,8 +711,6 @@ def read_all(filename):
     euler_factors_cc = {}
     # label -> labels
     orbits = {}
-    # label -> zeros as RealLiteral
-    zeros = {}
     # label -> postgres row as list
     rows = {}
     instances = {}
@@ -807,7 +803,7 @@ def read_all(filename):
     
     positive_zeros = schema_lf_dict['positive_zeros']
     for elt, val in rows.iteritems():
-        assert isinstance(val[positive_zeros], str)
+        assert isinstance(val[positive_zeros], str), "%s, %s, %s" % (elt, type(val[positive_zeros]), val[positive_zeros])
     lfun_filename = filename + ".lfunctions"
     instances_filename = filename + ".instances"
     export_lfunctions(rows, rational_rows, instances, lfun_filename, instances_filename)
