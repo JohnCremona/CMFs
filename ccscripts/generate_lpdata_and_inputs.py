@@ -29,7 +29,22 @@ def line_count(filename):
         for _ in F:
             i += 1
     return i
+def euler_factor(level, weight, char, p, ap, normalized = False):
+    if normalized:
+        ap *= p**(-ZZ(weight-1)/2)
+        ppower = 1
+    else:
+        ppower = p**(weight-1)
+    if p.divides(level):
+        return [1, -ap]
+    charval = CCC(2*char.logvalue(p)).exppii()
+    if charval.contains_exact(ZZ(1)):
+        charval = 1
+    elif charval.contains_exact(ZZ(-1)):
+        charval = -1
+    return [1, -ap, ppower * charval]
 
+weight_boundary_normalization = 201
 def generate_lpdata_and_inputs(filename, check_for_lpdata = True, check_for_lfunction = True, chunk = 100):
 
     linecount = line_count(filename)
@@ -76,21 +91,14 @@ def generate_lpdata_and_inputs(filename, check_for_lpdata = True, check_for_lfun
             assert conrey_label_again == conrey_label
             level = int(level)
             weight = int(weight)
+            weight_normalized = weight if weight < weight_boundary_normalization else 1
+            normalized = weight >= weight_boundary_normalization
             conrey_label = int(conrey_label)
             ap_list = [ toCCC(*elt.split(',')) for elt in ap_txt[2:-2].split('],[')]
             ap_list = zip(primes_first_n(len(ap_list)),ap_list)
             G = DirichletGroup_conrey(level, CCC)
             char = DirichletCharacter_conrey(G, conrey_label)
-            def euler_factor(p, ap):
-                if p.divides(level):
-                    return [1, -ap]
-                charval = CCC(2*char.logvalue(p)).exppii()
-                if charval.contains_exact(ZZ(1)):
-                    charval = 1
-                elif charval.contains_exact(ZZ(-1)):
-                    charval = -1
-                return [1, -ap, (p**(weight-1))*charval]
-            euler_factors = [[elt[0], euler_factor(*elt)] for elt in ap_list]
+            euler_factors = [[elt[0], euler_factor(level, weight, char, elt[0], elt[1], normalized = normalized)] for elt in ap_list]
             if not os.path.exists(lpfilename) or not check_for_lpdata:
                 with open(lpfilename, 'w') as LPDATA:
                     for p, ep in euler_factors:
@@ -98,10 +106,11 @@ def generate_lpdata_and_inputs(filename, check_for_lpdata = True, check_for_lfun
             if not os.path.exists(lfunctionfilename) or not check_for_lfunction:
                 if weight not in inputs:
                     inputs[weight] = []
-                inputs[weight].append("%d %d %d %s %s" % (weight, self_dual(char, ap_list) , level, label, lpfilename))
+                inputs[weight].append("%d %d %d %s %s" % (weight_normalized, self_dual(char, ap_list), level, label, lpfilename))
             k += 1
-            if (k % (linecount//10)) == 0:
-                print "generate_lpdata_and_inputs %.2f%% done" % (k*100./linecount)
+            if linecount > 10:
+                if (k % (linecount//10)) == 0:
+                    print "generate_lpdata_and_inputs %.2f%% done" % (k*100./linecount)
     parallel_inputs = os.path.join(base_dir, real_filename + '.tsv')
     with open(parallel_inputs, 'w') as I:
         for weight, lines in inputs.iteritems():
@@ -115,7 +124,7 @@ def generate_lpdata_and_inputs(filename, check_for_lpdata = True, check_for_lfun
                 with open(inputsfilename , 'w') as W:
                     W.write('\n'.join(line_block) + '\n')
                     #print "wrote %d lines to %s" % (len(line_block), inputsfilename)
-                I.write("%d\t%s\n" % (weight, inputsfilename))
+                I.write("%d\t%s\n" % (weight_normalized, inputsfilename))
 
     print "now set LFUNCTIONS and run:"
     print r"""parallel -a %s  --colsep '\t' --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
