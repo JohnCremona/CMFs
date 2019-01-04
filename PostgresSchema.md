@@ -37,6 +37,7 @@ mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
 AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
+trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
 traces | jsonb | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
 
 Table name: `mf_newspace_portraits`
