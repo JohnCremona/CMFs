@@ -503,7 +503,16 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
     for mf_orbit_label, labels in orbits.iteritems():
         level, weight, char_orbit, hecke_orbit = mf_orbit_label.split(".")
         level, weight = map(int, [level, weight])
-        # for now skip degree >= 100
+        # read and convert zeros to str
+        # is important to do this before converting them
+        zeros_as_real = []
+        for elt in labels:
+            zeros_factor = rows[elt][posistive_zeros]
+            zeros_as_real.extend( zeros_factor )
+            # and now convert them to strings
+            zeros_factor = [ z.str(truncate=False) for z in zeros_factor]
+            rows[elt][posistive_zeros] = str(zeros_factor).replace("'","\"")
+        # for now skip degree > 80
         if len(labels) > 80: # the real limit is 87
             continue
         degree = 2*len(labels)
@@ -515,14 +524,6 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
         row['accuracy'] = min([rows[elt][accuracy] for elt in labels])
 
 
-        ###
-        zeros_as_real = []
-        for elt in labels:
-            zeros_factor = rows[elt][posistive_zeros]
-            zeros_as_real.extend( zeros_factor )
-            # and now convert them to strings
-            zeros_factor = [ z.str(truncate=False) for z in zeros_factor]
-            rows[elt][posistive_zeros] = str(zeros_factor).replace("'","\"")
         zeros_as_real.sort()
         zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
         row['positive_zeros'] = str(zeros_as_str).replace("'","\"")
