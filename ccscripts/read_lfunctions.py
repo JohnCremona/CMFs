@@ -588,8 +588,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             if (k % (len(orbits)//10)) == 0:
                 print "populate_rational_rows %.2f%% done" % (k*100./len(orbits))
 
-
-
+    print "populate_rational_rows done"
     return rational_rows
 
 def self_dual(char, aps):
@@ -704,6 +703,7 @@ def check_all_files(filename, linecount, chunk = 100):
         sys.exit(1)
 
 
+    print "check_all_files done"
     return None
 
 def read_all(filename):
@@ -798,6 +798,7 @@ def read_all(filename):
             if linecount > 10:
                 if (k % (linecount//10)) == 0:
                     print "read_all %.2f%% done" % (k*100./linecount)
+    print "read_all Done"
 
     rational_rows = populate_rational_rows(orbits, euler_factors_cc, rows, instances)
     
