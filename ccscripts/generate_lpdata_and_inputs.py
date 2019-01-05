@@ -152,7 +152,8 @@ if len(sys.argv) == 2:
     generate_lpdata_and_inputs(sys.argv[1])
 else:
     # just generate lpdata
-    doline({}, sys.argv[2:], sys.argv[1] )
+    for line in sys.argv[2:]:
+        doline({}, line, sys.argv[1] )
 
 
 
