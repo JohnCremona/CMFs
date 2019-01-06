@@ -40,6 +40,10 @@ plus_dim | integer | For spaces with tirival character, dimension of the subspac
 trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
 traces | jsonb | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
 hecke_cutter_primes | jsonb | list of primes that appear in the hecke cutters for the newforms in this space (empty list if num_forms=1, not set for wt1 spaces or if we don't store exact eigenvalues for any forms in the space); only includes primes not dividing the level, minimal in the sense that each successive prime distinguishes forms not distinguished by any previous prime (so the length is always less than num_forms).
+dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
+a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
+s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
+a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 
 Table name: `mf_newspace_portraits`
 
