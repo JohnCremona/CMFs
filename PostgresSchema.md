@@ -64,7 +64,6 @@ weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
 char_orbit_index | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
 char_orbit_label | text | base-26 encoding (1='a') of index i of the character orbit that appears in label
 char_labels | jsonb | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
-dim | integer | dimension of `S_k(N, [\chi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit_index | integer | index j of `[\psi]` in sorted list of character orbits of modulus M
@@ -80,7 +79,6 @@ Column | Type | Notes
 label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
 level | integer | level N of the cuspidal space S_k(Gamma_1(N))
 weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
-dim | integer | dimension of S_k(Gamma_1(N))
 sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed in S^k(Gamma_1(N))
 sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
 sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
