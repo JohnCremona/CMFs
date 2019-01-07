@@ -57,14 +57,14 @@ level_radical | integer | product of prime divisors of N
 level_primes | jsonb | list of primes divisors of N
 weight | smallint | the weight k of the modular form
 odd_weight | boolean | whether k is odd
-analytic_conductor | double precision | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)
-Nk2 | integer | N*k^2
-sturm_bound | integer | floor(k*Index(Gamma1(N))/12)
+analytic_conductor | double precision | `N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
+Nk2 | integer | `N*k^2`
+sturm_bound | integer | `floor(k*Index(Gamma1(N))/12)`
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
 dim | integer | Q-dimension of S_k^new(Gamma1(N))
 num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
 hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits (irreducible Galois stable subspaces)
-eis_dim | integer | Q-dimension of the eisenstein subspace of M_k(Gamma1(N))`
+eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1(N))`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(Gamma1(N))`
 mf_dim | integer | Q-dimension of the full space`M_k(Gamma1(N))`
@@ -88,7 +88,7 @@ Table name: `mf_gamma1_portraits`.
 
 Column | Type | Notes
 -------|------|------
-label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
+label | text | label N.k for the space `S_k^new(Gamma1(N))`
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
 
 Table name: `mf_subspaces`.
@@ -115,9 +115,9 @@ Table name: `mf_gamma1_subspaces`.
 
 Column | Type | Notes
 -------|------|------
-label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
-level | integer | level N of the cuspidal space S_k(Gamma_1(N))
-weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
+label | text | label N.k for the cuspidal space `S_k(Gamma1(N))` (same as the label for `S_k^{new}(Gamma1(N))`
+level | integer | level N of the space S_k(Gamma_1(N))
+weight | smallint | weight k of the space S_k(Gamma_1(N))
 sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed in S^k(Gamma_1(N))
 sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
 sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
