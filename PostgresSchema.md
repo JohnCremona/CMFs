@@ -25,8 +25,8 @@ char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
-sturm_bound | integer | floor(k*Index(Gamma0(N))/12)
-trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
+sturm_bound | integer | `floor(k*Index(Gamma0(N))/12)`
+trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (-1 if empty, 0 if space has 1 form, 1 if more than 1 form but dimensions are all distinct)
 dim | integer | Q-dimension of this newspace S_k^new(N,[chi])
 num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
 hecke_orbit_dims | jsonb | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
@@ -60,7 +60,7 @@ odd_weight | boolean | whether k is odd
 analytic_conductor | double precision | `N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
 sturm_bound | integer | `floor(k*Index(Gamma1(N))/12)`
-trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
+trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (-1 if empty, 0 if space has 1 form, 1 if more than 1 form but dimensions are all distinct)
 dim | integer | Q-dimension of S_k^new(Gamma1(N))
 num_forms | integer | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
 hecke_orbit_dims | jsonb | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
@@ -73,7 +73,6 @@ mf_dim | integer | Q-dimension of the full space`M_k(Gamma1(N))`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
 trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
 traces | jsonb | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
-hecke_cutter_primes | jsonb | list of primes that appear in the hecke cutters for the newforms in this space (empty list if num_forms=1, not set for wt1 spaces or if we don't store exact eigenvalues for any forms in the space); only includes primes not dividing the level, minimal in the sense that each successive prime distinguishes forms not distinguished by any previous prime (so the length is always less than num_forms).
 dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
 s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
