@@ -6,7 +6,7 @@ from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
 default_prec = 300
 CCC = ComplexBallField(default_prec)
 RRR = RealIntervalField(default_prec)
-def toRRR(elt):
+def toRRR(elt, drop = True):
     if "." in elt and len(elt) > 70:
         # drop the last digit and convert it to an unkown
         if 'E' in elt:
@@ -16,13 +16,14 @@ def toRRR(elt):
         else:
             begin = elt
             end = "0"
-        begin = begin[:-1] # drop the last digit
+        if drop:
+            begin = begin[:-1] # drop the last digit
         return RRR(begin + "0e" + end, begin + "9e" + end)
     else:
         return RRR(elt)
         
-def toCCC(r, i):
-    return CCC(toRRR(r)) + CCC.gens()[0]*CCC(toRRR(i))
+def toCCC(r, i, drop = True):
+    return CCC(toRRR(r, drop)) + CCC.gens()[0]*CCC(toRRR(i, drop))
 
 
 def print_RRR(elt):
@@ -52,24 +53,24 @@ def constant_lf(level, weight, degree):
         'load_key' : 'CMFs-workshop',
         'motivic_weight': weight - 1,
         'types': [default_type],
-        'symmetry_type': None,
+        'symmetry_type': '\N',
         'group' : 'GL2',
         'degree' : degree,
-        'st_group' : None,
-        'selfdual': None,
+        'st_group' : '\N',
+        'selfdual': '\N',
         'analytic_normalization': float(weight - 1)/2,
-        'precision': None,
+        'precision': '\N',
         'algebraic': True,
-        'coeff_info': None, 
-        'credit' : None,
-        'values': None, # no special values at the moment
+        'coeff_info': '\N', 
+        'credit' : '\N',
+        'values': '\N', # no special values at the moment
         'gamma_factors': [[], [0]*(degree//2)],
-        'coefficient_field': None, # the label of the Hecke field, we set as \N as start
-        'dirichlet_coefficients' : None, # we already store a2 .. a10
-        'trace_hash': None
+        'coefficient_field': '\N', # the label of the Hecke field, we set as \N as start
+        'dirichlet_coefficients' : '\N', # we already store a2 .. a10
+        'trace_hash': '\N'
         }
     for i in range(2,11):
-        output['A' + str(i)] = None
+        output['A' + str(i)] = '\N'
 
     return output
 
@@ -499,6 +500,8 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
     plot_values = schema_lf_dict['plot_values']
     central_character = schema_lf_dict['central_character']
     posistive_zeros = schema_lf_dict['positive_zeros']
+    leading_term = schema_lf_dict['leading_term']
+    root_number = schema_lf_dict['root_number']
     k = 0
     for mf_orbit_label, labels in orbits.iteritems():
         try:
@@ -520,7 +523,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             row = constant_lf(level, weight, degree)
             row['origin'] = "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, char_orbit, hecke_orbit)
             row['self_dual'] = True
-            row['conjugate'] = None
+            row['conjugate'] = '\N'
             row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in labels])
             row['accuracy'] = min([rows[elt][accuracy] for elt in labels])
 
@@ -553,8 +556,9 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             deltas = [rows[elt][plot_delta] for elt in labels]
             values = [rows[elt][plot_values] for elt in labels]
             row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
-            row['leading_term'] = None
-            row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            # FIXME
+            row['leading_term'] = print_RRR(prod(toRRR(rows[elt][leading_term], drop=False) for elt in labels]))
+            row['root_number'] = str(RRR(prod(toCCC(rows[elt][root_number], drop=False) for elt in labels]).real()).unique_integer())# str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
             row['coefficient_field'] = '1.1.1.1'
 
 
@@ -635,14 +639,14 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     assert len(rows) + len(rational_rows) == len(instances)
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
-            LF.write("\t".join(map(json_hack,row)).replace("null","\N") + "\n")
+            LF.write("\t".join(map(json_hack,row)) + "\n")
 
         for key, row in rational_rows.iteritems():
-            LF.write("\t".join(map(json_hack,row)).replace("null","\N") + "\n")
+            LF.write("\t".join(map(json_hack,row)) + "\n")
 
     with open(instances_filename, 'a') as IF:
         for key, row in instances.iteritems():
-            IF.write("\t".join(map(json_hack,row)).replace("null","\N") + "\n")
+            IF.write("\t".join(map(json_hack,row)) + "\n")
 
 
 def line_count(filename):
@@ -764,7 +768,7 @@ def read_all(filename):
                 row[key] = val
 
             if row['self_dual']:
-                row['conjugate'] = None
+                row['conjugate'] = '\N'
             else:
                 lfconjfilename=  os.path.join(lfun_dir, label + ".lpdata.conj.lfunction")
                 assert os.path.exists(lfconjfilename)
