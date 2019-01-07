@@ -254,7 +254,7 @@ def read_lfunction_file(filename):
             else:
                 assert (root_number.abs() - 1).contains_zero(), "%s, %s" % (filename, root_number.abs() )
                 sign_arg = float(root_number.arg())
-                root_number = root_number.str(style="question").replace('?', '')
+                root_number = root_number #.str(style="question").replace('?', '')
             output['root_number'] = root_number;
             output['sign_arg'] = sign_arg;
         elif i == 2:
@@ -510,12 +510,17 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             # read and convert zeros to str
             # is important to do this before converting them
             zeros_as_real = []
+            root_numbers = []
             for elt in labels:
                 zeros_factor = rows[elt][posistive_zeros]
                 zeros_as_real.extend( zeros_factor )
                 # and now convert them to strings
                 zeros_factor = [ z.str(truncate=False) for z in zeros_factor]
                 rows[elt][posistive_zeros] = str(zeros_factor).replace("'","\"")
+                # same for root numbers
+                root_numbers.append(rows[elt][root_number])
+                rows[elt][root_number] = rows[elt][root_number].str(style="question").replace('?', '')
+
             # for now skip degree > 80
             if len(labels) > 80: # the real limit is 87
                 continue
@@ -556,9 +561,8 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             deltas = [rows[elt][plot_delta] for elt in labels]
             values = [rows[elt][plot_values] for elt in labels]
             row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
-            # FIXME
             row['leading_term'] = (prod(toRRR(rows[elt][leading_term], drop=False) for elt in labels)).str(style="question").replace('?', '')
-            row['root_number'] = str(RRR(prod(toCCC(rows[elt][root_number], drop=False) for elt in labels).real()).unique_integer())# str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            row['root_number'] = str(RRR(prod(root_numbers).real()).unique_integer())# str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
             row['coefficient_field'] = '1.1.1.1'
 
 
