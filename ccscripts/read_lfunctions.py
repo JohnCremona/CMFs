@@ -499,7 +499,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
     plot_delta = schema_lf_dict['plot_delta']
     plot_values = schema_lf_dict['plot_values']
     central_character = schema_lf_dict['central_character']
-    posistive_zeros = schema_lf_dict['positive_zeros']
+    positive_zeros = schema_lf_dict['positive_zeros']
     leading_term = schema_lf_dict['leading_term']
     root_number = schema_lf_dict['root_number']
     k = 0
@@ -512,11 +512,11 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             zeros_as_real = []
             root_numbers = []
             for elt in labels:
-                zeros_factor = rows[elt][posistive_zeros]
+                zeros_factor = rows[elt][positive_zeros]
                 zeros_as_real.extend( zeros_factor )
                 # and now convert them to strings
                 zeros_factor = [ z.str(truncate=False) for z in zeros_factor]
-                rows[elt][posistive_zeros] = str(zeros_factor).replace("'","\"")
+                rows[elt][positive_zeros] = str(zeros_factor).replace("'","\"")
                 # same for root numbers
                 root_numbers.append(rows[elt][root_number])
                 rows[elt][root_number] = rows[elt][root_number].str(style="question").replace('?', '')
