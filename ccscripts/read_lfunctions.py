@@ -557,7 +557,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             values = [rows[elt][plot_values] for elt in labels]
             row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
             # FIXME
-            row['leading_term'] = print_RRR(prod(toRRR(rows[elt][leading_term], drop=False) for elt in labels))
+            row['leading_term'] = (prod(toRRR(rows[elt][leading_term], drop=False) for elt in labels)).str(style="question").replace('?', '')
             row['root_number'] = str(RRR(prod(toCCC(rows[elt][root_number], drop=False) for elt in labels).real()).unique_integer())# str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
             row['coefficient_field'] = '1.1.1.1'
 
