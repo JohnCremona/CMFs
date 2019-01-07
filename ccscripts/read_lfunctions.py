@@ -422,7 +422,7 @@ def rational_euler_factors(euler_factors_cc, level, weight, an_list_bound = 11):
         if p_index >= 30:
             todo.append((p_index, p))
     for p_index, p in todo:
-        if p_index > len(euler_factors_cc[0]):
+        if p_index >= len(euler_factors_cc[0]):
             assert level % p == 0, "%s, %s, %s"  % (level, weight, len(euler_factors_cc))
             bad_lfactors.append([int(p), [int(1)] + [None]*halfdegree])
             continue
