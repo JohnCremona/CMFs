@@ -562,7 +562,11 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             values = [rows[elt][plot_values] for elt in labels]
             row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
             row['leading_term'] = (prod(toRRR(rows[elt][leading_term], drop=False) for elt in labels)).str(style="question").replace('?', '')
-            row['root_number'] = str(RRR(prod(root_numbers).real()).unique_integer())# str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            try:
+                row['root_number'] = str(RRR(prod(root_numbers).real()).unique_integer())
+            except ValueError:
+                # couldn't pin down the unique integer through root_numbers
+                row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
             row['coefficient_field'] = '1.1.1.1'
 
 
