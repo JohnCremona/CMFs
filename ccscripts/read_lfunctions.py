@@ -635,14 +635,14 @@ def export_lfunctions(rows, rational_rows, instances, lfunctions_filename, insta
     assert len(rows) + len(rational_rows) == len(instances)
     with open(lfunctions_filename, 'a') as LF:
         for key, row in rows.iteritems():
-            LF.write("\t".join(map(json_hack,row)).replace("null",'\N') + "\n")
+            LF.write("\t".join(map(json_hack,row)).replace("null","\N") + "\n")
 
         for key, row in rational_rows.iteritems():
-            LF.write("\t".join(map(json_hack,row)).replace("null",'\N') + "\n")
+            LF.write("\t".join(map(json_hack,row)).replace("null","\N") + "\n")
 
     with open(instances_filename, 'a') as IF:
         for key, row in instances.iteritems():
-            IF.write("\t".join(map(json_hack,row)).replace("null",'\N') + "\n")
+            IF.write("\t".join(map(json_hack,row)).replace("null","\N") + "\n")
 
 
 def line_count(filename):
