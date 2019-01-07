@@ -246,10 +246,10 @@ def read_lfunction_file(filename):
         elif i == 1:
             root_number  = R(*map(ZZ, l.split(" ")))/two_power;
             if (root_number - 1).contains_zero():
-                root_number = "1";
+                root_number = R(1);
                 sign_arg = 0;
             elif (root_number + 1).contains_zero():
-                root_number = "-1";
+                root_number = R(-1);
                 sign_arg = 0.5
             else:
                 assert (root_number.abs() - 1).contains_zero(), "%s, %s" % (filename, root_number.abs() )
