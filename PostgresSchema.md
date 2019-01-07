@@ -3,7 +3,7 @@ Spaces
 
 Table name: `mf_newspaces`.
 
-This table represents (Galois orbits of) spaces of newforms `S_k^{new}(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Character orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
+This table represents (Galois orbits of) spaces of newforms `S_k^new(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Character orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
 
 Column | Type | Notes
 -------|------|------
@@ -47,7 +47,7 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 
 Table name: `mf_gamma1`.
 
-This table contains data for spaces of newforms `S_k^{new}(Gamma1(N))`, most of which is computed by summing the corresponding rows in mf_newspaces.
+This table contains data for spaces of newforms `S_k^new(Gamma1(N))`, most of which is computed by summing the corresponding rows in mf_newspaces.
 
 Column | Type | Notes
 -------|------|------
@@ -62,8 +62,10 @@ Nk2 | integer | `N*k^2`
 sturm_bound | integer | `floor(k*Index(Gamma1(N))/12)`
 trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
 dim | integer | Q-dimension of S_k^new(Gamma1(N))
-num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
-hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits (irreducible Galois stable subspaces)
+num_forms | integer | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
+hecke_orbit_dims | jsonb | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
+num_spaces | integer | number of newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))` (=number of character orbits)
+newspace_dims | jsonb | list of Q-dimensions of newspaces `S_k^new(N,\chi)` in `S_k^new(Gamma1(N))` ordered by character orbit index
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1(N))`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(Gamma1(N))`
