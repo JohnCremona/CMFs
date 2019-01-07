@@ -501,87 +501,91 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
     posistive_zeros = schema_lf_dict['positive_zeros']
     k = 0
     for mf_orbit_label, labels in orbits.iteritems():
-        level, weight, char_orbit, hecke_orbit = mf_orbit_label.split(".")
-        level, weight = map(int, [level, weight])
-        # read and convert zeros to str
-        # is important to do this before converting them
-        zeros_as_real = []
-        for elt in labels:
-            zeros_factor = rows[elt][posistive_zeros]
-            zeros_as_real.extend( zeros_factor )
-            # and now convert them to strings
-            zeros_factor = [ z.str(truncate=False) for z in zeros_factor]
-            rows[elt][posistive_zeros] = str(zeros_factor).replace("'","\"")
-        # for now skip degree > 80
-        if len(labels) > 80: # the real limit is 87
-            continue
-        degree = 2*len(labels)
-        row = constant_lf(level, weight, degree)
-        row['origin'] = "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, char_orbit, hecke_orbit)
-        row['self_dual'] = True
-        row['conjugate'] = None
-        row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in labels])
-        row['accuracy'] = min([rows[elt][accuracy] for elt in labels])
+        try:
+            level, weight, char_orbit, hecke_orbit = mf_orbit_label.split(".")
+            level, weight = map(int, [level, weight])
+            # read and convert zeros to str
+            # is important to do this before converting them
+            zeros_as_real = []
+            for elt in labels:
+                zeros_factor = rows[elt][posistive_zeros]
+                zeros_as_real.extend( zeros_factor )
+                # and now convert them to strings
+                zeros_factor = [ z.str(truncate=False) for z in zeros_factor]
+                rows[elt][posistive_zeros] = str(zeros_factor).replace("'","\"")
+            # for now skip degree > 80
+            if len(labels) > 80: # the real limit is 87
+                continue
+            degree = 2*len(labels)
+            row = constant_lf(level, weight, degree)
+            row['origin'] = "ModularForm/GL2/Q/holomorphic/%d/%d/%s/%s" % (level, weight, char_orbit, hecke_orbit)
+            row['self_dual'] = True
+            row['conjugate'] = None
+            row['order_of_vanishing'] = sum([rows[elt][order_of_vanishing] for elt in labels])
+            row['accuracy'] = min([rows[elt][accuracy] for elt in labels])
 
 
-        zeros_as_real.sort()
-        zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
-        row['positive_zeros'] = str(zeros_as_str).replace("'","\"")
-        zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in labels], key = lambda x : x[1])
-        row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
-        for i in range(0,3):
-            row['z' + str(i + 1)] = str(zeros_as_real[i])
+            zeros_as_real.sort()
+            zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
+            row['positive_zeros'] = str(zeros_as_str).replace("'","\"")
+            zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in labels], key = lambda x : x[1])
+            row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
+            for i in range(0,3):
+                row['z' + str(i + 1)] = str(zeros_as_real[i])
 
 
-        # character
-        if degree == 2:
-            row['central_character'] = rows[labels[0]][central_character]
-        else:
-            G = DirichletGroup_conrey(level)
-            chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in labels])
-            chiprod_index = chiprod.number()
-            row['central_character'] = "%s.%s" % (level, chiprod_index)
+            # character
+            if degree == 2:
+                row['central_character'] = rows[labels[0]][central_character]
+            else:
+                G = DirichletGroup_conrey(level)
+                chiprod = prod([G[ int(rows[elt][central_character].split(".")[-1]) ] for elt in labels])
+                chiprod_index = chiprod.number()
+                row['central_character'] = "%s.%s" % (level, chiprod_index)
 
-        row['sign_arg'] = sum([rows[elt][sign_arg] for elt in labels])
-        while row['sign_arg'] > 0.5:
-            row['sign_arg'] -= 1
-        while row['sign_arg'] <= -0.5:
-            row['sign_arg'] += 1
-        
+            row['sign_arg'] = sum([rows[elt][sign_arg] for elt in labels])
+            while row['sign_arg'] > 0.5:
+                row['sign_arg'] -= 1
+            while row['sign_arg'] <= -0.5:
+                row['sign_arg'] += 1
+            
 
-        deltas = [rows[elt][plot_delta] for elt in labels]
-        values = [rows[elt][plot_values] for elt in labels]
-        row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
-        row['leading_term'] = None
-        row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
-        row['coefficient_field'] = '1.1.1.1'
-
-
-
-        euler_factors = [euler_factors_cc[elt] for elt in labels]
-        row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(euler_factors, level, weight)
-
-        # fill in ai
-        for i, ai in enumerate(dirichlet):
-            if i > 1:
-                row['a' + str(i)] = int(dirichlet[i])
-                #print 'a' + str(i), dirichlet[i]
+            deltas = [rows[elt][plot_delta] for elt in labels]
+            values = [rows[elt][plot_values] for elt in labels]
+            row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
+            row['leading_term'] = None
+            row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            row['coefficient_field'] = '1.1.1.1'
 
 
-        for key in schema_lf:
-            assert key in row, "%s not in row = %s" % (key, row.keys())
-        for key in row.keys():
-            assert key in schema_lf, "%s unexpected"  % key
-        assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
 
-        #rewrite row as a list
-        rational_rows[mf_orbit_label] = [row[key] for key in schema_lf]
-        instances[mf_orbit_label] = (row['origin'], row['Lhash'], 'CMF')
+            euler_factors = [euler_factors_cc[elt] for elt in labels]
+            row['euler_factors'], row['bad_lfactors'], dirichlet = rational_euler_factors(euler_factors, level, weight)
 
-        # if dim == 1, drop row
-        if len(labels) == 1:
-            rows.pop(labels[0])
-            instances.pop(labels[0])
+            # fill in ai
+            for i, ai in enumerate(dirichlet):
+                if i > 1:
+                    row['a' + str(i)] = int(dirichlet[i])
+                    #print 'a' + str(i), dirichlet[i]
+
+
+            for key in schema_lf:
+                assert key in row, "%s not in row = %s" % (key, row.keys())
+            for key in row.keys():
+                assert key in schema_lf, "%s unexpected"  % key
+            assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
+
+            #rewrite row as a list
+            rational_rows[mf_orbit_label] = [row[key] for key in schema_lf]
+            instances[mf_orbit_label] = (row['origin'], row['Lhash'], 'CMF')
+
+            # if dim == 1, drop row
+            if len(labels) == 1:
+                rows.pop(labels[0])
+                instances.pop(labels[0])
+        except Exception:
+            print mf_orbit_label, labels
+            raise
 
 
         k += 1
