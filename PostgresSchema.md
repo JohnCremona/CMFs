@@ -3,7 +3,7 @@ Spaces
 
 Table name: `mf_newspaces`.
 
-This table represents (Galois orbits of) spaces of newforms `S_k^{new}(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
+This table represents (Galois orbits of) spaces of newforms `S_k^new(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Character orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
 
 Column | Type | Notes
 -------|------|------
@@ -25,24 +25,71 @@ char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
-sturm_bound | integer |
-trace_bound | integer | the integer n so that the traces from 1 up to n distinguish all forms in this space (e.g. 1 if the dimensions are all distinct)
-dim | integer | Q-dimension of this newspace
+sturm_bound | integer | `\floor(k*Index(Gamma0(N))/12)`
+trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has one form, 1 if more than 1 form but dimensions are all distinct)
+dim | integer | Q-dimension of this newspace S_k^new(N,[chi])
 num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
-hecke_orbit_dims | jsonb | Sorted list of dimensions of Hecke orbits (irreducible Galois stable subspaces)
-eis_dim | integer | Q-dimension of the eisenstein subspace of the corresponding `M_k(N, \chi)`
-eis_new_dim | integer | Q-dimension of the new eisenstein subspace of the corresponding `M_k(N, \chi)`
+hecke_orbit_dims | jsonb | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
+eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(N, \chi)`
+eis_new_dim | integer | Q-dimension of the new eisenstein subspace of `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
 AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
+trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
+traces | jsonb | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
+hecke_cutter_primes | jsonb | list of primes that appear in the hecke cutters for the newforms in this space (empty list if num_forms=1, not set for wt1 spaces or if we don't store exact eigenvalues for any forms in the space); only includes primes not dividing the level, minimal in the sense that each successive prime distinguishes forms not distinguished by any previous prime (so the length is always less than num_forms).
+dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
+a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
+s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
+a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
+
+Table name: `mf_gamma1`.
+
+This table contains data for spaces of newforms `S_k^new(Gamma1(N))`, most of which is computed by summing the corresponding rows in mf_newspaces.
+
+Column | Type | Notes
+-------|------|------
+label | text | (N.k)
+level | integer | the level N of the modular form
+level_radical | integer | product of prime divisors of N
+level_primes | jsonb | list of primes divisors of N
+weight | smallint | the weight k of the modular form
+odd_weight | boolean | whether k is odd
+analytic_conductor | double precision | `N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
+Nk2 | integer | `N*k^2`
+sturm_bound | integer | `floor(k*Index(Gamma1(N))/12)`
+trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has 1 form, 1 if more than 1 form but dimensions are all distinct)
+dim | integer | Q-dimension of S_k^new(Gamma1(N))
+num_forms | integer | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
+hecke_orbit_dims | jsonb | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
+num_spaces | integer | number of newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))` (=number of character orbits)
+newspace_dims | jsonb | list of Q-dimensions of newspaces `S_k^new(N,\chi)` in `S_k^new(Gamma1(N))` ordered by character orbit index
+eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
+eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1(N))`
+cusp_dim | integer | Q-dimension of the cuspidal space `S_k(Gamma1(N))`
+mf_dim | integer | Q-dimension of the full space`M_k(Gamma1(N))`
+mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
+trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
+traces | jsonb | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
+dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
+a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
+s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
+a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 
 Table name: `mf_newspace_portraits`
 
 Column | Type | Notes
 -------|------|------
 label | text | label (N.k.i) of the newspace
+portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
+
+Table name: `mf_gamma1_portraits`.
+
+Column | Type | Notes
+-------|------|------
+label | text | label N.k for the space `S_k^new(Gamma1(N))`
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
 
 Table name: `mf_subspaces`.
@@ -57,7 +104,6 @@ weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
 char_orbit_index | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
 char_orbit_label | text | base-26 encoding (1='a') of index i of the character orbit that appears in label
 char_labels | jsonb | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
-dim | integer | dimension of `S_k(N, [\chi])`
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit_index | integer | index j of `[\psi]` in sorted list of character orbits of modulus M
@@ -70,21 +116,12 @@ Table name: `mf_gamma1_subspaces`.
 
 Column | Type | Notes
 -------|------|------
-label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
-level | integer | level N of the cuspidal space S_k(Gamma_1(N))
-weight | smallint | weight k of the cuspidal space S_k(Gamma_1(N))
-dim | integer | dimension of S_k(Gamma_1(N))
+label | text | label N.k for the cuspidal space `S_k(Gamma1(N))` (same as the label for `S_k^{new}(Gamma1(N))`
+level | integer | level N of the space S_k(Gamma_1(N))
+weight | smallint | weight k of the space S_k(Gamma_1(N))
 sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed in S^k(Gamma_1(N))
 sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
 sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
-
-Table name: `mf_gamma1_portraits`.
-
-Column | Type | Notes
--------|------|------
-label | text | label N.k for the cuspidal space `S_k(Gamma1(N))`
-portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
-
 
 Newforms
 ========
