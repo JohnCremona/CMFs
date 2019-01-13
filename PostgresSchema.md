@@ -10,10 +10,10 @@ Column | Type | Notes
 label | text | (N.k.i)
 level | integer | the level N of the modular form
 level_radical | integer | product of prime divisors of N
-level_primes | jsonb | list of primes divisors of N
+level_primes | integer[] | list of primes divisors of N
 weight | smallint | the weight k of the modular form
 odd_weight | boolean | whether k is odd
-analytic_conductor | double precision | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)
+analytic_conductor | double precision | N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)
 Nk2 | integer | N*k^2
 char_orbit | integer | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
 char_orbit_label | text | string encoding the char_orbit i via 1->a, 2->b, ... 26->z, 27->ba,... (note the shift, a is 1 not 0).
@@ -29,7 +29,7 @@ sturm_bound | integer | `\floor(k*Index(Gamma0(N))/12)`
 trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has one form, 1 if more than 1 form but dimensions are all distinct)
 dim | integer | Q-dimension of this newspace S_k^new(N,[chi])
 num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
-hecke_orbit_dims | jsonb | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
+hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(N, \chi)`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
@@ -37,9 +37,9 @@ mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
 AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
-trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
-traces | array | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
-hecke_cutter_primes | jsonb | list of primes that appear in the hecke cutters for the newforms in this space (empty list if num_forms=1, not set for wt1 spaces or if we don't store exact eigenvalues for any forms in the space); only includes primes not dividing the level, minimal in the sense that each successive prime distinguishes forms not distinguished by any previous prime (so the length is always less than num_forms).
+trace_display | numeric[4] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
+traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
+hecke_cutter_primes | integer[] | list of primes that appear in the hecke cutters for the newforms in this space (empty list if num_forms=1, not set for wt1 spaces or if we don't store exact eigenvalues for any forms in the space); only includes primes not dividing the level, minimal in the sense that each successive prime distinguishes forms not distinguished by any previous prime (so the length is always less than num_forms).
 dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
 s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
@@ -54,25 +54,25 @@ Column | Type | Notes
 label | text | (N.k)
 level | integer | the level N of the modular form
 level_radical | integer | product of prime divisors of N
-level_primes | jsonb | list of primes divisors of N
+level_primes | integer[] | list of primes divisors of N
 weight | smallint | the weight k of the modular form
 odd_weight | boolean | whether k is odd
-analytic_conductor | double precision | `N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
+analytic_conductor | double precision | N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)
 Nk2 | integer | `N*k^2`
 sturm_bound | integer | `floor(k*Index(Gamma1(N))/12)`
 trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has 1 form, 1 if more than 1 form but dimensions are all distinct)
 dim | integer | Q-dimension of S_k^new(Gamma1(N))
 num_forms | integer | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
-hecke_orbit_dims | jsonb | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
+hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
 num_spaces | integer | number of newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))` (=number of character orbits)
-newspace_dims | jsonb | list of Q-dimensions of newspaces `S_k^new(N,\chi)` in `S_k^new(Gamma1(N))` ordered by character orbit index
+newspace_dims | integer[] | list of Q-dimensions of newspaces `S_k^new(N,\chi)` in `S_k^new(Gamma1(N))` ordered by character orbit index
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1(N))`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(Gamma1(N))`
 mf_dim | integer | Q-dimension of the full space`M_k(Gamma1(N))`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
-trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
-traces | jsonb | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
+trace_display | numeric[4] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
+traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
 dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
 s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
@@ -134,10 +134,10 @@ label |  text | (N.k.i.x)
 space_label | text | (N.k.i)
 level | integer | the level N of the modular form
 level_radical | integer | product of prime divisors of N
-level_primes | jsonb | list of prime divisors of N
+level_primes | integer[] | list of prime divisors of N
 weight | smallint | the weight k of the modular form
 odd_weight | boolean | whether k is odd
-analytic_conductor | double precision | N*(2*Exp(Psi((1+k)/2)))^2 where Psi(t) := Gamma'(t)/Gamma(t)
+analytic_conductor | double precision | N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)
 Nk2 | integer | N*k^2
 char_orbit_index | integer | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
 char_orbit_label | text | string encoding i (with a=1).
@@ -151,9 +151,9 @@ char_is_real | boolean | whether the character takes only real values (trivial o
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
 dim | integer | the Q-dimension of this Galois orbit
-relative_dim | integer | the Q(chi)-dimension of this Galois orbit (=dim/char_degree)
+relative_dim | integer | the Q(chi)-dimension of this Hecke orbit (=dim/char_degree)
 field_disc | jsonb | factored discriminant of the coefficient field, if known
-field_poly | jsonb | list of integers giving defining polynomial for the Hecke field (standard Sage order of coefficients)
+field_poly | numeric[] | list of integers giving defining polynomial for the Hecke field (standard Sage order of coefficients)
 field_poly_is_cyclotomic | boolean | true if field_poly is a cylcotomic polynomial (the field might be Q(zeta_n) even when this flage is not set if we haven't chosen a cyclotomic polynomial to define it)
 field_poly_is_real_cyclotomic | boolean | true if field_poly is the minimal polynomial of zeta_n + zeta_n^-1 for some n (the field might be Q(zeta_n)^+ even when this flage is not set if we haven't chosen a cyclotomic polynomial to define it)
 field_poly_root_of_unity | integer | the value of n if either field_poly_is_cylotomic of field_poly_is_real_cyclotomic is set
@@ -174,9 +174,9 @@ self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
 is_self_twist | boolean | whether this form is a self twist
 is_cm | boolean | whether the form has CM
 is_rm | boolean | whether the form has RM
-self_twist_discs | jsonb | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants)
-cm_discs | jsonb | list of CM discriminants (the negative discriminants listed in self_twist_discs)
-rm_discs | jsonb | list of RM discriminants (the positive discriminants listed in self_twist_discs)
+self_twist_discs | integer[] | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants)
+cm_discs | integer[] | list of CM discriminants (the negative discriminants listed in self_twist_discs)
+rm_discs | integer[] | list of RM discriminants (the positive discriminants listed in self_twist_discs)
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
 is_twist_minimal | boolean |
 inner_twists | jsonb | List of quadruples <b,m,M,o> where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
@@ -186,15 +186,15 @@ atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues order
 fricke_eigenval | smallint | product of the Atkin-Lehner eigenvalues (NULL if nontrivial character)
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
-trace_display | jsonb | list of traces tr(a_2), tr(a_3), tr(a_5), tr(a_7) for display on search page results
-traces | jsonb | full list of traces tr(a_n) for n from 1 to 1000
+trace_display | numeric[4] | list of traces tr(a_2), tr(a_3), tr(a_5), tr(a_7) for display on search page results
+traces | numeric[] | full list of traces tr(a_n) for n from 1 to 1000
 projective_image_type | text | for weight 1 forms, one of "Dn", "A4", "S4", "A5"
 projective_image | text | for weight 1 forms, isomorphism class of project image (e.g. which Dn)
 projective_field | jsonb | for weight 1 forms, list of integer coefficients of polynomial whose splitting field is the fixed field of the kernel of the projective Galois rep (subfield of the artin field fixed be the center of its Galois group)
 projective_field_label | text | LMFDB label of projective field (if present)
 artin_degree | integer | for weight 1 forms, order of the image of the Galois rep, equivalently, the degree of the Artin field
 artin_image | text | for weight 1 forms, small group label of the image of the Galois rep (and the Galois group of the artin field)
-artin_field | jsonb | for weight 1 forms, list of integer coefficients of polynomial whose splitting field is the fixed field of the Galois rep (equivalently, a defining polynomial for the 2-dim Artin rep corresponding to this weight 1 form)
+artin_field | numeric[] | for weight 1 forms, list of integer coefficients of polynomial whose splitting field is the fixed field of the Galois rep (equivalently, a defining polynomial for the 2-dim Artin rep corresponding to this weight 1 form)
 artin_field_label | text | LMFDB label of artin field (if present)
 
 Table name: `mf_newform_portraits`
