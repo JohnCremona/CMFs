@@ -150,7 +150,8 @@ char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
-dim | integer | the dimension of this Hecke orbit
+dim | integer | the Q-dimension of this Galois orbit
+relative_dim | integer | the Q(chi)-dimension of this Galois orbit (=dim/char_degree)
 field_disc | jsonb | factored discriminant of the coefficient field, if known
 field_poly | jsonb | list of integers giving defining polynomial for the Hecke field (standard Sage order of coefficients)
 field_poly_is_cyclotomic | boolean | true if field_poly is a cylcotomic polynomial (the field might be Q(zeta_n) even when this flage is not set if we haven't chosen a cyclotomic polynomial to define it)
