@@ -38,7 +38,7 @@ mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
 AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
 trace_display | jsonb | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
-traces | jsonb | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
+traces | array | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
 hecke_cutter_primes | jsonb | list of primes that appear in the hecke cutters for the newforms in this space (empty list if num_forms=1, not set for wt1 spaces or if we don't store exact eigenvalues for any forms in the space); only includes primes not dividing the level, minimal in the sense that each successive prime distinguishes forms not distinguished by any previous prime (so the length is always less than num_forms).
 dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
