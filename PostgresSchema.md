@@ -278,5 +278,5 @@ label | text | N.n where N is the modulus and n is the conrey label
 orbit_label | text | N.i where N is the modulus and i is the orbit_index
 prim_label | text | the label of primitive character inducing this one
 order | smallint
-values | jsonb | list of the first twelve values on -1,1, then the next ten integers relatively prime to the modulus
-values_gens | jsonb | list of pairs [n, chi(n)] for n generating the unit group
+values | integers[][] | list of pairs [x,m] giving first twelve values e(m/n) on x=-1,1, then the next ten integers relatively prime to the modulus, where n is the order of the character
+values_gens | integers[][] | list of pairs [x, m] giving values on generators x of the unit group
