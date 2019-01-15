@@ -210,6 +210,10 @@ Table name: `mf_newform_portraits`
 Column | Type | Notes
 -------|------|------
 label | text | label (N.k.i.x) of the newform
+level | integer | level N
+weight | smallint | weight k
+char_orbit_index | integer | character orbit index i
+hecke_orbit | integer | Hecke orbit index x
 portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
 Hecke eigenvalues
