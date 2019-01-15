@@ -28,6 +28,7 @@ char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order o
 sturm_bound | integer | `\floor(k*Index(Gamma0(N))/12)`
 trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has one form, 1 if more than 1 form but dimensions are all distinct)
 dim | integer | Q-dimension of this newspace S_k^new(N,[chi])
+relative_dim | integer | Q(chi)-dimension of this newspace S_k^new(N,[chi]), equal to dim/degree(chi)
 num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
 hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(N, \chi)`
