@@ -45,6 +45,7 @@ dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for 
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
 s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
 a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
+hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as a key in mf_hecke_newspace_traces.  N + (k<<24) + ((i-1)<<36); this is the same as the Hecke orbit code of the first newform in the space.
 
 Table name: `mf_gamma1`.
 
@@ -155,7 +156,7 @@ char_degree | integer | Degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((X-1)<<52).
+hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((x-1)<<52).
 dim | integer | the Q-dimension of this Galois orbit
 relative_dim | integer | the Q(chi)-dimension of this Hecke orbit (=dim/char_degree)
 field_disc | numeric | discriminant of the coefficient field, if known
@@ -245,6 +246,14 @@ Column | Type | Notes
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z
+
+Table name: `mf_hecke_newspace_traces`
+
+Column | Type | Notes
+-------|------|------
+hecke_orbit_code | bigint | encoding of the tuple (N.k.i.0) into 64 bits (this is the same as the Hecke orbit code for the first newform in the space, but in this table the traces are sums over the entire newspace N.k.i)
+n | integer | index of a_n
+trace_an | numeric | trace of a_n down to Z, where a_n is the sum of a_n over all newforms in the space
 
 Table name: `mf_hecke_cc`
 
