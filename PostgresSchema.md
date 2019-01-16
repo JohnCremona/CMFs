@@ -251,7 +251,7 @@ Table name: `mf_hecke_newspace_traces`
 
 Column | Type | Notes
 -------|------|------
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.0) into 64 bits (this is the same as the Hecke orbit code for the first newform in the space, but in this table the traces are sums over the entire newspace N.k.i)
+hecke_orbit_code | bigint | encoding of the tuple (N.k.i) into 64 bits (this is the same as the Hecke orbit code for the first newform in the space, but in this table the traces are sums over the entire newspace N.k.i)
 n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z, where a_n is the sum of a_n over all newforms in the space
 
