@@ -13,7 +13,6 @@ level_radical | integer | product of prime divisors of N
 level_primes | integer[] | list of primes divisors of N
 weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
-odd_weight | boolean | deprecated, currently set to true if (-1)^k = -1
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
 char_orbit | integer | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
@@ -60,7 +59,6 @@ level_radical | integer | product of prime divisors of N
 level_primes | integer[] | list of primes divisors of N
 weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
-odd_weight | boolean | deprecated, currently set to true if (-1)^k = -1
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
 sturm_bound | integer | `floor(k*Index(Gamma1(N))/12)`
@@ -145,7 +143,6 @@ level | integer | the level N of the modular form
 level_radical | integer | product of prime divisors of N
 level_primes | integer[] | list of prime divisors of N
 weight | smallint | the weight k of the modular form
-odd_weight | boolean | whether k is odd
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
 char_orbit_index | integer | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
