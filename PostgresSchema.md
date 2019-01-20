@@ -26,11 +26,11 @@ char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
 sturm_bound | integer | `\floor(k*Index(Gamma0(N))/12)`
-trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has one form, 1 if more than 1 form but dimensions are all distinct)
+trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has one form, 1 if more than 1 form but dimensions are all distinct), only set when known
 dim | integer | Q-dimension of this newspace S_k^new(N,[chi])
 relative_dim | integer | Q(chi)-dimension of this newspace S_k^new(N,[chi]), equal to dim/degree(chi)
-num_forms | smallint | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
-hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
+num_forms | smallint | number of (Hecke/Galois orbits of ) newforms, only set when known
+hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits, only set when known
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(N, \chi)`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of `M_k(N, \chi)`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
@@ -38,8 +38,8 @@ mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
 AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
-trace_display | numeric[] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
-traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
+trace_display | numeric[] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7), only set when dim > 0 and not yet computed in every case.
+traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000, only set when dim > 0 and not yet computed in every case.
 hecke_cutter_primes | integer[] | list of primes that appear in the hecke cutters for the newforms in this space (empty list if num_forms=1, not set for wt1 spaces or if we don't store exact eigenvalues for any forms in the space); only includes primes not dividing the level, minimal in the sense that each successive prime distinguishes forms not distinguished by any previous prime (so the length is always less than num_forms).
 dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
@@ -64,8 +64,8 @@ Nk2 | integer | `N*k^2`
 sturm_bound | integer | `floor(k*Index(Gamma1(N))/12)`
 trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has 1 form, 1 if more than 1 form but dimensions are all distinct)
 dim | integer | Q-dimension of S_k^new(Gamma1(N))
-num_forms | integer | number of Hecke orbits (each corresponds to a Galois conjugacy class of modular forms)
-hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits (irreducible Galois stable subspaces)
+num_forms | integer | number of (Hecke/Galois orbits of) newforms, only set when known
+hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits, only set when known
 num_spaces | integer | number of newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))` (=number of character orbits)
 newspace_dims | integer[] | list of Q-dimensions of newspaces `S_k^new(N,\chi)` in `S_k^new(Gamma1(N))` ordered by character orbit index
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
@@ -73,8 +73,8 @@ eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(Gamma1(N))`
 mf_dim | integer | Q-dimension of the full space`M_k(Gamma1(N))`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
-trace_display | numeric[] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7)
-traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000
+trace_display | numeric[] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7), only set when dim > 0, not yet computed in every case.
+traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms) for n from 1 to 1000, only set when dim > 0, not yet computed in every case.
 dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
 s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
