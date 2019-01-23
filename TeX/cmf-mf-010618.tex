@@ -1,0 +1,1041 @@
+\documentclass[11pt]{amsart}
+
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{epsfig}
+\usepackage{comment}
+\usepackage{enumerate}
+\usepackage{fullpage}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,urlcolor=blue,citecolor=blue,linkcolor=blue}
+\usepackage{colonequals}
+
+%\usepackage[top=1.2cm, bottom=1.8cm, left=2.cm, right=1.9cm]{geometry}
+
+\numberwithin{equation}{subsection}
+
+\theoremstyle{plain}
+\newtheorem{thm}[equation]{Theorem}
+\newtheorem{prop}[equation]{Proposition}
+\newtheorem{lem}[equation]{Lemma}
+\newtheorem{cor}[equation]{Corollary}
+\newtheorem{conj}[equation]{Conjecture}
+
+\theoremstyle{definition}
+\newtheorem{defn}[equation]{Definition}
+\newtheorem{defis}[equation]{Definitions}
+\newtheorem{rem}[equation]{Remark}
+\newtheorem{rems}[equation]{Remarks}
+\newtheorem{rmk}[equation]{Remark}
+\newtheorem{remark}[equation]{Remark}
+\newtheorem{ex}[equation]{Example}
+\newtheorem{exm}[equation]{Example}
+\newtheorem{example}[equation]{Example}
+\newtheorem{exs}[equation]{Examples}
+\newtheorem{algo}[equation]{Algorithm}
+\newtheorem{ques}[equation]{Question}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\TT}{\mathcal{T}}
+\newcommand{\calP}{\mathcal{P}}
+\newcommand{\Hamil}{\mathbb{H}}
+\newcommand{\frakm}{\mathfrak{m}}
+\newcommand{\disc}{\Delta}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\prm}{\mathfrak{p}}
+\newcommand{\order}{\mathcal{O}}
+\newcommand{\calO}{\order}
+\newcommand{\lat}{\mathrm{Lat}}
+\newcommand{\hlat}{\lat^{*}}
+%\newcommand{\hlat}{\mathrm{HLat}}
+\newcommand{\hlato}{\lat^{*1}}
+%\newcommand{\hlato}{\mathrm{HLat}^{1}}
+
+\newcommand{\scal}[1]{\langle{#1}\rangle}
+\newcommand{\defi}[1]{\textsf{#1}} 	% for defined terms
+\newcommand{\legen}[2]{\left(\frac{#1}{#2}\right)}
+
+\DeclareMathOperator{\Aut}{Aut}
+\DeclareMathOperator{\cond}{cond}
+\DeclareMathOperator{\End}{End}
+\DeclareMathOperator{\Gal}{Gal}
+\DeclareMathOperator{\lcm}{lcm}
+\DeclareMathOperator{\PSL}{PSL}
+\DeclareMathOperator{\GL}{GL}
+\DeclareMathOperator{\id}{id}
+\DeclareMathOperator{\SL}{SL}
+\DeclareMathOperator{\U}{U}
+\DeclareMathOperator{\Cl}{Cl}
+\DeclareMathOperator{\vol}{vol}
+\DeclareMathOperator{\Hom}{Hom}
+\DeclareMathOperator{\covol}{covol}
+\DeclareMathOperator{\mat}{\mathcal{M}}
+\DeclareMathOperator{\Frob}{Frob}
+\DeclareMathOperator{\Cls}{Cls}
+\DeclareMathOperator{\aCls}{Cls^{*1}}
+\DeclareMathOperator{\trd}{trd}
+\DeclareMathOperator{\nrd}{nrd}
+\DeclareMathOperator{\proj}{pr}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Nm}{Nm}
+\DeclareMathOperator{\dist}{\rho}
+\DeclareMathOperator{\diag}{diag}
+
+\newenvironment{enumalph}
+{\begin{enumerate}\renewcommand{\labelenumi}{\textnormal{(\alph{enumi})}}}
+{\end{enumerate}}
+
+\newenvironment{enumroman}
+{\begin{enumerate}\renewcommand{\labelenumi}{\textnormal{(\roman{enumi})}}}
+{\end{enumerate}}
+
+
+\usepackage{xcolor}
+\definecolor{pastelred}{rgb}{0.741176, 0., 0.14902}
+\newcommand{\as}[1]{{\color{pastelred} \textsf{[[AS: #1]]}}}
+\newcommand{\jv}[1]{{\color{red} \textsf{[[JV: #1]]}}}
+\newcommand{\jc}[1]{{\color{orange} \textsf{[[JC: #1]]}}}
+
+\setcounter{tocdepth}{1}
+
+
+\begin{document}
+
+\title{Computing classical modular forms}
+\author{Alex J.\ Best}
+\address{}
+\email{}
+\urladdr{}
+
+\author{Jonathan Bober}
+\address{}
+\email{}
+\urladdr{}
+
+\author{Andrew Booker}
+\address{}
+\email{}
+\urladdr{}
+
+\author{Edgar Costa}
+\address{}
+\email{}
+\urladdr{}
+
+\author{John Cremona}
+\address{}
+\email{}
+\urladdr{}
+
+\author{David Roe}
+\address{}
+\email{}
+\urladdr{}
+
+\author{Andrew V. Sutherland}
+\address{}
+\email{}
+\urladdr{}
+
+\author{John Voight}
+\address{Department of Mathematics, Dartmouth College, 6188 Kemeny Hall, Hanover, NH 03755, USA}
+\email{jvoight@gmail.com}
+\urladdr{\url{http://www.math.dartmouth.edu/~jvoight/}}
+
+\date{\today}
+
+\hypersetup{pdftitle={Computing classical modular forms},
+pdfauthor={}}
+
+\begin{abstract}
+We discuss practical aspects of computing a database of classical modular forms.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+\jv{The list of authors is provisional...}
+
+\section{Introduction}
+
+\subsection{Motivation}
+
+Databases of classical modular forms have been used for a variety of mathematical purposes and have almost a 50 year history (see section \ref{sec:history}).  In this article, we report on a recent effort in the $L$-functions and Modular Forms DataBase (LMFDB, \href{http://lmfdb.org}{\texttt{http://lmfdb.org}}) \cite{LMFDB:Cremona}.
+
+\subsection{Organization}
+
+The paper is organized as follows.  In section \ref{sec:history} we begin with a short history.  Next, in section \ref{sec:compmf} we detail what we mean by computing (spaces of) modular forms and then in section \ref{sec:algs} we give a short overview of algorithms for computing modular forms.  In section \ref{sec:chars} we discuss issues concerning Dirichlet characters.  In section \ref{sec:implementations}, we sample the available implementations and make some comparisons.  Next, in section \ref{sec:issues} we discuss some computational, theoretical, and practical issues that arose in our efforts and in section \ref{sec:Lfunctions} we explain how we (rigorously) computed the $L$-functions.  
+
+Turning to our main effort, in section \ref{sec:overview} we provide an overview of the computation we performed and make some notes on the data.  In sections \ref{sec:twists}--\ref{sec:weight1} we treat twists and issues specific to modular forms of weight $1$.  We conclude in section \ref{sec:conclusion} with some final remarks.  
+
+\subsection{Acknowledgements}
+
+This research was undertaken under the support of Simons Collaboration Grants (550029, ...).  The authors would like to thank Karim Belabas, Henri Cohen, Alan Lauder, David Loeffler, David Platt, Mark Watkins, ...
+
+
+\section{History} \label{sec:history}
+
+In this section, we briefly indicate the history of computing tables of modular forms.  For more history and discussion, see Kilford \cite[Chapter 7]{Kilford}.
+
+Perhaps the first systematic tabulation of modular forms was performed by Wada \cite{Wada1,Wada2}.  As early as 1971, he used the Eichler--Selberg trace formula to compute a factorization of the characteristic polynomial of the Hecke operator $T_p$ on $S_2(\Gamma_0(q),\chi)$ for $q \equiv 1 \pmod{4}$ prime where $\chi$ was either trivial or the quadratic character of conductor $q$.  The total computation time was about 300 hours on a TOSBAC-3000.  
+
+The next major step was made in the famous ``Antwerp IV'' tables (published in 1975), which contains ...  and was computed using modular symbols.  These were later extended by Cremona \cite{Cremona:mec} (the first edition came out in 1992), with applications to the tabulation of elliptic curves.
+
+Miyake \cite{Miyake} published some numerical tables as appendices, again using the trace formula.  These tables included: dimensions of $S_k(\Gamma_0(N))$ for $k \geq 2$ even and $N$ small, eigenvalues and characteristic polynomials of Hecke operators on $S_2(\Gamma_0(N))$ for $N$ a small prime, and Fourier coefficients of a primitive form in $S_2(\Gamma_0(N),\chi_N)$ for $N=29,37$.
+
+In the 1990s, Henri Cohen, Nils-Peter Skoruppa, and Don Zagier compiled tables of eigenforms in weights $2$ through $12$, level up to $1000$ in weight $2$ and lower in higher weight, some tables with character.  They followed a paper by Skoruppa--Zagier on the trace formula \cite{SkoruppaZagier}, but these tables were not published.  
+
+In the early 2000s, William Stein create an online modular forms database \cite{Stein:Tables}, computed primarily using a modular symbols package \cite{Stein} he implemented in \textsf{Magma} \cite{Magma} starting in the late 1990s.  The data was computed using a rack of six custom-built machines and a Sun V480; it was stored in a PostgreSQL database (more than 10 GB) and provided a (Python-based) web interface to the data.  These tables included dimensions, characteristic polynomials, and $q$-expansions in a variety of weights and levels.  Using the Magma implementation, Christian Meyer \cite{Meyer1,Meyer2} computed a table of newforms for $\Gamma_0(N)$ with rational coefficients: in weight $k=2$ he went to $N \leq 3000$ and for $k=4$ to $N \leq 2000$.
+
+Prior to our work, the LMFDB had a database of classical modular forms computed by Stephan Ehlen and Fredrik Str\"omberg.  This dataset included partial information on $S_k(\Gamma_0(N))$ for $(k,N)$ in the ranges $[2,12] \times [1,100]$ and $[2,40] \times [1,25]$, and on $S_k(\Gamma_1(N))$ in the ranges $[2,10] \times [1,50]$ and $[2,20] \times [1,16]$.  
+% \jv{The corresponding values of $Nk^2$ are $12^2\cdot 100 = 14400$, $40^2\cdot 25=40000$, $10^2 \cdot 50=5000$, and $20^2\cdot 16=6400$.}
+
+\begin{verbatim}
+The last data set listed below, which is a lower bound on what we should 
+have by next week when we submit the PR is the union of the following 
+sets of newspaces S_k(N,chi)
+
+* All spaces with Nk^2 <= 4000
+* All spaces with Nk^2 <= 40000 and trivial character
+* All spaces with Nk^2 <= 40000 and N <= 40 (I plan to go to 100 but I 
+have up to 40 now)
+* All spaces with Nk^2 <= 40000 and N <= 100 and k <= 12
+* All spaces with Nk^2 <= 100000 and N <= 10 (I have this now but it has 
+not been uploaded)
+
+The last two parts of the union ensure that we easily majorize both 
+Stein's database and current LMFDB
+
+// Stein database (everything in his tables for both Gamma0 and Gamma1)
+> spacestats(stein,T);
+Touched Gamma1(N,k): 8506 (8129 nonzero)
+Complete Gamma1(N,k): 418 (315 nonzero)
+Newspaces S_k(N,chi): 9731 (8579 nonzero)
+Newforms: 84407 (25806 rational, 83694 trivchar, 713 nontrivchar, 0 
+weight 1)
+Embeddings: 1095619
+Max level: 7248
+Max weight: 78
+Max Nk^2: 60840
+Max dimension: 340
+
+// LMFDB 1.0
+> formstats(old,TT);
+Touched Gamma1(N,k): 2081 (2081 nonzero)
+Complete Gamma1(N,k): 756 (756 nonzero)
+Touched S_k^new(N,chi): 3488 (3488 nonzero)
+Complete S_k^new(N,chi): 3416 (3416 nonzero)
+Newforms: 8659 (2292 rational, 5731 trivchar, 2928 nontrivchar, 0 weight 
+1)
+Embeddings: 77434
+Max level: 549
+Max weight: 200
+Max Nk^2: 40000
+Max dimension: 208
+
+// what we have now
+> spacestats(S_4000 cat S_triv_40000,T);
+Touched Gamma1(N,k): 65510 (19555 nonzero)
+Complete Gamma1(N,k): 234 (117 nonzero)
+Newspaces S_k(N,chi): 312948 (47015 nonzero)
+Newforms: 237791 (51268 rational, 178792 trivchar, 58999 nontrivchar, 
+19306 weight 1)
+Embeddings: 13058799
+Max level: 40000
+Max weight: 200
+Max Nk^2: 40000
+Max dimension: 39690
+
+// what we will have next week (pre-PR), this majorizes stein and oldcmf 
+(by a lot in every direction)
+> spacestats(S,T);
+Touched Gamma1(N,k): 66094 (20825 nonzero)
+Complete Gamma1(N,k): 8903 (7045 nonzero)
+Newspaces S_k(N,chi): 316236 (50098 nonzero)
+Newforms: 236555 (48324 rational, 171238 trivchar, 65317 nontrivchar, 
+19306 weight 1)
+Embeddings: 13710564
+Max level: 40000
+Max weight: 316
+Max Nk^2: 100000
+Max dimension: 39690
+
+
+It's worth noting that:
+
+* Other than having more coefficients, and more forms with non-trivial 
+character, it is hard to argue that LMFDB 1.0 was much of an improvement 
+on Stein's database, and in fact it has far fewer modular forms.
+
+* We have achieved about a 20x increase in the mathematical size of the 
+CMF database relative to LMFDB 1.0 using roughly the same amount of disk 
+space (we might be slightly bigger, but less than 1.5x disk space).
+
+The second bullet is due to a combination of factors but by far the 
+biggest is optimizing the Hecke ring basis (we saw many examples where 
+this saved a factor of more than 10x).  To be fair, we are not storing 
+exact eigenvalues for some forms where LMFDB 1.0 has them (but you can't 
+display them and the downloads fail for some of the bigger ones).
+\end{verbatim}
+
+\section{Computing modular forms} \label{sec:compmf}
+
+In this section, we try to make precise what it means to compute modular forms.
+
+\subsection{Setup}
+
+As basic input, we suppose we are given as input a weight $k \in \Z_{\geq 1}$, a level $N \in \Z_{\geq 1}$, and a Dirichlet character $\chi \colon (\Z/N\Z)^\times \to \C^\times$ (of modulus $N$).  For the specification of the character in bits, see section \ref{sec:chars}.  
+
+Recall that a \defi{modular form} of weight $k$ and level $N$ with (Nebentypus) character $\chi$ is a holomorphic function
+\[ f \colon \mathcal{H} \to \C \]
+on the upper half-plane $\mathcal{H}$, bounded in vertical strips, satisfying
+\[ f\left(\frac{az+b}{cz+d}\right)=\chi(d)(cz+d)^k f(z) \]
+for all $\begin{pmatrix} a & b \\ c & d \end{pmatrix} \in \Gamma_0(N) \leq \SL_2(\Z)$.  The space of such forms is denoted $M_k(\Gamma_0(N),\chi)$
+
+\begin{rmk}
+We restrict ourselves to integral weight forms in this article.  For forms of half-integral weight, the algorithms, applications, and issues that arise are quite different.  
+\end{rmk}
+
+\subsection{Dimensions}
+
+The first thing one may ask for are dimensions.  Matrix: old and new, cuspidal and Eisenstein subspaces.
+
+There are no dimension formulas for weight $k=1$.
+
+Dimension formulas are given in \jv{...}.  For new and old Eisenstein dimensions, the formula for $k \geq 3$ is given by Cohen--Str\"omberg \cite[Propositions 7.5.14 and 7.5.20]{CohenStroemberg}.
+
+Sturm bound.
+
+\subsection{Eisenstein series}
+
+Explicit bases are given by Cohen--Str\"omberg \cite[Theorem 7.5.16 and 7.5.21]{CohenStroemberg}.
+
+\subsection{Decomposition into Hecke orbits}
+
+Dimensions, Hecke field, and trace form
+
+Hecke cutters
+
+See below for a discussion of Maeda and verifying irreducibility.
+
+\subsection{Hecke eigenvalues}
+
+Exact.  Issues in how to represent them.
+
+Gives a smaller bound to recognize form (often, just one Hecke eigenvalue is enough).
+
+Complex.  Rigor in computing.  Satake parameters and angles.
+
+\subsection{$L$-functions}
+
+What we mean by computing $L$-functions, see section \ref{sec:Lfunctions} for more.
+
+\section{Algorithms} \label{sec:algs}
+
+In this section, we give a brief overview of the different algorithmic methods to compute modular forms and where they are implemented.  In our effort, we only use the first two (modular symbols and the trace formula).  
+
+\subsection{Modular symbols}
+
+Specifically, Manin symbols.  The book \cite{Stein} describes in Sage and the overview in weight 2 by Stein \cite{Stein2}.
+
+Stein implemented in Magma in the 1990s with improvements by ...  and in Sage in the 2000s with additional improvements by ...
+
+Buzzard and Buzzard--Lauder use modular symbols to get weight $1$ in Magma by multiplying by an Eisenstein series to get to weight $2$.  Currently, you can get a basis in Magma for the cuspidal subspace, but it does not decompose the space into the old and new subspace and does not provide the action of the Hecke operators.  (They wrote code to do this.)  
+
+\begin{verbatim}
+> chi := Generators(FullDirichletGroup(383))[1];
+> M := ModularForms(chi,1);
+> Dimension(M);
+190
+> HeckeOperator(M,5);
+
+>> HeckeOperator(M,5);
+                ^
+Runtime error: Hecke operator computation currently only supported for spaces 
+with a single character that takes values +/-1.
+> S := CuspidalSubspace(M);
+> Basis(S);
+[]
+\end{verbatim}
+
+\jv{Get a better example here.}
+
+In Sage, the Hecke stability method of Schaeffer \cite{Schaeffer} is implemented to get forms in weight 1.  \jv{Unfortunately, it is slow because modular symbols in Sage is slow.}
+
+\subsection{Trace formula: exact method}
+
+Hijikata
+
+\begin{verbatim}
+This is a bit optimistic, but typically OK, yes :
+
+1) you assume that the weight is fixed (otherwise the size of the matrix
+entries must be taken into account); and that the Nebentypus has fixed order
+as well [ otherwise you need to work in cyclotomic fields or large degree, which
+increases the cost of "base field" computations ]
+
+2) splitting the space may need many (linear combinations of) T_p 
+[ I don't know anything better than the Sturm bound to guarantee that the
+T_p, p <= B, generate the Hecke algebra ]. So O~(d^4) would be a
+worst case [ given assumption 1) ]
+
+>   * To get further eigenvalues, you typically only need one row of
+> T_p, but you still need to multiply this row by each eigenvector, so
+> it ends up being basically soft-O(d*p) again.
+
+For the trace formula, here's a quick back-of-the-enveloppe computation.
+Will check this with Henri in september :-) :
+
+1) We must first build the space S_k^new: 
+
+1.a) we pick successive forms T_j Tr^new until they generate the space.
+Assuming the first O~(d) values of j are enough [ heuristic for now but it may
+be possible to prove this; it's true in practice ], this requires
+expanding those O~(d) forms up to Sturm bound ( O~(d) ). So will need
+O~(d * max(j)) = O~(d^2) coeffs of Tr^new.
+
+1.b) all Hurwitz class numbers of index O~(d * max(j)) are precomputed
+[ cost O~(d^3) ]; the coefficient Tr(n) [ = trace of T_n on the space S_k]
+costs O(sqrt(n)). I am assuming that the weight and Nebentypus are
+fixed, otherwise we need to take into account the "size" of coefficients.
+
+So computing all Tr(n) up to O~(d^2) costs O~(d^3). The Tr^new(n) are
+simple convolutions of the Tr(n) with Moebius function and the like and
+costs the same up to log factors (sums over divisors etc.).
+
+1.c) we compute the rank of the matrix made up by the coefficients of
+the T_j Tr^new, and hope to get maximal rank in O(1) trials with O~(d)
+forms: O(d^3) [ or whatever exponent: no soft-Oh because we expect to
+detect the rank by projecting Z[\chi] to a small finite field ]
+
+1.d) we precompute base change matrices from and to Miller's basis: at
+least O~(d^\omega+1) [ the T_j Tr^new form a somewhat random basis and the
+coefficients in the original -> Miller base change matrix are huge ]
+
+Total [heuristic] cost for this phase: O~(d^\omega+1)
+
+2) To compute the matrix of T_p on our basis for S_k^new, we now need
+coefficients of Tr^new up to O~(d * max(j) * p). The Hurwitz class
+number precomputation and subsequent coefficients computation jumps to
+O~(d^3 p^{3/2}).
+
+3) Then it's the same as in the other methods: characteristic polynomial,
+factorization over Q(\chi), splitting, etc.
+
+
+Thus, in theory, I would expect the trace formula to be slower than modular
+symbols because of
+
+- the cost to convert to Miller basis (or to express a random form in
+  terms of the T_j Tr^new basis)
+
+- the extra costs (extra coefficients) involved in hitting T_j Tr^new by T_p
+
+In practice, as long as p doesn't get too large (and the linear algebra
+involved in converting T_j Tr^new -> Miller basis doesn't get dominant),
+I'm not sure at all that this is the case. It also depends on how you
+get S_k^new from modular symbols when N is highly composite : kernels of
+degeneracy maps can get expensive since they apply on "huge" S_k (of
+dimension D), not "tiny" S_k^new (of dimension d).
+
+I'm *very* interested in data points if you compare the above guesstimates
+with Sage or Magma running times. :-)
+\end{verbatim}
+
+\subsection{Trace formula: complex analytic method}
+
+Still rigorous, but need to make exact matches for Galois orbits.
+
+\begin{verbatim}
+We use the trace formula (for example, as written down in "Hecke operators and the weight distributions of certain codes" by Schoof and van der Vlugt, though I think they got it from unpublished work of Henri Cohen) and sieve to get a basis of each new space, and then explicitly compute Hecke operators and do linear algebra to get a basis of newforms (normalized Hecke-eigenforms). The software was custom written in C++ by me, and is available at https://github.com/jwbober/mflib, though it is not particularly user friendly at the moment. We use arb (http://arblib.org/) for multiprecision arithmetic, and in particular implemented some rigorous multiprecision matrix diagonalization to make sure that all of the computations have rigorous error bounds. This algorithm is due to Bober-Booker-Lee, I suppose, but the only place it is published in any detail right now is in Cohen and Stromberg's new book (Modular Forms: A Classical Approach). This is the same as the algorithm that is implemented in Pari, though Pari instead works with exact arithmetic.
+
+For computation of the fields of coefficients of the modular forms and spitting into Galois orbits, I use the same algorithm to compute matrices of Hecke operators, and then their characteristic polynomials, modulo enough small primes to exactly reconstruct the characteristic polynomials in characteristic zero. (And we know that it is precise enough because we can use the eigenvalue data to compute an approximation to this characteristic polynomial.) It may be worth pointing out that I use NTL at this point for it's excellent polynomial factorization.
+
+I'm not sure at the moment how many CPU hours were used. I do have some information stored somewhere I think. Probably it is somewhere on the order of 10^5 to 10^6 CPU hours total, which is not so massive, but is pretty big, and sometimes required a lot of ram.
+\end{verbatim}
+
+\subsection{Brandt matrices}
+
+Theta series, Pizer.  Kohel.  
+
+\subsection{Method of graphs}
+
+Mestre and Osterl\'e.  
+
+\subsection{Ternary quadratic forms}
+
+Birch, and Hein--Tornaria--Voight.
+
+
+
+\section{Characters} \label{sec:chars}
+
+Conductor versus modulus.
+
+\subsection{Galois orbits and labels}
+
+Orbit codes.
+
+\subsection{A crash course on Conrey labels}
+
+\subsection{Compatibility}
+
+It is not enough just to embed the character field into the coefficient field (which is already hard when the coefficient field is big), you need to embed it in such a way that the character values are compatible with the Hecke action, and it can take a non-trivial amount of time to work this out (matching up roots of unity).
+
+We could avoid this by keeping track of the coefficient field of the form as a relative extension of a cyclotomic field, but that creates some headaches comparing across implementations and does not allow us to represent eigenvalues in terms of a nice LLL-reduced basis (see below).  
+
+So we compute the values of $\chi$ on generators for $(\Z/N\Z)^\times$ in terms of the Hecke field.
+
+\section{A sample of the implementations} \label{sec:implementations}
+
+Three methods: modular symbols in Magma and Sage, exact trace formula in Pari, Brandt matrices, ternary Birch.  Not really a user's guide, but something.  
+
+Weight 1 in Sage is slow.  
+
+\section{Issues: computational, theoretical, and practical} \label{sec:issues}
+
+\subsection{Analytic conductor}
+
+Ordering proposed by Sarnak.  ..., Roberts, roughly $Nk^2$.  
+
+\subsection{Atkin--Lehner eigenvalues}
+
+The Atkin--Lehner operators $W_M$ for $M \parallel N$ map $S_k(N,\chi) \to S_k(N,\chi')$ with some explicit dependence of $\chi'$ on $\chi, M, N$.  In general, $\chi'$ is different from $\chi$ so they are no use for splitting up spaces.  We have $\chi'=\chi$ when the character is quadratic, but Magma computes the operator only for trivial character so we follow suit.  
+
+\jv{Mention the Fricke involution.}
+
+\subsection{Self-dual}
+
+\begin{verbatim}
+> If the coefficient field has odd degree then it must be totally real
+> since it cannot be a CM field (I believe you said the CM/totally real
+> dichotomy is due to Shimura, do you have a reference for this?)
+
+The reference I was thinking of is Theorem 7.16 in Shimura's
+"Introduction to the Arithmetic Theory of Automorphic Forms", but this
+seems to have restrictive hypotheses.  But it always seems like when I
+look something up in Shimura, it's either much too general, or has
+some kind of annoying technical conditions...  Instead, how about
+Proposition (3.2) in the attached?
+
+I mean, somehow this is not hard.  We're only talking about cusp
+forms, so we just invoke the Petersson (complex) inner product.  The
+fundamental calculation is that for Hecke operators T(n) with n
+coprime to the level N, the Hecke operator T(n) is chi-Hermitian with
+respect to the Petersson scalar product, i.e.,
+  <T(n)f, g> = chi(n) <f, T(n)g>.
+
+> Looking at the data, it would appear that if the character is trivial
+> then the coefficient field is always totally real (this is true for all
+> 2893 newforms with trivial character that we currently have).  I presume
+> this is also a theorem?
+
+Yes, you can read that from the above.  We have
+  bar(a_n(f)) = bar(chi(n)) a_n(f)
+for all n coprime to N (take g = f above).  In particular, this shows
+that whenever chi is trivial, the a_n's are totally real--and in
+linear algebra terms, this is because chi-Hermitian becomes just
+self-adjoint, so the eigenvalues are (totally) real.
+
+(BTW, this was already at issue for us with genus 2 automorphy.  Just
+looking at weight 2 and quadratic Hecke field, we can distinguish
+between real quadratic and imaginary quadratic Hecke field based on
+the character of the form...)
+
+> Assuming it is, then we only have to consider the case of quadratic
+> character and even degree coefficient field.  There are 2484 such
+> newforms currently in our database.   However, I notice that only 61 of
+> these actually have self-dual L-functions, and these 61 all have
+> coefficient fields that are either quadratic or degree 4, and these are
+> obviously easy to handle.  But is there any way to bound this degree in
+> general?
+
+Perhaps Ribet's Proposition (3.3) is enough?  This is still just
+reading off from the linear algebra.  We have to check for inner twist
+by the (Nebentypus) character, but I think we've done that.
+\end{verbatim}
+
+\subsection{Computing Hecke polynomials}
+
+Basically, we should be able to do this modulo primes and reconstruct.
+
+\begin{verbatim}
+Regarding your comment about the Hecke cutters, these are actually 
+minpolys of T_p, and for the big spaces Magma can be really slow at 
+computing them, even just for T_2 (which for the 4760,4760 example would 
+already be enough, in fact the trace of a_2 down to Q already 
+distinguishes these spaces).
+
+I see -- presumably magma had done a similar computation to find the 
+splitting but does not give back the "certificate" after doing so.  
+I wonder if we could persuade magma to all for that.
+
+A while back I reported on one case I had where the dimension was 
+162*80, so the Hecke matrices were 80x80 over Q(chi) of degree 162, 
+for which computing the char poly of T2 was almost hopeless.  (This 
+was level 3^6=729 and a character of order 2*3^4.)  I mentioned it 
+to Bill Hart when I saw him 3 or 4 weeks ago, he asked me to send 
+him the matrix which I did, and a few days after that I heard from 
+Claus Fieker who had a probably result (the char poly) which he 
+had computed mod p for lots of primes (choosing those which split 
+completely in Q(chi) as I had been doing) and then Chinese Remaindering 
+these.  He could not certify the result only because I had not told 
+him that we know a theoretical bound on the eigenvalues and hence 
+on the coefficients.
+
+It would be nice of Magma (and the others) would use such modular 
+methods automatically.
+\end{verbatim}
+
+\begin{verbatim}
+Andrew,
+
+> I can't guarantee this will hit the same code path internally, but
+> externally it is doing exactly the same thing:
+> 
+>> chi := FullDirichletGroup(29).1^2;
+>> k := 2;
+>> time S :=
+>> NewformDecomposition(NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,-1))));
+> Time: 0.020
+>> S;
+> [
+> Modular symbols space of level 29, weight 2, character $.1^2, and
+> dimension 2 over Cyclotomic Field of order 28 and degree 12
+> ]
+
+Thanks for that.
+
+The reason for the crash is now understood and a patch is being
+developed.
+
+My colleague Allan Steel looked at the slowness of your computation
+and found (not surprisingly) that it arises from linear algebra over
+Q or a number field. In particular, in this computation the bottlenecks
+were the computation of the min polynomial of an element of a Hecke
+algebra and then computing a huge resultant in order to factor the
+min polynomial (mainly the latter). Allan hacked the code for this
+example introducing some parallelism and this reduced the runtime
+down to 40 minutes using 16 cores. The answer is
+
+[
+     Modular symbols space of level 743, weight 2, character $.1^2, and 
+dimension
+     61 over Cyclotomic Field of order 742 and degree 312
+]
+
+This was the internal standard function to factor a polynomial f over a
+number field K=Q(alpha).  This uses Trager's algorithm, which computes
+the norm N of f over K, factors N which is over Q, and then takes the GCD
+of each factor with f back over K to get the true factors of f over K.
+
+To compute the norm, we just use a resultant, of course (to eliminate
+alpha); basically we get:
+
+    Resultant(f, g, alpha), where g is min poly of alpha.
+
+Overview here:
+
+https://en.wikipedia.org/wiki/Factorization_of_polynomials#Factoring_over_algebraic_extensions_(Trager's_method)
+
+It would be nice to make improvements for the general case but this
+will take some serious development.
+\end{verbatim}
+
+\subsection{Efficiently recognizing irreducibility}
+
+$N=2$ is by far the most time-consuming case for magma: for $k>400$ with $4 \mid k$, each space takes more than 12 hours CPU time.  
+
+\begin{conj}
+For all $k \geq 2$, the space $S_k(\Gamma_0(2))$ decomposes under the Atkin--Lehner operator $w_2$ into Hecke irreducible subspaces of dimensions $\lfloor d/2\rfloor$ and $\lceil d/2 \rceil$ where $d=\dim_\C S_k(\Gamma_0(2))$.
+\end{conj}
+
+This is a Maeda-like conjecture that we verified up to weight $k \leq 400$, but with the additional prediction that the Atkin--Lehner operator splits the space as evenly as possible.  For general $N$, the difference $\dim S_2(\Gamma_0(N))^+ - \dim S_2(\Gamma_0(N))^-$ can be expressed in terms of class numbers of imaginary quadratic fields (fixed points of Atkin--Lehner involutions), and so this difference is $\ll N^{1/2+\epsilon}$.  Probably this is explicit enough for $N=2$ to prove the dimensions above, and something similar can be said for $N$ composite.  
+
+Anyway, we should be able to prove that the space is irreducible by working with just one Hecke polynomial (likely to be irreducible).
+
+\begin{ques}
+Given a polynomial $f(x) \in \Z[x]$, is there a fast algorithm that with positive probability correctly identifies if $f$ is irreducible (but gives no information otherwise)?
+\end{ques}
+
+In other words, if you expect that a polynomial is irreducible, can you verify this quickly without factoring the polynomial?  Perhaps factoring it modulo primes until it is clear that the Galois group of the polynomial is transitive (with the expectation that it is typically $S_d$, and it should be quick to verify this).  This is different than the typical factorization methods in computer algebra systems, which compute a factorization $p$-adically and then reconstruct the factorization over $\Z$.  Example spaces that took a long time: \href{http://cmfskatex.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/659/2/g/}{\textsf{659.2.g}} (took 86131s in Magma) and 
+\href{http://cmfskatex.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/443/3/h/}{\textsf{443.3.h}} (took 845077s).  Basically, any space that has dimension in the thousands.
+
+\subsection{Trace form}
+
+For the trace form, in general the coefficients $a_n$ carry information that cannot be seen from just the prime coefficients $a_p$ or even the prime power coefficients $a_{p^e}$.
+
+In theory, the trace form uniquely determines the Galois orbit of newforms (because the traces of the $a_p$ determine $L$-function).  Is there an effective bound?  The spaces \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/1500/1/l/a/}{\textsf{1500.1.l.a}} and \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/1500/1/l/b/}{\textsf{1500.1.l.b}} have the same trace form up to precision $1000$.  
+
+\jv{We should spell out the difference between the trace form and the $L$-series of the imprimitive form: they have the same $a_p$, but are apparently not the same.}
+
+\subsection{Polredabs}
+
+Unique polynomial, sometimes very hard to get, might try polredbest first and then polredabs to verify.  Polredbest uses an LLL-reduced basis for an order, and thereby runs in deterministic polynomial time in the size of the input; whereas polredabs does this for the maximal order (which may require factoring).
+
+Really important: take version of Pari = blank, Sage 8.3.
+
+There were occasions where we could compute a Hecke polynomial, but polredabs did not terminate.  For example, with the space \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/3901/1/j/b/}{\textsf{3901.1.j.b}}, the coefficient field is $\Q(\zeta_{205})$, relative degree $4$ over $\Q(\chi)=\Q(\zeta_{41})$.  It is not hard to guess this is correct, but to compute an explicit isomorphism required effort.  (One can quickly guess the roots of unity in a number field by checking for roots of unity modulo many large primes, like what is done for torsion of abelian varieties.)  Without this optimization, the output is an order of magnitude larger.
+
+\subsection{Nicely presenting Hecke eigenvalues}  \label{sec:LLLbasis}
+
+LLL-basis of Hecke order.  Recognizing cyclotomic ring, writing in terms of powers of $\zeta$ is nice for weight $1$.
+
+Matrix in terms of powers of $\nu$, inverse matrix is smaller in size.
+
+\begin{exm}
+Precision can be an issue in getting $1$ as a shortest vector: using default precision might find no basis vector that is a root of unity (including $1$).  For example, the newforms in the space \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/14/16/c/}{\textsf{14.16.c}} have an issue when the precision is too low.  
+
+In our computations, we always use precision that is at least as large as the discriminant of the Hecke ring.  
+\end{exm}
+
+The inverse matrix is noticeably smaller.  
+
+Compare to Magma's \texttt{CompactSystemOfEigenvalues}.  \jv{How does this work, anyway?}
+
+\begin{rmk}
+In the above, we have been concentrating on the case where $f$ is an newform, representing a Galois orbit of newforms, and we write down its $q$-expansion in terms of a $\Z$-basis for the Hecke ring.  
+
+As an alternative, we can consider the $\C$-vector space spanned by $f$ and its conjugates under $\Aut(\C)$, making a $\C$-vector space of dimension say $d$.  These conjugates will include conjugates that \emph{do not} preserve the character, so we would either be working implicitly in the direct sum of the spaces over the full Galois orbit of characters, or we need to restrict to quadratic characters, or we only consider conjugates under $\Aut(\C\,|\,\Q(\chi))$ and get a $\Q(\chi)$-vector space.  Anyway, inside this space is a canonical $\Q$-subspace, namely, those forms whose $q$-expansion belongs to $\Q[[q]]$.  So we could instead represent the Galois orbit canonically by an echelonized basis of $d$ individual $q$-expansions with coefficients in $\Q$.  We could then write a representative newform as before as a linear combination of this basis over the Hecke field.
+
+To go from the eigenform to the $\Q$-basis, we apply the operators $\Tr(\beta_i f)$ for $\beta_i$ any $\Q$-basis for the Hecke field.  (To go from the $\Q$-basis to an eigenform one needs to retain sufficiently many eigenvalues to do the linear algebra.  In other words, the eigenform contains more information than the $\Q$-basis.)  This generalizes the trace form, which is where we take $\beta_i=\beta_0=1$.  
+
+We could also work integrally and take the $\Z$-module of forms whose $q$-expansions belong to $\Z$ and then take a LLL-reduced basis which minimizes a (weighted) sum of finitely many coefficients.  
+
+It is conceivable that in a world where linear algebra over $\Q$ is much faster than linear algebra over number fields that we could succeed in computing a $\Q$-basis in reasonable time but not succeed in computing an eigenform.  
+\end{rmk}
+
+\subsection{Sturm bound}
+
+\begin{prop}
+Let $N,k \geq 1$, let $\chi$ be a character of modulus $N$, and let $\TT \subseteq \End_\C(S_k(\Gamma_0(N),\chi)$ be the $\Z$-subalgebra generated by the Hecke operators $T_n$ for all $n \in \Z_{\geq 1}$.  Let $\Z[\chi] \subseteq \C$ be the $\Z$-subalgebra generated by the values of $\chi$.  Then there is a natural inclusion $\Z[\chi] \hookrightarrow \TT$, and the following statements hold:
+\begin{enumalph}
+\item $\TT$ is generated as a $\Z[\chi]$-module by $T_n$ for all $n \leq k\psi(N)/12$, where $\psi(N)=[\SL_2(\Z):\Gamma_0(N)]$.
+\item $\TT$ is generated as a $\Z[\chi]$-algebra by $T_1$ and $T_p$ for all $p \leq k\psi(N)/12$.
+\end{enumalph}
+\end{prop}
+
+\begin{proof}
+First, show that the subset $S_k(\Gamma_0(N),\chi;\Z[\chi]) \subseteq S_k(\Gamma_0(N),\chi)$ whose $q$-expansion belongs to $\Z[\chi]$ is torsion free and therefore (because $\Z[\chi]$ is a Dedekind domain) locally free over $\Z[\chi]$ (of finite rank).  
+
+Second, show that the pairing
+\begin{equation}
+\begin{aligned} 
+\TT \times S_k(\Gamma_0(N),\chi;\Z[\chi]) &\to \Z[\chi] \\
+(T,f) &\mapsto a_1(Tf)
+\end{aligned}
+\end{equation}
+is perfect following Ribet \cite[Theorem (2.2)]{Ribet:modp}, so $\TT_{k,N,\chi} \simeq \Hom_{\Z[chi]}(S_k(\Gamma_0(N),\chi;\Z[\chi]),\Z[\chi])$ as $\Z[\chi]$-modules.  This is a little more delicate, as I think we will argue that it is locally perfect, hence perfect.  
+
+Third, argue following Buzzard does that if $\frakm \subseteq \Z[\chi]$ is a maximal ideal and $f \in S_k(\Gamma_0(N),\chi;\Z[\chi])$ has $a_n(f) \equiv 0 \pmod{\frakm}$ for all $n \leq k\psi(N)/12$, then $a_n(f) \equiv 0 \pmod{\frakm}$.  
+
+Fourth, we consider the $\Z[\chi]$-submodule $\TT_{\leq n} \subseteq \TT$ generated by $T_n$ with $n \leq k\psi(N)/12$.  By step three, the pairing restricted to $\TT_{\leq n}$ is still nondegenerate modulo $\frakm$ for all $\frakm$, so $\TT_{\leq n}/\frakm \TT_{\leq n} \hookrightarrow \TT/\frakm \TT$ is an equality.  Therefore $\TT_{\leq n}=\TT$, proving (a).
+
+For (b), we use multiplicativity to see that $T_n$ for $n$ composite is contained in the algebra generated by the prime power $T_{p^e}$, and the Hecke recurrence to see that $T_{p^e}$ is contained in the algebra generated by $T_1$ and $T_p$.
+\end{proof}
+
+\begin{remark}
+I don't see how to proceed arguing across characters without increasing the bound, even if the characters are conjugate.  In the third (Buzzard) step, we look at $(f-g)^s$ where $s$ is the order of $[\chi]$, and the claim is that $(f-g)^s \in S_{sk}(\Gamma_0(N))$, but I don't think that is true if $f,g$ have different characters.
+\end{remark}
+
+\section{Computing $L$-functions rigorously} \label{sec:Lfunctions}
+
+Discuss both the $\C$-primitive $L$-function and $\Q$-primitive (product) $L$-functions
+
+Labels for complex embeddings
+
+\subsection{Verifying the analytic rank}
+
+Maarten Derickx.
+
+\section{An overview of the computation} \label{sec:overview}
+
+\subsection{Data extent}
+
+Our data set covers $S_k(\Gamma_1(N))$ for all $(N,k)$ satisfying $Nk^2 \leq 4000$.  This data consists of $247\,438$ spaces $S_k(\Gamma_0(N),\chi)$ of which $30\,738$ are nonempty, a total of $67\,180$ Galois orbits of newforms, giving rise to a total of $9\,966\,498$ modular forms as holomorphic functions.  For more statistics on distribution of level, weight, dimension, and more, see the \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/stats}{stats page}.
+
+In Magma, the data was computed using 64 cores \as{...} and the estimated total CPU time was \as{...}.  
+
+For the newforms with coefficient field of absolute degree $d \leq 20$, we computed algebraic $a_n$ for $1 \leq n \leq 1000$ in the LLL-basis described in section \ref{sec:LLLbasis}.  This step dominated the running time.  In all cases, this exceeds the Sturm bound.
+
+For Pari, the data was \jc{Just one small comment / reminder: the vast majority of the spaces are fast or very fast, but there is a small minority which take days or worse.  If I were to start on the range 4k-5k my gues is that within a week I might get 95\% of the spaces, but that the remainder would take another couple of weeks at least.  That's only a very rough guess.}
+
+\begin{comment}
+I finished weight 1 to level 2000, data uploaded.  Approximately twice as much stuff as for 1-1000.  Here are the stats (for level ranges 1-1000 and 1001-2000 separately; the files are about 24 and 56 mb):
+
+sage: gdata1 = read_dtp("mfdata_wt1_1000.gp.txt")
+Read 26852 spaces of which 1368 are nontrivial; 2130 Galois orbits.
+2088 orbits have dimension <=20
+largest three dimsensions: [42, 46, 52]
+Total time = 155525.304
+Max time = 1869.929 for space (975, 1, 62)
+Average time (all spaces)      = 5.792
+Average time (nonzero spaces)  = 47.931
+
+sage: gdata2 = read_dtp("mfdata_wt1_1001-2000.gp.txt")
+Read 47348 spaces of which 2287 are nontrivial; 4309 Galois orbits.
+4050 orbits have dimension <=20
+largest three dimsensions: [106, 112, 130]
+Total time = 1592922.855
+Max time = 29630.354 for space (1950, 1, 63)
+Average time (all spaces)      = 33.643
+Average time (nonzero spaces)  = 210.930
+
+The bulk of the weight>1 for Nk^2 up to 2000 are done, but as usual a few hard cases are holding things up (some have been running 70h).  I did write to Karim but have had no reply yet.
+
+John
+\end{comment}
+
+The exact data from Magma and from Pari was compared and it agrees.
+
+For the complex data (computed using the trace formula), we have data in the following boxes:
+\begin{itemize}
+\item $N \leq 999$, $k \leq 4$, and in this range rigorous $a_{p^n}$ for $p^n < 2000$;
+\item $N \leq 99$, $k \leq 12$; and
+\item $N \leq 30$, $k \leq 30$.
+\end{itemize}
+\jv{This is just what I scribbled down, it is probably wrong.}
+
+\subsection{Comparing implementations}
+
+\begin{verbatim}
+Stats for Nk^2 <= 1000 in Magma and Pari.
+
+$ wc mfdata_1000.m.txt 
+    5533     5533 82782397 mfdata_1000.m.txt
+$ wc mfdata_1000.g.txt 
+    5533     5533 82955633 mfdata_1000.g.txt
+
+sage: gdata = read_dtp("t1000")
+Read 5533 spaces of which 2653 are nontrivial; 4843 Galois orbits.
+3707 orbits have dimension <=20
+largest three dimsensions: [1404, 1824, 2016]
+Total time = 120960.448
+Max time = 11638.884 for space (237, 2, 14)
+Average time (all spaces)      = 21.862
+Average time (nonzero spaces)  = 45.327
+
+sage: mdata = read_dtp("mfdata_1000.m.txt")
+Read 5533 spaces of which 2653 are nontrivial; 4843 Galois orbits.
+3707 orbits have dimension <=20
+largest three dimsensions: [1404, 1824, 2016]
+Total time = 158823.160
+Max time = 2685.130 for space (227, 2, 3)
+Average time (all spaces)      = 28.705
+Average time (nonzero spaces)  = 59.853
+\end{verbatim}
+
+So the current gp+sage code is faster.  However there are some individual spaces for which there is a huge time discrepancy, and we are not 100\% sure that there are not tricks left.  The wall time for the Pari run for $Nk^2 \leq 1000$ was about 3 hours on 37 cores but the vast majority were done much faster, just a few outliers took ages.  
+
+A space where pari was a lot slower than Magma: \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/237/2/n/}{\textsf{237.2.n}} took 283s in magma and 11638s in pari.  The hard case seems to be when there is more than one irreducible piece and (perhaps) at least one piece has quite large dimension.
+
+A space where Magma was a lot slower than pari: \href{http://cmfskatex.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/227/2/c/}{\textsf{227.2.c}} took 2685s in magma and 66s in pari.  If you know the space is irreducible, then all we computed was the trace form and that is exactly what the trace formula is designed to give you.
+
+\begin{ques}
+Can one get the trace forms when the space is not irreducible without decomposing the space, computing the eigenvalues, and taking a trace?
+\end{ques}
+
+\subsection{Interesting and extreme behavior}
+
+The largest Hecke irreducible subspace in our data set is \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/983/2/c/a/}{\textsf{983.2.c.a}}, having dimension $39690$.
+
+The index of the Hecke ring in the Hecke field can be surprisingly large.  \jv{Example}
+
+\subsection{Pictures}
+
+The graph of $\left|f(z)\right|$ for $\left|q\right|=\left|e^{2\pi iz}\right|<1$ with the absolute value interpreted as a color.  We always have $f(\infty)=0$ so the center is zero (``cold'').  
+
+\subsection{Data reliability}
+
+The data agrees.
+
+\section{Twisting} \label{sec:twists}
+
+In this section, we discuss issues of twists.  Convenient background references are articles by Ribet \cite{Ribet:galreps,Ribet:endos}.
+
+\subsection{Definitions}
+
+Let $f \in S_k(\Gamma_1(N))$ be a newform with $N,k \in \Z_{\geq 1}$ and let $\Q(f) \colonequals \Q(\{a_n(f)\}_n) \subseteq \C$ be its Hecke field.  Let $\psi$ be a \emph{nontrivial} Dirichlet character.  Then there is a unique newform $g \colonequals f \otimes \psi$ with the property that 
+\begin{equation} \label{eqn:angfpsi}
+a_n(g)=\psi(n)a_n(f) \quad \text{ for all $n$ coprime to $N\cond(\psi)$};
+\end{equation}
+we call $g$ the \defi{twist} of $f$ by $\psi$.  By the Hecke recurrence, \eqref{eqn:angfpsi} is equivalent to the condition 
+\begin{equation}
+a_p(g)=\psi(p)a_p(f) \quad \text{for all $p \nmid N\cond(\psi)$.}
+\end{equation}
+
+\begin{lem} \label{lem:MNchipsi}
+If $f \in S_k(\Gamma_0(N),\chi)$, then $f \otimes \psi \in S_k(\Gamma_0(M),\chi\psi^2)$ where
+\begin{equation} \label{eqn:MNpsi}
+M = \lcm(N,\cond(\psi)^2,\cond(\chi)\cond(\psi)). 
+\end{equation}
+\end{lem}
+
+\begin{proof}
+Shimura, Proposition 3.64.
+\end{proof}
+
+\begin{defn}
+We say that $f$ has \defi{inner twist} (or \defi{extra twist}) by $\psi$ if there exists $\sigma \in \Aut(\Q(f))$ such that $f=\sigma(f) \otimes \psi$.  We say that $f$ has \defi{self-twist} by $\psi$ if $f=f \otimes \psi$.
+\end{defn}
+
+In other words, a self-twist is an inner twist where we may take $\sigma=\id$ the identity.  The twist is said to be ``inner'' because twisting stays ``within'' the Galois orbit of $f$.  Note we do not include the trivial character, so there is no self-twist by the trivial character.  
+
+\begin{lem}
+Having inner twist or self-twist is well-defined on the Galois orbit of $f$.
+\end{lem}
+
+\begin{proof}
+Easy check.
+\end{proof}
+
+\begin{prop}[Ribet] \label{prop:ribetcm}
+If $f \in S_k(\Gamma_1(N))$ has self-twist by $\psi$, then $\psi$ is a quadratic character; if moreover $k \geq 2$, then $\psi$ is associated to an imaginary quadratic field.
+\end{prop}
+
+\begin{proof}
+By Lemma \ref{lem:MNchipsi}, for a self-twist by $\psi$ we must have $\chi=\chi\psi^2$ so $\psi$ is quadratic.  For the second statement, see Ribet \cite[Theorem (4.5)]{Ribet:galreps}.
+\end{proof}
+
+In light of Proposition \ref{prop:ribetcm}, we make the following definition.
+
+\begin{defn}
+We say $f$ has \defi{real multiplication (RM)} if $f$ has self-twist by a character attached to a real quadratic field and \defi{complex multiplication (CM)} if $f$ has self-twist by a character attached to an imaginary quadratic field.
+\end{defn}
+
+\begin{exm}
+Forms of weight $1$ have self-twist if and only if they have dihedral projective image.  Indeed, if $f \in S_1(\Gamma_1(N))$ has self-twist by the quadratic character $\psi$, then $a_p(f)=0$ for all $p$ that are inert in $\Q(\psi)$ (asymptotically half of the primes), and by classification (see below) this happens if and only if the projective image is dihedral.  
+
+We can say more: suppose $f$ is dihedral, and let $K$ be the fixed field of the kernel of the projective Galois representation associated to such a form $f$, so $\Gal(K\,|\,\Q) \simeq D_n$ (a group of order $2n$).  Then for each quadratic subfield $F \subseteq K$, the form $f$ has self-twist by the character associated to $F$.  Accordingly, when $n>2$ the subfield $F$ and associated self-twist character are unique, and when $n=2$ (so $K$ is biquadratic) there are three distinct subfields and corresponding characters.  
+
+These quadratic subfields may be real or imaginary, so there are weight $1$ forms with RM or CM (or both).  The forms with RM arise precisely from ray class characters of a real quadratic field that are of mixed signature (so even at one real place and odd at another).  
+\end{exm}
+
+\begin{rmk}
+In view of Proposition \ref{prop:ribetcm}, it is common in the literature to just replace the term \emph{self-twist} by \emph{complex multiplication}.  There is no harm for weight $k \geq 2$ (where the associated forms may be constructed using Hecke Gr\"ossencharacters of imaginary quadratic fields), but for weight $k=1$ we think this is potentially confusing, and we want to avoid saying ``$f$ has complex multiplication by the character attached to $\Q(\sqrt{5})$.''
+\end{rmk}
+
+\begin{rmk}
+Among the forms of weight $k=2$, trivial character, and dimension $2$, we can \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?weight=2&char_order=1&dim=2&has_inner_twist=yes&count=50&search_type=List}{search for forms with inner twist} and we should see a table that matches Cremona \cite[Table 3]{Cremona:abextratwist} up to level $N \leq 300$.  The lists match with one exception: we found one form \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/169/2/a/a/}{\textsf{169.2.a.a}} that was missed by Cremona.
+\end{rmk}
+
+\begin{exm}
+CM modular forms may also have an inner twist that is not a self-twist: the smallest example by analytic conductor is \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/52/1/j/a/}{\textsf{52.1.j.a}} has CM by $\Q(\sqrt{-1})$ and inner twist.  This phenomenon is not restricted to weight $1$, for example \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/20/2/e/a/}{\textsf{20.2.e.a}}.
+\end{exm}
+
+\subsection{Computing inner twists}
+
+\begin{lem}
+If $f \in S_k(\Gamma_0(N),\chi)$ has inner twist by $\psi$, then $\psi$ is unramified away from $N$.  
+\end{lem}
+
+\begin{proof}
+If $p \mid \cond(\psi)$ and $p \nmid N$, then $p$ will divide the level of $f \otimes \psi$, contradicting that the level of $\sigma(f)$ is $N$. 
+\end{proof}
+
+The simplest algorithm is just loop over the finite list of characters and test equality up to the Sturm bound for level $M$ in \eqref{eqn:MNpsi}.  
+
+Another algorithm computes $\Aut(\Q(f))$ and then tries to match a Dirichlet character $\psi(p)=\sigma(a_p(f))/a_p(f)$ for $a_p(f) \neq 0$ and for each $\sigma \in \Aut(\Q(f))$.  
+
+One trick: computing the minimal polynomial of $a_p(f)$ and writing it as a polynomial in $x^s$ with $s \in \Z_{\geq 1}$ as large as possible, the order of $\psi(p)$ as a root of unity is a divisor of $s$.  
+
+Another possible trick: compute a minimal twist, compute its inner twists (hopefully easier because the level is smaller), then recover the full set of inner twists.
+
+\subsection{Sato--Tate group}
+
+The twisting behavior determines the Sato-Tate group in an explicit way.  
+
+\section{Weight 1} \label{sec:weight1}
+
+\subsection{Computational observations}
+
+A large amount of time is spent to prove that a (new) space is zero-dimensional.  For example, the space \href{http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/3900/1/x/}{3900.1.x} has no newforms, which required 215 CPU hours and over 250 GB in Pari.  
+
+Some weight $1$ forms with projective image $D_2$ can have very large kernel fields.
+
+\subsection{Classifying the projective Galois images}
+
+Described by Buzzard--Lauder.  In Magma, there is separate functionality to compute the dihedral forms, so this is a bit of reverse engineering.  Apparently Pari (\texttt|mfgaloistype|) can classify the projective image (using \verb|mfgaloistype|).
+
+We made some further observations...
+
+\subsection{Computing the associated Artin representation}
+
+Along the way, we found small number fields to add to the LMFDB: for example the $S_4$-quartic field defined by $x^4-401x-8421$ arises as the projective image for a weight $1$ form of level $1203$.
+
+Pari can only provide projective kernel polynomials for the $A_4$ and $S_4$ cases.  
+
+Conversely, we matched all 4375 odd 2-dimensional Artin reps of conductor $\leq 4000$ stored in the LMFDB to weight one forms in our data.
+
+\section{Final remarks} \label{sec:conclusion}
+
+Future work:
+\begin{itemize}
+\item Extend data set: for trivial character, compute $Nk^2 \leq 40000$ (necessarily even weight, will surely be dominated by $k=2$).  This is in progress.
+\item Make a database of modular and Shimura curves.
+\item Make a database of modular abelian varieties, including (geometric) endomorphism algebra.
+\item \jv{Mention Dohyeong Kim is computing $k=2$ and trivial character and quadratic Hecke field using linear combinations of $T_1,T_p,T_q$?}
+\end{itemize}
+
+\begin{thebibliography}{999}
+
+\bibitem{CohenStroemberg}
+Henri Cohen and Fredrik Str\"omberg, \emph{Modular forms: a classical approach}, Grad.\ Studies in Math.\, vol.\ 179, Amer.\ Math.\ Soc., Providence, RI, 2017.
+
+\bibitem{Cremona:abextratwist}
+J.\ E.\ Cremona, \emph{Abelian varieties with extra twist, cusp forms, and elliptic curves over imaginary quadratic fields}, J.\ London Math.\ Soc.\ (2) \textbf{45} (1992), no.\ 3, 404--416.
+
+\bibitem{Cremona:mec}
+J.\ E.\ Cremona, \emph{Algorithms for modular elliptic curves}, 2nd ed., Cambridge University Press, Cambridge, 1997.
+
+\bibitem{LMFDB:Cremona}
+John Cremona, \emph{The $L$-functions and modular forms database project}, Found.\ Comput.\ Math.\ \textbf{16} (2016), no.\ 6, 1541--1553.
+
+\bibitem{Kilford}
+Lloyd J.P.\ Kilford, \emph{Modular forms: A classical and computational introduction}, 2nd ed., Imperial College Press, London, 2015.
+
+\bibitem{Magma}
+W.~Bosma, J.~Cannon, and C.~Playoust, \emph{The Magma algebra system.\ I.\ The user language}, J.\ Symbolic Comput.\ \textbf{24} (3--4), 1997, 235--265.
+
+\bibitem{Meyer1}
+Christian Meyer, \emph{Newforms of weight two for $\Gamma_0(N)$ with rational coefficients}, \\ \href{http://www2.mathematik.uni-mainz.de/alggeom/cm/weight2.pdf}{\texttt{http://www2.mathematik.uni-mainz.de/alggeom/cm/weight2.pdf}}, 2005.
+
+\bibitem{Meyer2}
+Christian Meyer, \emph{Newforms of weight four for $\Gamma_0(N)$ with rational coefficients}, \\ \href{http://www2.mathematik.uni-mainz.de/alggeom/cm/weight4.pdf}{\texttt{http://www2.mathematik.uni-mainz.de/alggeom/cm/weight4.pdf}}, 2005.
+
+\bibitem{Miyake}
+Toshitsune Miyake, \emph{Modular forms}, Translated from the 1976 Japanese original by Yoshitaka Maeda, Springer Monographs in Math., Springer-Verlag, Berlin, 2006.
+
+\bibitem{Ribet:galreps}
+Kenneth A.\ Ribet, \emph{Galois representations attached to eigenforms with Nebentypus}, Modular functions of one variable, V (Proc.\ Second Internat.\ Conf., Univ.\ Bonn, Bonn, 1976), Lecture Notes in Math., vol.\ 601, Springer, Berlin, 1977, 17--51.
+
+\bibitem{Ribet:endos}
+Kenneth A.\ Ribet, \emph{Twists of modular forms and endomorphisms of abelian varieties}, Math.\ Ann.\ \textbf{253} (1980), no.\ 1, 43--62.
+
+\bibitem{SkoruppaZagier}
+Nils-Peter Skoruppa and Don Zagier, \emph{Jacobi forms and a certain space of modular forms}, Invent.\ Math.\ \textbf{94} (1988), no.\ 1, 113--146.
+
+\bibitem{Stein:Tables}
+William Stein, \emph{The Modular Forms Database}, \href{http://wstein.org/Tables/}{\texttt{http://wstein.org/Tables/}}.
+
+\bibitem{Stein}
+William Stein, \emph{Modular forms, a computational approach}, with an appendix by Paul E.\ Gunnells, Graduate Studies in Math., vol.~79, Amer.\ Math.\ Soc., Providence, 2007.
+
+\bibitem{Stein2}
+William A.\ Stein, \emph{An introduction to computing modular forms using modular symbols}, Algorithmic number theory: lattices, number fields, curves and cryptography, Math.\ Sci.\ Res.\ Inst.\ Publ., vol.\ 44, Cambridge Univ. Press, Cambridge, 2008, 641--652.
+
+\bibitem{Wada1}
+Hideo Wada, \emph{Tables of Hecke operators.\ I}, Seminar on Modern Methods in Number Theory (Inst.\ Statist.\ Math., Tokyo, 1971), Paper No.\ 39, Inst.\ Statist.\ Math., Tokyo, 1971. 
+
+\bibitem{Wada2}
+Hideo Wada, \emph{A table of Hecke operators.\ II}, Proc.\ Japan Acad.\ \textbf{49} (1973), 380--384. 
+
+\end{thebibliography}
+
+\end{document}
