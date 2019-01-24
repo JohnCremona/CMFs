@@ -123,12 +123,12 @@ def generate_lpdata_and_inputs(filename, check_for_lpdata = True, check_for_lfun
         for line in F:
             doline(inputs, line, lfun_dir, check_for_lpdata, check_for_lfunction)
             k += 1
-            if linecount > 10:
-                if (k % (linecount//10)) == 0:
+            if linecount > 1000:
+                if (k % (linecount//1000)) == 0:
                     print "generate_lpdata_and_inputs %.2f%% done" % (k*100./linecount)
-    write_inputs(inputs, inputs_dir);
+    write_inputs(inputs, real_filename, base_dir, inputs_dir, chunk);
 
-def write_inputs(inputs, inputs_dir) :
+def write_inputs(inputs, real_filename,  base_dir, inputs_dir, chunk = 100):
     parallel_inputs = os.path.join(base_dir, real_filename + '.tsv')
     with open(parallel_inputs, 'w') as I:
         for weight, lines in inputs.iteritems():
@@ -142,7 +142,7 @@ def write_inputs(inputs, inputs_dir) :
                 with open(inputsfilename , 'w') as W:
                     W.write('\n'.join(line_block) + '\n')
                     #print "wrote %d lines to %s" % (len(line_block), inputsfilename)
-                I.write("%d\t%s\n" % (weight_normalized, inputsfilename))
+                I.write("%d\t%s\n" % (weight, inputsfilename))
 
     print "now set LFUNCTIONS and run:"
     print r"""parallel -a %s  --colsep '\t' --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
@@ -152,6 +152,7 @@ if len(sys.argv) == 2:
     generate_lpdata_and_inputs(sys.argv[1])
 else:
     # just generate lpdata
+    #print len(sys.argv) - 2
     for line in sys.argv[2:]:
         doline({}, line, sys.argv[1] )
 
