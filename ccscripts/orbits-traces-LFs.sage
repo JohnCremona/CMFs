@@ -1,4 +1,4 @@
-import sqlite < 10003
+import sqlite3
 import os
 import sys
 import struct
