@@ -185,8 +185,8 @@ self_twist_discs | integer[] | list of discriminants giving self twists (either 
 cm_discs | integer[] | list of CM discriminants (the negative discriminants listed in self_twist_discs)
 rm_discs | integer[] | list of RM discriminants (the positive discriminants listed in self_twist_discs)
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
-has_inner_twist | boolean |
-inner_twists | jsonb | List of quadruples <b,m,M,o> where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
+has_non_self_twist | boolean | true if newform admits an inner twist that is not a self twist
+inner_twists | jsonb | List of septuples <b,m,M,o,parity,order,disc> where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
 inner_twist_count | integer | number of inner twists (includes proved and unproved), null if inner twists have not been computed (this applies to all forms of dimension > 20 and weight > 1)
 atkin_lehner_eigenvals | integer[] | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
 atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
