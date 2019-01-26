@@ -293,7 +293,7 @@ def read_lfunction_file(filename):
                     if 'accuracy' not in output:
                         # if vals[3] = -101
                         # then accuracy = 100
-                        output['accuracy'] = max(100, -vals[2] - 1)
+                        output['accuracy'] = min(100, -vals[2] - 1)
                         two_power = 2**output['accuracy']
                     else:
                         assert -vals[2] - 1 >= output['accuracy']
