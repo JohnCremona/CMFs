@@ -214,7 +214,7 @@ def CBF_to_pair(x):
     a = CCC(x)
     return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
 
-def reads_lfunction_file(filename):
+def read_lfunction_file(filename):
     """
     reads an .lfunction file
     adds to it the order_of_vanishing
@@ -238,7 +238,6 @@ def reads_lfunction_file(filename):
     ...
     """
     output = {}
-    accuracy = None
     with open(filename, "r") as lfunction_file:
         for i, l in enumerate(lfunction_file):
             if i == 0:
@@ -248,7 +247,7 @@ def reads_lfunction_file(filename):
                     return read_lfunction_file_old(filename)
                 assert len(vals) == 6
                 root_number = from_acb2(*vals)
-                assert ola.abs().contains_exact(1), "%s, %s" % (filename, root_number.abs() )
+                assert root_number.abs().contains_exact(1), "%s, %s" % (filename, root_number.abs() )
                 try:
                     root_number = ZZ(root_number)
                     if root_number == 1:
@@ -284,43 +283,43 @@ def reads_lfunction_file(filename):
                     assert 4 +  output['order_of_vanishing'] > i, "%s, %s < %s" % (filename, 5 +  output['order_of_vanishing'], i);
                 else:
                     assert 4 +  output['order_of_vanishing'] <= i,  "%s, %s >= %s" % (filename, 5 +  output['order_of_vanishing'], i);
-                    zero = RRR(from_arb2(*vals))
-                    dobule_zero = float(zero.real())
-                    if accuracy is None:
-                        # we expect vals[3] = -101
-                        # thus accuracy = 100
-                        accuracy = -vals[2] - 1
-                        output['accuracy'] = accuracy
-                        two_power = 2**accuracy
+                    assert vals[1] - vals[0] <= 2
+                    arb_zero = from_arb2(*vals).real()
+                    double_zero = float(arb_zero)
+                    if 'accuracy' not in output:
+                        # if vals[3] = -101
+                        # then accuracy = 100
+                        output['accuracy'] = -vals[2] - 1
+                        two_power = 2**output['accuracy']
                     else:
                         assert -(output['accuracy'] + 1) == vals[2]
-                    int_zero = ZZ(zero*two_power)
-
-                    zero_realnumber = RealNumber(int_zero.str()+".")/two_power;
-                zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
-                assert zero_after_string  == int_zero, "zero_after_field = %s\nint_zero = %s" % (zero_after_string, int_zero,)
-                if int_zero == 0:
-                    # they will be converted to strings later on
+                    int_zero = ZZ(arb_zero*two_power)
+                    zero = RealNumber(int_zero.str()+".")/two_power;
+                    zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
+                    assert double_zero == zero, "%s, %s != %s" % (filename, double_zero, zero)
+                    assert zero_after_string  == int_zero, "zero_after_field = %s\nint_zero = %s" % (zero_after_string, int_zero,)
+                    # will be converted to strings later on
+                    # as zero.str(truncate=False)
                     # during populate_rational_rows
                     output['positive_zeros'] += [zero];
                     #Lhash = (first_zero * 2^100).round()
                     if 'Lhash' not in output:
-                        output['Lhash'] = str( QQ(int_zero*2**(100 - accuracy)).round() )
-                        if accuracy < 100:
+                        output['Lhash'] = str( QQ(int_zero*2**(100 - output['accuracy'])).round() )
+                        if output['accuracy'] < 100:
                             output['Lhash'] = "_" +  output['Lhash'];
             elif i == 4 +  number_of_zeros:
                 output['plot_delta'] = float(l);
-            elif i == 6 +  number_of_zeros:
+            elif i == 5 +  number_of_zeros:
                 len_plot_values = int(l);
                 output['plot_values'] = [];
-            elif i >  6 + number_of_zeros:
+            elif i >  5 + number_of_zeros:
                 output['plot_values'] += [float(l)];
-    output['accuracy'] =
     assert len(output['plot_values']) == len_plot_values, "%s, %s != %s" % (filename, len(output['plot_values']), len_plot_values)
     assert len(output['positive_zeros']) ==  number_of_zeros - output['order_of_vanishing'], "%s, %s != %s" % (filename, len(output['positive_zeros']),  output['number_of_zeros'] - output['order_of_vanishing']) ;
 
     assert 'Lhash' in output, "%s" % filename
     for i in range(0,3):
+        # were we don't want to truncate
         output['z' + str(i + 1)] = str(output['positive_zeros'][i])
 
     return output
