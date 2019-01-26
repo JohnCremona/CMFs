@@ -293,10 +293,10 @@ def read_lfunction_file(filename):
                     if 'accuracy' not in output:
                         # if vals[3] = -101
                         # then accuracy = 100
-                        output['accuracy'] = -vals[2] - 1
+                        output['accuracy'] = max(100, -vals[2] - 1)
                         two_power = 2**output['accuracy']
                     else:
-                        assert -(output['accuracy'] + 1) == vals[2]
+                        assert -vals[2] - 1 >= output['accuracy']
                     int_zero = ZZ(arb_zero*two_power)
                     zero = RealNumber(int_zero.str()+".")/two_power;
                     zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
