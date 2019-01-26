@@ -38,6 +38,18 @@ def print_CCC(elt):
     elt = CCC(elt)
     return "[ %s, %s]" % tuple(map(print_RRR, [elt.real(), elt.imag()]))
 
+def RIF_to_float(x):
+    x = RRR(x)
+    if x.contains_zero():
+        return 0
+    elif x.abs() < 1e-70:
+        return 0
+    else:
+        return float(x)
+def CBF_to_pair(x):
+    a = CCC(x)
+    return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
+
 def from_arb2(lower, upper, exp):
     return from_acb2(lower, upper, exp, 0, 0, 1)
 
@@ -67,7 +79,7 @@ def constant_lf(level, weight, degree):
         'analytic_normalization': float(weight - 1)/2,
         'precision': '\N',
         'algebraic': True,
-        'coeff_info': '\N', 
+        'coeff_info': '\N',
         'credit' : '\N',
         'values': '\N', # no special values at the moment
         'gamma_factors': [[], [0]*(degree//2)],
@@ -204,15 +216,7 @@ schema_instances_types.pop('id')
 # End of postgres stuff
 ########################
 
-def RIF_to_float(x):
-    x = RRR(x)
-    if x.contains_zero():
-        return 0
-    else:
-        return float(x)
-def CBF_to_pair(x):
-    a = CCC(x)
-    return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
+
 
 def read_lfunction_file(filename):
     """
@@ -257,7 +261,7 @@ def read_lfunction_file(filename):
                     else:
                         assert root_number in [1, -1], "%s %s" % (root_number, from_acb2(*vals))
                 except Exception:
-                    sign_arg = float(root_number.arg())
+                    sign_arg = float(root_number.arg()/(2*pi))
                 root_number = CIF(root_number) # for conversion to text purposes
                 output['root_number'] = root_number;
                 output['sign_arg'] = sign_arg;
@@ -369,10 +373,10 @@ def read_lfunction_file_old(filename):
                     sign_arg = 0.5
                 else:
                     assert (root_number.abs() - 1).contains_zero(), "%s, %s" % (filename, root_number.abs() )
-                    sign_arg = float(root_number.arg())
+                    sign_arg = float(root_number.arg()/(2*pi))
                     root_number = root_number #.str(style="question").replace('?', '')
                 output['root_number'] = root_number;
-                output['sign_arg'] = sign_arg;
+                output['sign_arg'] = sign_arg
             elif i == 2:
                 output['leading_term'] = (R(ZZ(l))/two_power).str(style="question").replace('?', '');
             elif i == 3:
@@ -655,8 +659,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             zeros_as_real.sort()
             zeros_as_str = [ z.str(truncate=False) for z in zeros_as_real]
             row['positive_zeros'] = str(zeros_as_str).replace("'","\"")
-            zeros_hash = sorted([ (rows[elt][Lhash], rows[elt][positive_zeros][0]) for elt in labels], key = lambda x : x[1])
-            row['Lhash'] = ",".join([elt[0] for elt in zeros_hash])
+            row['Lhash'] = ",".join(map(str, sorted([int(rows[elt][Lhash]) for elt in labels])))
             for i in range(0,3):
                 row['z' + str(i + 1)] = str(zeros_as_real[i])
 
@@ -682,6 +685,12 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
             row['leading_term'] = (prod(toRRR(rows[elt][leading_term], drop=False) for elt in labels)).str(style="question").replace('?', '')
             try:
                 row['root_number'] = str(RRR(prod(root_numbers).real()).unique_integer())
+                if row['root_number'] == str(1):
+                    row['sign_arg'] = 0
+                elif row['root_number'] == str(-1):
+                    row['sign_arg'] = 0.5
+                else:
+                    assert row['root_number'] in map(str, [1, -1]), "%s" % row['root_number']
             except ValueError:
                 # couldn't pin down the unique integer through root_numbers
                 row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
@@ -918,10 +927,8 @@ def read_all(filename):
             row['bad_lfactors'] =  map( lambda x: [int(x[0]), map(CBF_to_pair, x[1])], bad_euler_factors)
             row['coefficient_field'] = 'CDF'
             for i, ai in enumerate(dirichlet(CCC, euler_factors[:11])[2:12]):
-                ai = CDF(ai)
-                ai_jsonb = [float(ai.real_part()), float(ai.imag_part())]
                 if i + 2 <= 10:
-                    row['a' + str(i+2)] = ai_jsonb
+                    row['a' + str(i+2)] = CBF_to_pair(ai)
 
 
             for key in schema_lf:
