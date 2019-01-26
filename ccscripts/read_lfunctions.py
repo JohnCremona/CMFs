@@ -6,6 +6,7 @@ from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
 default_prec = 300
 CCC = ComplexBallField(default_prec)
 RRR = RealIntervalField(default_prec)
+CIF = ComplexIntervalField(default_prec)
 def toRRR(elt, drop = True):
     if "." in elt and len(elt) > 70:
         # drop the last digit and convert it to an unkown
@@ -21,10 +22,9 @@ def toRRR(elt, drop = True):
         return RRR(begin + "0e" + end, begin + "9e" + end)
     else:
         return RRR(elt)
-        
+
 def toCCC(r, i, drop = True):
     return CCC(toRRR(r, drop)) + CCC.gens()[0]*CCC(toRRR(i, drop))
-
 
 def print_RRR(elt):
         if elt.contains_integer():
@@ -37,6 +37,12 @@ def print_RRR(elt):
 def print_CCC(elt):
     elt = CCC(elt)
     return "[ %s, %s]" % tuple(map(print_RRR, [elt.real(), elt.imag()]))
+
+def from_arb2(lower, upper, exp):
+    return from_acb2(lower, upper, exp, 0, 0, 1)
+
+def from_acb2(lower_real, upper_real, exp_real, lower_imag, upper_imag, exp_imag):
+    return CCC(RRR(lower_real, upper_real)*2**exp_real, RRR(lower_imag, upper_imag)*2**exp_imag)
 
 ####################
 # postgres stuff
@@ -208,9 +214,120 @@ def CBF_to_pair(x):
     a = CCC(x)
     return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
 
+def reads_lfunction_file(filename):
+    """
+    reads an .lfunction file
+    adds to it the order_of_vanishing
+    and Lhash
 
 
-def read_lfunction_file(filename):
+    expects:
+    root_number as acb2, see from_acb2
+    order_of_vanishing
+    L(1/2)^r / r! as arb2
+    n = number of zeros computed
+    z1 as arb2
+    z2 as arb2
+    z3 as arb2
+    ...
+    zn as arb2
+    plot_delta
+    number of plot_values
+    plot_value1
+    plot_value2
+    ...
+    """
+    output = {}
+    accuracy = None
+    with open(filename, "r") as lfunction_file:
+        for i, l in enumerate(lfunction_file):
+            if i == 0:
+                # Root number
+                vals = map(int, l.split())
+                if len(vals) == 1:
+                    return read_lfunction_file_old(filename)
+                assert len(vals) == 6
+                root_number = from_acb2(*vals)
+                assert ola.abs().contains_exact(1), "%s, %s" % (filename, root_number.abs() )
+                try:
+                    root_number = ZZ(root_number)
+                    if root_number == 1:
+                        sign_arg = 0
+                    elif root_number == -1:
+                        sign_arg = 0.5
+                    else:
+                        assert root_number in [1, -1], "%s %s" % (root_number, from_acb2(*vals))
+                except Exception:
+                    sign_arg = float(root_number.arg())
+                root_number = CIF(root_number) # for conversion to text purposes
+                output['root_number'] = root_number;
+                output['sign_arg'] = sign_arg;
+            elif i == 1:
+                # Order of vanishing
+                output['order_of_vanishing'] = int(l);
+            elif i == 2:
+                # Leading term
+                # L^(r)(1/2) / r!
+                vals = map(int, l.split())
+                assert len(vals) == 3
+                output['leading_term'] = RRR(from_arb2(*vals)).str(style="question").replace('?', '')
+            elif i == 3:
+                # Number of zeros
+                number_of_zeros = int(l);
+                output['positive_zeros'] = [];
+            elif i < 4 +  number_of_zeros:
+                vals = map(int, l.split())
+                assert len(vals) == 3
+                if vals == [0,0,0]:
+                    int_zero = 0
+                    double_zero = 0
+                    assert 4 +  output['order_of_vanishing'] > i, "%s, %s < %s" % (filename, 5 +  output['order_of_vanishing'], i);
+                else:
+                    assert 4 +  output['order_of_vanishing'] <= i,  "%s, %s >= %s" % (filename, 5 +  output['order_of_vanishing'], i);
+                    zero = RRR(from_arb2(*vals))
+                    dobule_zero = float(zero.real())
+                    if accuracy is None:
+                        # we expect vals[3] = -101
+                        # thus accuracy = 100
+                        accuracy = -vals[2] - 1
+                        output['accuracy'] = accuracy
+                        two_power = 2**accuracy
+                    else:
+                        assert -(output['accuracy'] + 1) == vals[2]
+                    int_zero = ZZ(zero*two_power)
+
+                    zero_realnumber = RealNumber(int_zero.str()+".")/two_power;
+                zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
+                assert zero_after_string  == int_zero, "zero_after_field = %s\nint_zero = %s" % (zero_after_string, int_zero,)
+                if int_zero == 0:
+                    # they will be converted to strings later on
+                    # during populate_rational_rows
+                    output['positive_zeros'] += [zero];
+                    #Lhash = (first_zero * 2^100).round()
+                    if 'Lhash' not in output:
+                        output['Lhash'] = str( QQ(int_zero*2**(100 - accuracy)).round() )
+                        if accuracy < 100:
+                            output['Lhash'] = "_" +  output['Lhash'];
+            elif i == 4 +  number_of_zeros:
+                output['plot_delta'] = float(l);
+            elif i == 6 +  number_of_zeros:
+                len_plot_values = int(l);
+                output['plot_values'] = [];
+            elif i >  6 + number_of_zeros:
+                output['plot_values'] += [float(l)];
+    output['accuracy'] =
+    assert len(output['plot_values']) == len_plot_values, "%s, %s != %s" % (filename, len(output['plot_values']), len_plot_values)
+    assert len(output['positive_zeros']) ==  number_of_zeros - output['order_of_vanishing'], "%s, %s != %s" % (filename, len(output['positive_zeros']),  output['number_of_zeros'] - output['order_of_vanishing']) ;
+
+    assert 'Lhash' in output, "%s" % filename
+    for i in range(0,3):
+        output['z' + str(i + 1)] = str(output['positive_zeros'][i])
+
+    return output
+
+
+
+def read_lfunction_file_old(filename):
     """
     reads an .lfunction file
     adds to it the order_of_vanishing
@@ -236,65 +353,68 @@ def read_lfunction_file(filename):
     """
 
     output = {};
-    lfunction_file = open(filename, "r");
-    for i, l in enumerate(lfunction_file):
-        if i == 0:
-            accuracy = int(l) - 1;
-            output['accuracy'] = accuracy;
-            two_power = 2 ** output['accuracy'];
-            R = ComplexIntervalField(accuracy)
-        elif i == 1:
-            root_number  = R(*map(ZZ, l.split(" ")))/two_power;
-            if (root_number - 1).contains_zero():
-                root_number = R(1);
-                sign_arg = 0;
-            elif (root_number + 1).contains_zero():
-                root_number = R(-1);
-                sign_arg = 0.5
-            else:
-                assert (root_number.abs() - 1).contains_zero(), "%s, %s" % (filename, root_number.abs() )
-                sign_arg = float(root_number.arg())
-                root_number = root_number #.str(style="question").replace('?', '')
-            output['root_number'] = root_number;
-            output['sign_arg'] = sign_arg;
-        elif i == 2:
-            output['leading_term'] = (R(ZZ(l))/two_power).str(style="question").replace('?', '');
-        elif i == 3:
-            output['order_of_vanishing'] = int(l);
-        elif i == 4:
-            number_of_zeros = int(l);
-            output['positive_zeros'] = [];
-        elif i < 5 +  number_of_zeros:
-            double_zero, int_zero = l.split(" ");
-            double_zero = float(double_zero);
-            int_zero = ZZ(int_zero);
-            zero = RealNumber(int_zero.str()+".")/two_power;
-            zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
-            assert double_zero == zero, "%s, %s != %s" % (filename, double_zero, zero)
-            assert zero_after_string  == int_zero, "zero_after_field = %s\nint_zero = %s" % (zero_after_string, int_zero,)
-            if int_zero == 0:
-                assert 5 +  output['order_of_vanishing'] > i, "%s, %s < %s" % (filename, 5 +  output['order_of_vanishing'], i);
-            else:
-                assert 5 +  output['order_of_vanishing'] <= i,  "%s, %s >= %s" % (filename, 5 +  output['order_of_vanishing'], i);
+    with open(filename, "r") as lfunction_file:
+        for i, l in enumerate(lfunction_file):
+            if i == 0:
+                accuracy = int(l) - 1;
+                output['accuracy'] = accuracy;
+                two_power = 2 ** output['accuracy'];
+                R = ComplexIntervalField(accuracy)
+            elif i == 1:
+                root_number  = R(*map(ZZ, l.split(" ")))/two_power;
+                if (root_number - 1).contains_zero():
+                    root_number = R(1);
+                    sign_arg = 0;
+                elif (root_number + 1).contains_zero():
+                    root_number = R(-1);
+                    sign_arg = 0.5
+                else:
+                    assert (root_number.abs() - 1).contains_zero(), "%s, %s" % (filename, root_number.abs() )
+                    sign_arg = float(root_number.arg())
+                    root_number = root_number #.str(style="question").replace('?', '')
+                output['root_number'] = root_number;
+                output['sign_arg'] = sign_arg;
+            elif i == 2:
+                output['leading_term'] = (R(ZZ(l))/two_power).str(style="question").replace('?', '');
+            elif i == 3:
+                output['order_of_vanishing'] = int(l);
+                if output['order_of_vanishing'] > 0:
+                    output['leading_term'] = '\N'
+            elif i == 4:
+                number_of_zeros = int(l);
+                output['positive_zeros'] = [];
+            elif i < 5 +  number_of_zeros:
+                double_zero, int_zero = l.split(" ");
+                double_zero = float(double_zero);
+                int_zero = ZZ(int_zero);
+                zero = RealNumber(int_zero.str()+".")/two_power;
+                zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
+                assert double_zero == zero, "%s, %s != %s" % (filename, double_zero, zero)
+                assert zero_after_string  == int_zero, "zero_after_field = %s\nint_zero = %s" % (zero_after_string, int_zero,)
+                if int_zero == 0:
+                    assert 5 +  output['order_of_vanishing'] > i, "%s, %s < %s" % (filename, 5 +  output['order_of_vanishing'], i);
+                else:
+                    assert 5 +  output['order_of_vanishing'] <= i,  "%s, %s >= %s" % (filename, 5 +  output['order_of_vanishing'], i);
 
-                # they will be converted to strings later on
-                # during populate_rational_rows
-                output['positive_zeros'] += [zero];
-                #Lhash = (first_zero * 2^100).round()
-                if 'Lhash' not in output:
-                    output['Lhash'] = str( QQ(int_zero*2**(100 - accuracy)).round() )
-                    if accuracy < 100:
-                        output['Lhash'] = "_" +  output['Lhash'];
-        elif i == 5 +  number_of_zeros:
-            output['plot_delta'] = float(l);
-        elif i == 6 +  number_of_zeros:
-            len_plot_values = int(l);
-            output['plot_values'] = [];
-        elif i >  6 + number_of_zeros:
-            output['plot_values'] += [float(l)];
+                    # they will be converted to strings later on
+                    # during populate_rational_rows
+                    output['positive_zeros'] += [zero];
+                    #Lhash = (first_zero * 2^100).round()
+                    if 'Lhash' not in output:
+                        output['Lhash'] = str( QQ(int_zero*2**(100 - accuracy)).round() )
+                        if accuracy < 100:
+                            output['Lhash'] = "_" +  output['Lhash'];
+            elif i == 5 +  number_of_zeros:
+                output['plot_delta'] = float(l);
+            elif i == 6 +  number_of_zeros:
+                len_plot_values = int(l);
+                output['plot_values'] = [];
+            elif i >  6 + number_of_zeros:
+                output['plot_values'] += [float(l)];
 
     assert len(output['plot_values']) == len_plot_values, "%s, %s != %s" % (filename, len(output['plot_values']), len_plot_values)
     assert len(output['positive_zeros']) ==  number_of_zeros - output['order_of_vanishing'], "%s, %s != %s" % (filename, len(output['positive_zeros']),  output['number_of_zeros'] - output['order_of_vanishing']) ;
+
 
     assert 'Lhash' in output, "%s" % filename
     for i in range(0,3):
@@ -556,7 +676,6 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
                 row['sign_arg'] -= 1
             while row['sign_arg'] <= -0.5:
                 row['sign_arg'] += 1
-            
 
             deltas = [rows[elt][plot_delta] for elt in labels]
             values = [rows[elt][plot_values] for elt in labels]

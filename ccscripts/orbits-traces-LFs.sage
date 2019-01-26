@@ -1197,6 +1197,11 @@ elif len(sys.argv) == 3:
         N = int(sys.argv[1])
         k = int(sys.argv[2])
         do(N, k)
+elif len(sys.argv) == 4:
+    assert sys.argv[1] == 'traces'
+    N = int(sys.argv[2])
+    k = int(sys.argv[3])
+    do(N, k, only_traces = True)
 
 
 
