@@ -296,7 +296,11 @@ def read_lfunction_file(filename):
                         two_power = 2**output['accuracy']
                     else:
                         assert -vals[2] - 1 >= output['accuracy']
-                    int_zero = ZZ(arb_zero*two_power)
+                    try:
+                        int_zero = ZZ(arb_zero*two_power)
+                    except ValueError:
+                        print "%s %s %s" % (filename, vals, i)
+                        raise
                     zero = RealNumber(int_zero.str()+".")/two_power;
                     zero_after_string = (RealNumber(zero.str(truncate=False)) * two_power).round()
                     assert double_zero == zero, "%s, %s != %s" % (filename, double_zero, zero)
