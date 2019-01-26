@@ -287,7 +287,6 @@ def read_lfunction_file(filename):
                     assert 4 +  output['order_of_vanishing'] > i, "%s, %s < %s" % (filename, 5 +  output['order_of_vanishing'], i);
                 else:
                     assert 4 +  output['order_of_vanishing'] <= i,  "%s, %s >= %s" % (filename, 5 +  output['order_of_vanishing'], i);
-                    assert vals[1] - vals[0] <= 2, "%s %s %s" % (filename, vals, i)
                     arb_zero = from_arb2(*vals).real()
                     double_zero = float(arb_zero)
                     if 'accuracy' not in output:
