@@ -923,7 +923,8 @@ def read_all(filename):
                 elif charval.contains_exact(ZZ(-1)):
                     charval = -1
                 return [1, -ap, (p**(weight-1))*charval]
-            euler_factors = [ euler_factor(*elt) for elt in ap_list[:max(30, prime_pi(max(prime_divisors(level))))] ]
+            cut = 30 if level == 1 else max(30, prime_pi(max(prime_divisors(level))))
+            euler_factors = [ euler_factor(*elt) for elt in ap_list[:cut] ]
             bad_euler_factors = [ [elt[0], euler_factor(*elt)] for elt in ap_list if elt[0].divides(level)]
 
             euler_factors_cc[label] = euler_factors
