@@ -456,6 +456,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             bad_euler.append([p, [c, b]])
             euler.append([c,b])
             a = 0
+            angles.append(None)
         else:
             charval = CCC(2*char.logvalue(p)).exppii()
             if charval.contains_exact(1):
@@ -476,7 +477,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
                     theta +=1
                 assert theta <= 0.5 and theta > -0.5, "%s %s %s" % (theta, arg_hack(alpha), alpha)
                 thetas.append(theta)
-            angles.append([p, float(min(thetas))])
+            angles.append(float(min(thetas)))
         if len(coeffs) > p**2:
             assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
     an_f = map(CBF_to_pair, coeffs[:to_store + 1])
@@ -1131,7 +1132,12 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         write_header_hecke_file(hecke_filename)
         with open(hecke_filename, 'a') as HF:
             for v in get_hecke_cc().values():
-                HF.write("\t".join(map(json.dumps,v)).replace('[','{').replace(']','}') + "\n")
+                try:
+                    HF.write("\t".join(map(json.dumps,v)).replace('[','{').replace(']','}') + "\n")
+                except TypeError:
+                    for elt in v:
+                        print v
+                    raise
 
 
 
