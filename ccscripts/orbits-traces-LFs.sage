@@ -615,7 +615,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         chi = result['chi']
         chibar = inverse_mod(chi, level)
         if only_orbit is not None:
-            if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]:
+            if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
                     continue
 
         is_trivial = False
@@ -680,7 +680,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         chi = result['chi']
         original_chi = chi
         if only_orbit is not None:
-            if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]:
+            if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
                     continue
 
         if (level, weight, chi) not in degree_lists:
