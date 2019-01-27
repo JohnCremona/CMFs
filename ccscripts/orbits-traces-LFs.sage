@@ -1115,17 +1115,15 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             ol = cremona_letter_code(orbit_labels[chi] - 1)
             lfuntion_label = ".".join( map(str, [level, weight] + [ol, a, chi, n]))
             hecke_cc[key] = [
-                    hecke_orbit_code[key],
+                    int(hecke_orbit_code[key]),
                     lfuntion_label, # N.k.c.x.n
-                    label[0], # conrey_label
-                    label[2], # embedding_index
-                    embedding_m[key],
+                    int(label[0]), # conrey_label
+                    int(label[2]), # embedding_index
+                    int(embedding_m[key]),
                     '\N', # embedding_root_real
                     '\N', # embedding_root_imag
                     coeffs_f[key][1:],
-                    coeffs_f[key][1:101],
                     angles[key],
-                    [pair for pair in angles[key] if pair[0] < 100],
                     ]
         return hecke_cc
 
@@ -1133,7 +1131,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         write_header_hecke_file(hecke_filename)
         with open(hecke_filename, 'a') as HF:
             for v in get_hecke_cc().values():
-                HF.write("\t".join(map(json.dumps,v)) + "\n")
+                HF.write("\t".join(map(json.dumps,v)).replace('[','{').replace(']','}') + "\n")
 
 
 
