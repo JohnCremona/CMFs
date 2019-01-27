@@ -840,7 +840,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     assert CBFlisteq(coeffs_list[chibar][cn - 1][2], an_conjugate)
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
-                    hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
+                    hecke_orbit_code[(chi,j)] = int(level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52))
                     all_the_labels[(chi,j)] = (level, weight, ol, sa, chi, sn)
                     converted_label = (chi, sa, sn)
                     labels[(chi, j)] = converted_label
