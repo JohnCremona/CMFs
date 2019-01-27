@@ -1128,15 +1128,21 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     ]
         return hecke_cc
 
+    def json_hack(elt):
+        if isinstance(elt, str):
+            return elt
+        else:
+            return json.dumps(elt)
     def write_hecke_cc(hecke_filename):
         write_header_hecke_file(hecke_filename)
         with open(hecke_filename, 'a') as HF:
             for v in get_hecke_cc().values():
                 try:
-                    HF.write("\t".join(map(json.dumps,v)).replace('[','{').replace(']','}') + "\n")
+                    HF.write("\t".join(map(json_hack,v)).replace('[','{').replace(']','}') + "\n")
                 except TypeError:
                     for elt in v:
-                        print v
+                        print elt
+                        print json_hack(elt)
                     raise
 
 
