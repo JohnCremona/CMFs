@@ -659,7 +659,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         if chibar > chi:
             coeffs[(chibar, j)] = [z.conjugate() for z in _coeffs]
 
-    assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
+    if only_orbit is None:
+        assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
 
 
     if not only_traces:
