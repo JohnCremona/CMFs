@@ -916,6 +916,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row['leading_term'] = '\N'
         if row['self_dual']:
             row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            if row['root_number'] == str(1):
+                row['sign_arg'] = 0
+            elif row['root_number'] == str(-1):
+                row['sign_arg'] = 0.5
         else:
             row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
         #row['dirichlet_coefficients'] = [None] * 10
@@ -1032,6 +1036,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
             row['leading_term'] = '\N'
             row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            if row['root_number'] == str(1):
+                row['sign_arg'] = 0
+            elif row['root_number'] == str(-1):
+                row['sign_arg'] = 0.5
             row['coefficient_field'] = '1.1.1.1'
 
             for chi, _, _ in triples:
