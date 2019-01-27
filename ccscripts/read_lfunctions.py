@@ -287,15 +287,16 @@ def read_lfunction_file(filename):
                     assert 4 +  output['order_of_vanishing'] > i, "%s, %s < %s" % (filename, 5 +  output['order_of_vanishing'], i);
                 else:
                     assert 4 +  output['order_of_vanishing'] <= i,  "%s, %s >= %s" % (filename, 5 +  output['order_of_vanishing'], i);
+                    assert vals[1] - vals[0] <= 2, "%s %s %s" % (filename, vals, i)
                     arb_zero = from_arb2(*vals).real()
                     double_zero = float(arb_zero)
                     if 'accuracy' not in output:
                         # if vals[3] = -101
                         # then accuracy = 100
-                        output['accuracy'] = min(100, -vals[2] - 1)
+                        output['accuracy'] = -vals[2] - 1
                         two_power = 2**output['accuracy']
                     else:
-                        assert -vals[2] - 1 >= output['accuracy']
+                        assert -(output['accuracy'] + 1) == vals[2]
                     try:
                         int_zero = ZZ(arb_zero*two_power)
                     except ValueError:
