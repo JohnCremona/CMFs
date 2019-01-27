@@ -1,4 +1,4 @@
-from sage.all import ComplexIntervalField, RealNumber, ZZ, CDF, prime_pi, prime_divisors, ComplexBallField, RealIntervalField, RR, QQ, prime_powers, PowerSeriesRing, PolynomialRing, prod, spline, srange, gcd, primes_first_n, exp, pi, I, next_prime
+from sage.all import ComplexIntervalField, RealNumber, ZZ, CDF, prime_pi, prime_divisors, ComplexBallField, RealIntervalField,  QQ, prime_powers, PowerSeriesRing, PolynomialRing, prod, spline, srange, gcd, primes_first_n, exp, pi, I, next_prime, Infinity, RR
 import os, sys, json
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
 
@@ -45,7 +45,11 @@ def RIF_to_float(x):
     elif x.abs() < 1e-70:
         return 0
     else:
-        return float(x)
+        fx = float(x)
+        if fx == Infinity:
+            return repr(RR(x))
+        else:
+            return float(x)
 def CBF_to_pair(x):
     a = CCC(x)
     return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
