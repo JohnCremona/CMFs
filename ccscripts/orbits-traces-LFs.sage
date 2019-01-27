@@ -536,7 +536,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (level*weight**2))
         if only_orbit is not None:
             print "N = %s, k = %s, orbit = %s" % (level, weight, only_orbit)
-            hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d_%d_%d.txt' % (leve, weight, only_orbit))
+            hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d_%d_%d.txt' % (level, weight, only_orbit))
             instances_filename = None
             lfun_filename = None
     if traces_filename is None:
