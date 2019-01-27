@@ -510,7 +510,7 @@ def write_header_hecke_file(filename, overwrite = False):
             FILE.write("\n")
 
 
-def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None, only_traces = False):
+def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None, only_traces = False, only_orbit = None):
     print "N = %s, k = %s" % (level, weight)
     polyinfile = os.path.join(base_import, 'polydb/{}.{}.polydb'.format(level, weight))
     mfdbinfile = os.path.join(base_import, 'mfdb/{}.{}.mfdb'.format(level, weight))
@@ -534,6 +534,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (level*weight**2))
     if hecke_filename is None:
         hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (level*weight**2))
+        if only_orbit is not None:
+            hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d_%d_%d.txt' % (leve, weight, only_orbit))
+            instances_filename = None
+            lfun_filename = None
     if traces_filename is None:
         traces_filename = os.path.join(base_export, 'CMF_traces_%d.txt' % (level*weight**2))
 
@@ -608,6 +612,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     for result in mfdb.execute('SELECT prec, exponent, ncoeffs, coefficients, chi, j FROM modforms WHERE level={} AND weight={};'.format(level, weight)):
         chi = result['chi']
+        chibar = inverse_mod(chi, level)
+        if only_orbit is not None:
+            if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]:
+                    continue
 
         is_trivial = False
         is_quadratic = False
@@ -647,7 +655,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         _coeffs[1] = CCC(1)
         extend_multiplicatively(_coeffs)
         coeffs[(chi, j)] = _coeffs
-        chibar = inverse_mod(chi, level)
         if chibar > chi:
             coeffs[(chibar, j)] = [z.conjugate() for z in _coeffs]
 
@@ -671,6 +678,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         weight = result['weight']
         chi = result['chi']
         original_chi = chi
+        if only_orbit is not None:
+            if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]:
+                    continue
 
         if (level, weight, chi) not in degree_lists:
             degree_lists[(level, weight, chi)] = []
@@ -737,7 +747,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     zeros = {}
     plots = {}
     Ldbresults = {}
-    if only_traces:
+    if only_traces or only_orbit is not None:
         cur = []
     else:
         cur = Ldb.execute('SELECT level, weight, chi, j, rank, zeroprec, nzeros, zeros, valuesdelta, nvalues, Lvalues, signarg from modformLfunctions')
@@ -1092,15 +1102,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
 
-
-
-
-
-
-
-
-
-
     def get_hecke_cc():
         # if field_poly exists then compute the corresponding embedding of the root
         # add the conrey label
@@ -1150,6 +1151,9 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 IF.write("\t".join(map(json.dumps,row)) + "\n")
 
 
+    if only_orbit is not None:
+        write_hecke_cc(hecke_filename)
+        return 0
     populate_complex_rows()
     populate_conjugates()
     populate_rational_rows()
@@ -1206,10 +1210,15 @@ elif len(sys.argv) == 3:
         k = int(sys.argv[2])
         do(N, k)
 elif len(sys.argv) == 4:
-    assert sys.argv[1] == 'traces'
-    N = int(sys.argv[2])
-    k = int(sys.argv[3])
-    do(N, k, only_traces = True)
+    if sys.argv[1] == 'traces':
+        N = int(sys.argv[2])
+        k = int(sys.argv[3])
+        do(N, k, only_traces = True)
+    else:
+        N = int(sys.argv[1])
+        k = int(sys.argv[2])
+        orbit = int(sys.argv[3])
+        do(N, k, only_orbit = orbit)
 
 
 
