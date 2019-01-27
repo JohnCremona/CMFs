@@ -301,7 +301,7 @@ def read_orbit(orbitblob):
 def RIF_to_float(x):
     x = RRR(x)
     if x.contains_zero():
-        return 0
+        return int(0)
     else:
         return float(x)
 def CBF_to_pair(x):
