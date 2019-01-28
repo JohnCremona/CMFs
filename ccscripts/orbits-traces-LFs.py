@@ -1150,13 +1150,13 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         with open(lfunctions_filename, 'a') as LF:
             for key, row in rows.iteritems():
-                LF.write("\t".join(map(json.dumps,row)) + "\n")
+                LF.write("\t".join(map(json_hack, row)) + "\n")
 
             for key, row in rational_rows.iteritems():
-                LF.write("\t".join(map(json.dumps,row)) + "\n")
+                LF.write("\t".join(map(json_hack, row)) + "\n")
         with open(instances_filename, 'a') as IF:
             for key, row in instances.iteritems():
-                IF.write("\t".join(map(json.dumps,row)) + "\n")
+                IF.write("\t".join(map(json_hack, row)) + "\n")
 
 
     if only_orbit is not None:
