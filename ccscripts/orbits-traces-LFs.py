@@ -927,7 +927,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         Lhashes[(chi, a, n)] = row['Lhash']
         row['sign_arg'] = float(Ldbrow['signarg']/(2*pi))
         for i in range(0,3):
-            row['z' + str(i + 1)] = RealNumber(str(zeros_as_int[i]) + ".")/2**prec
+            row['z' + str(i + 1)] = (RealNumber(str(zeros_as_int[i]) + ".")/2**prec).str()
 
         row['plot_delta'] = Ldbrow['valuesdelta']
         row['plot_values'] = [RDF(CDF(elt).real_part()) for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
@@ -1048,7 +1048,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     zeros_zi.append(rows[elt][schema_lf_dict['z' + str(i + 1)]])
             zeros_zi.sort()
             for i in range(0,3):
-                row['z' + str(i + 1)] = zeros_zi[i]
+                row['z' + str(i + 1)] = zeros_zi[i].str()
 
             deltas = [rows[elt][plot_delta] for elt in triples]
             values = [rows[elt][plot_values] for elt in triples]
