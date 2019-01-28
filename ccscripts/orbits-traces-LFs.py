@@ -919,7 +919,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row['central_character'] = "%s.%s" % (level, chi)
         row['self_dual'] = self_dual(chi, a, n)
         row['conjugate'] = None
-        row['Lhash'] = str(zeros_as_int[0] * 2**(100-prec).round())
+        row['Lhash'] = str((zeros_as_int[0] * 2**(100-prec)).round())
         if prec < 100:
             row['Lhash'] = '_' + row['Lhash']
         Lhashes[(chi, a, n)] = row['Lhash']
