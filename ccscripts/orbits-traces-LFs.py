@@ -1163,7 +1163,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 try:
                     LF.write("\t".join(map(json_hack, row)) + "\n")
                 except TypeError:
-                    for elt in row:
+                    for i, elt in enumerate(row):
+                        print schema_lf[i]
                         print elt
                         print json_hack(elt)
                     raise
