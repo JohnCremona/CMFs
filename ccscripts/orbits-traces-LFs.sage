@@ -508,8 +508,8 @@ def write_header(lfunctions_filename, instances_filename, overwrite = False):
 
 
 def write_header_hecke_file(filename, overwrite = False):
-    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_m', 'embedding_root_real', 'embedding_root_imag', 'an', 'first_an', 'angles', 'first_angles']
-    types = ['bigint', 'text', 'integer', 'integer', 'integer', 'double precision', 'double precision', 'jsonb', 'jsonb', 'jsonb', 'jsonb']
+    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_m', 'embedding_root_real', 'embedding_root_imag', 'an', 'angles']
+    types = ['bigint', 'text', 'integer', 'integer', 'integer', 'double precision', 'double precision', 'double precision[]', 'double precision[]']
     if not os.path.exists(filename) or overwrite:
         with open(filename, "w") as FILE:
             FILE.write("\t".join(columns) + "\n")
