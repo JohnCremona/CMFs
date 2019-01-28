@@ -4,9 +4,9 @@ import sys
 import struct
 import json
 
-from dirichlet_conrey import *
-from sage.all import prime_range, pi
-from sage.databases.cremona import cremona_letter_code, class_to_int
+from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
+from sage.all import prime_range, pi, ZZ, CDF, I, prod, exp, sqrt, ComplexBallField, RealIntervalField, gcd, Infinity, RR, srange, spline, PowerSeriesRing, primes_first_n, prime_pi, dimension_new_cusp_forms, prime_powers, inverse_mod, PolynomialRing, Gamma1, RealNumber, RDF 
+from sage.databases.cremona import cremona_letter_code
 
 to_compute = 2000 #coeffs/traces that we compute
 to_store = 1000  # that we store
@@ -213,7 +213,7 @@ schema_instances_types.pop('id')
 # sqrt hack for ComplexBallField
 def sqrt_hack(foo):
     if not foo.real().contains_zero() and foo.real().mid() < 0:
-        return foo.parent().0*(-foo).sqrt()
+        return foo.parent().gens()[0]*(-foo).sqrt()
     else:
         return foo.sqrt()
 
@@ -238,15 +238,15 @@ def CBFlistcmp(L1, L2):
         x1, y1 = z1.real(), z1.imag()
         x2, y2 = z2.real(), z2.imag()
         if x1 < x2:
-            return -1r
+            return -1
         elif x1 > x2:
-            return 1r
+            return 1
         elif y1 < y2:
-            return -1r
+            return -1
         elif y1 > y2:
-            return 1r
+            return 1
 
-    return 0r
+    return 0
 
 def CBFlisteq(L1, L2):
     for (z1, z2) in zip(L1, L2):
@@ -295,8 +295,8 @@ def read_gmp_int(buf, offset):
     return number, bytes_read
 
 def read_orbit(orbitblob):
-    A = struct.unpack_from('i'*(len(orbitblob)/4r), orbitblob)
-    return [ (A[2*i], A[2*i+1]) for i in range(len(A)/2r) ]
+    A = struct.unpack_from('i'*(len(orbitblob)/4), orbitblob)
+    return [ (A[2*i], A[2*i+1]) for i in range(len(A)/2) ]
 
 def RIF_to_float(x):
     x = RRR(x)
@@ -359,7 +359,6 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
     halfdegree = len(euler_factors_cc)
     PS = PowerSeriesRing(ZZ, "X")
     CCCx = PolynomialRing(CCC, "x")
-    x = CCCx.gen()
     todo = list(enumerate(primes_first_n(30)))
     for p in sorted(ZZ(level).prime_divisors()):
         p_index = prime_pi(p) - 1
@@ -475,7 +474,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             sqrt_disc = sqrt_hack(b**2 - 4*a*c)
             thetas = []
             for sign in [1, -1]:
-                alpha = (-b + sign * sqrt_hack(b**2 - 4*a*c))/(2*c)
+                alpha = (-b + sign * sqrt_disc)/(2*c)
                 theta = (arg_hack(alpha) / (2*CCC.pi().real())).mid()
                 if theta > 0.5:
                     theta -=1
@@ -626,11 +625,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     continue
 
         is_trivial = False
-        is_quadratic = False
+        #is_quadratic = False
         if chi == 1:
             is_trivial = True
-        elif (chi*chi) % level == 1:
-            is_quadratic = True
+        #elif (chi*chi) % level == 1:
+        #    is_quadratic = True
 
         j = result['j']
         offset = 0
@@ -654,17 +653,13 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 imag_part = CCC(I*z*2^exponent)
                 if prec != MF_PREC_EXACT:
                     imag_part = imag_part.add_error(2^prec)
-            z = real_part + imag_part
-            _coeffs[pp] = z
-            #if not is_trivial and not is_quadratic:            # just for the moment...
-            #    z = 2*real_part
-            #traces[k] += z
+            _coeffs[pp] = real_part + imag_part
         #print coeffs
         _coeffs[1] = CCC(1)
         extend_multiplicatively(_coeffs)
         coeffs[(chi, j)] = _coeffs
         if chibar > chi:
-            coeffs[(chibar, j)] = [z.conjugate() for z in _coeffs]
+            coeffs[(chibar, j)] = [elt.conjugate() for elt in _coeffs]
 
     if only_orbit is None:
         assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
@@ -696,19 +691,19 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             traces_lists[(level, weight, chi)] = []
         degree_lists[(level, weight, chi)].append(result['degree'])
 
-        whatever = result['whatevernumber']
+        #whatever = result['whatevernumber']
         label = result['labelnumber']
-        degree = result['degree']
+        #degree = result['degree']
         mforbit = read_orbit(result['mforbit'])
         #mforbits[original_chi] = mforbit
         #print level, weight, chi, whatever, label, degree, mforbit
 
-        is_trivial = False
-        is_quadratic = False
-        if chi == 1:
-            is_trivial = True
-        elif (chi*chi) % level == 1:
-            is_quadratic = True
+        #is_trivial = False
+        #is_quadratic = False
+        #if chi == 1:
+        #    is_trivial = True
+        #elif (chi*chi) % level == 1:
+        #    is_quadratic = True
 
         traces_bound = to_compute + 1
         traces = [RRR(0)] * traces_bound
@@ -717,8 +712,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             #    continue
             for k, z in enumerate(coeffs[(chi, j)][:traces_bound]):
                 traces[k] += RRR(z.real())
-                #if not is_trivial and not is_quadratic:
-                #    traces[k] += RRR(z.real())
 
         for i, z in enumerate(traces):
             try:
@@ -754,7 +747,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     '''
 
     zeros = {}
-    plots = {}
     Ldbresults = {}
     if only_traces or only_orbit is not None:
         cur = []
@@ -819,8 +811,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             chi_list = sorted(set( chi for (chi, j) in mforbit))
             coeffs_list = {}
             for chi in chi_list:
-                j_list = [j for (_, j) in mforbit if _ == chi]
-                coeffs_list[chi] = [(chi, j, coeffs[(chi,j)]) for j in j_list]
+                j_list = [elt for (_, elt) in mforbit if _ == chi]
+                coeffs_list[chi] = [(chi, elt, coeffs[(chi,elt)]) for elt in j_list]
                 coeffs_list[chi].sort(cmp=CBFlistcmp, key = lambda z : z[-1])
             d = len(j_list)
             m = 1
@@ -984,10 +976,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     rational_rows = {}
     def populate_rational_rows():
-        CCCx = PolynomialRing(CCC, "x")
         order_of_vanishing = schema_lf_dict['order_of_vanishing']
         accuracy = schema_lf_dict['accuracy']
-        positive_zeros = schema_lf_dict['positive_zeros']
         sign_arg = schema_lf_dict['sign_arg']
         Lhash = schema_lf_dict['Lhash']
         plot_delta = schema_lf_dict['plot_delta']
