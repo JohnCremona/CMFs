@@ -332,8 +332,8 @@ def from_power_sums(ps):
     if len(ps) > 1:
         es[1] = ps[1]
         for k in range(2, len(ps)):
-            es[k] = sum( (-1)^(i -1) * es[k-i] * ps[i] for i in range(1, k + 1))/k
-        es = [(-1)^i * elt for i, elt in enumerate(es)]
+            es[k] = sum( (-1)**(i -1) * es[k-i] * ps[i] for i in range(1, k + 1))/k
+        es = [(-1)**i * elt for i, elt in enumerate(es)]
     return es
 
 
@@ -377,7 +377,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         root_powers = [None] * (halfdegree + 1)
         for j in range(1,halfdegree + 1):
             try:
-                root_powers[j] = RRR(sum( map(lambda z: (z^j).real(), roots) )).unique_integer()
+                root_powers[j] = RRR(sum( map(lambda z: (z**j).real(), roots) )).unique_integer()
             except ValueError:
                 root_powers = root_powers[:j]
                 break
@@ -400,14 +400,14 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
 
 
         if level % p != 0:
-            sign = RRR(ef.list()[-1].real()/p^((halfdegree)*(weight - 1))).unique_integer()
-            assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
+            sign = RRR(ef.list()[-1].real()/p**((halfdegree)*(weight - 1))).unique_integer()
+            assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p**((halfdegree)*(weight - 1)))
             efzz2 = [None] * halfdegree
             for i, elt in enumerate(reversed(efzz[:-1])):
                 if elt is None:
                     efzz2[i] = None
                 else:
-                    efzz2[i] = int(sign*p^((i+1)*(weight - 1)) * elt)
+                    efzz2[i] = int(sign*p**((i+1)*(weight - 1)) * elt)
             efzz += efzz2
             euler_factors.append(efzz)
         else:
@@ -643,16 +643,16 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             z, bytes_read = read_gmp_int(coeffblob, offset)
             #print z
             offset = offset + bytes_read
-            real_part = CCC(z*2^exponent)
+            real_part = CCC(z*2**exponent)
             if prec != MF_PREC_EXACT:
-                real_part = real_part.add_error(2^prec)
+                real_part = real_part.add_error(2**prec)
             imag_part = 0
             if not is_trivial:
                 z, bytes_read = read_gmp_int(coeffblob, offset)
                 offset = offset + bytes_read
-                imag_part = CCC(I*z*2^exponent)
+                imag_part = CCC(I*z*2**exponent)
                 if prec != MF_PREC_EXACT:
-                    imag_part = imag_part.add_error(2^prec)
+                    imag_part = imag_part.add_error(2**prec)
             _coeffs[pp] = real_part + imag_part
         #print coeffs
         _coeffs[1] = CCC(1)
