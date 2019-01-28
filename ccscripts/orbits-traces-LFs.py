@@ -463,7 +463,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             a = 0
             angles.append(None)
         else:
-            charval = CCC(2*char.logvalue(p)).exppii()
+            charval = CCC(2*char.logvalue(int(p))).exppii()
             if charval.contains_exact(ZZ(1)):
                 charval = 1
             elif charval.contains_exact(ZZ(-1)):
@@ -489,12 +489,13 @@ def angles_euler_factors(coeffs, level, weight, chi):
             else:
                 match = ((coeffs[p**2] -(b**2 - a)).abs()/coeffs[p**2].abs()).mid() < 1e-5
             assert match,\
-            "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s\na=%s\nb = %s\n" % ((level, weight, chi, p),
+            "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s\na=%s\nb = %s\nap = %s" % ((level, weight, chi, p),
                     CDF(coeffs[p**2]), CDF(b**2 - a),
                     coeffs[p**2] -(b**2 - a), b**2 - a,
                     coeffs[p**2],
                     CDF(a),
-                    CDF(b))
+                    CDF(b),
+                    CDF(coeffs[p]))
     an_f = map(CBF_to_pair, coeffs[:to_store + 1])
     return an_f, angles, euler, bad_euler
 
