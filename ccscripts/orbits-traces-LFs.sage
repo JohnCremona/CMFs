@@ -303,7 +303,13 @@ def RIF_to_float(x):
     if x.contains_zero():
         return int(0)
     else:
+        fx = float(x)
+        if fx == Infinity:
+            return repr(RR(x))
+        else:
+            return float(x)
         return float(x)
+
 def CBF_to_pair(x):
     a = CCC(x)
     return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
@@ -1182,7 +1188,7 @@ def do_Nk2(Nk2, only_traces = False):
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
         if k in ZZ and k > 1:
-            if False: # (N,k) in [(780,2), (840,2)]:
+            if Nk2 > 4000 and (N > 100 or k > 12):
                 print "skipping N = %d k = %d" % (N , k)
             else:
                 todo.append((N, k))
