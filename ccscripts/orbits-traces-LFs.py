@@ -1046,7 +1046,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             for i in range(0,3):
                 for elt in triples:
                     zeros_zi.append(rows[elt][schema_lf_dict['z' + str(i + 1)]])
-            zeros_zi.sort()
+            zeros_zi.sort(key = lambda x: RealNumber(x))
             for i in range(0,3):
                 row['z' + str(i + 1)] = zeros_zi[i].str()
 
