@@ -946,10 +946,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         #row['dirichlet_coefficients'] = [None] * 10
         #print label(chi,j)
         for i, ai in enumerate(coeffs[(chi, j)][2:12]):
-            ai = CDF(ai)
-            ai_jsonb = [ai.real_part(), ai.imag_part()]
             if i + 2 <= 10:
-                row['a' + str(i+2)] = ai_jsonb
+                row['a' + str(i+2)] = CDF_to_pair(ai)
                 # print 'a' + str(i+2), ai_jsonb
             #row['dirichlet_coefficients'][i] = ai_jsonb
 
@@ -1088,7 +1086,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             # fill in ai
             for i, ai in enumerate(dirichlet):
                 if i > 1:
-                    row['a' + str(i)] = dirichlet[i]
+                    row['a' + str(i)] = int(dirichlet[i])
                     #print 'a' + str(i), dirichlet[i]
 
 
