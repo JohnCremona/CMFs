@@ -430,13 +430,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
                     dirichlet[p**i] = foo[i]
             else:
                 dirichlet[p] = -efzz[1] if len(efzz) > 1 else 0;
-            if len(traces) >= p:
-                assert dirichlet[p] == traces[p-1], "p = %s, ap = %s, tp = %s, efzz = %s" % (p, dirichlet[p], traces[p-1], efzz)
-            else:
-                print level, weight
-                print len(traces)
-                print traces
-                assert False
+            assert dirichlet[p] == traces[p-1], "p = %s, ap = %s, tp = %s, efzz = %s" % (p, dirichlet[p], traces[p-1], efzz)
 
         extend_multiplicatively(dirichlet)
 
@@ -657,16 +651,17 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             z, bytes_read = read_gmp_int(coeffblob, offset)
             #print z
             offset = offset + bytes_read
-            real_part = CCC(z*2**exponent)
+            real_part = CCC(z)*2**exponent
             if prec != MF_PREC_EXACT:
                 real_part = real_part.add_error(2**prec)
             imag_part = 0
             if not is_trivial:
                 z, bytes_read = read_gmp_int(coeffblob, offset)
                 offset = offset + bytes_read
-                imag_part = CCC(I*z*2**exponent)
+                imag_part = I*CCC(z)*2**exponent
                 if prec != MF_PREC_EXACT:
                     imag_part = imag_part.add_error(2**prec)
+            print real_part + imag_part
             _coeffs[pp] = real_part + imag_part
         #print coeffs
         _coeffs[1] = CCC(1)
