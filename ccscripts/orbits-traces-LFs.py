@@ -464,9 +464,9 @@ def angles_euler_factors(coeffs, level, weight, chi):
             angles.append(None)
         else:
             charval = CCC(2*char.logvalue(p)).exppii()
-            if charval.contains_exact(1):
+            if charval.contains_exact(ZZ(1)):
                 charval = 1
-            elif charval.contains_exact(-1):
+            elif charval.contains_exact(ZZ(-1)):
                 charval = -1
             a = (p**(weight-1))*charval
             euler.append([c,b,a])
