@@ -775,8 +775,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             zdata = struct.unpack_from("B" * nlimbs, result['zeros'], offset)
             offset = offset + nlimbs
             z = sum( [x * 2**(8*k) for (k, x) in enumerate(reversed(zdata))] )
-            _zeros.append(ZZ(z))
-        zeros[(chi,j)] = _zeros
+            _zeros.append(z)
+        zeros[(chi,j)] = map(ZZ, _zeros)
         Ldbresults[(chi,j)] = result
 
     '''
