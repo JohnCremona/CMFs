@@ -947,7 +947,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         #print label(chi,j)
         for i, ai in enumerate(coeffs[(chi, j)][2:12]):
             if i + 2 <= 10:
-                row['a' + str(i+2)] = CDF_to_pair(ai)
+                row['a' + str(i+2)] = CBF_to_pair(ai)
                 # print 'a' + str(i+2), ai_jsonb
             #row['dirichlet_coefficients'][i] = ai_jsonb
 
