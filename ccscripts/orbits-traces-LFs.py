@@ -5,7 +5,7 @@ import struct
 import json
 
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
-from sage.all import prime_range, pi, ZZ, CDF, I, prod, exp, sqrt, ComplexBallField, RealIntervalField, gcd, Infinity, RR, srange, spline, PowerSeriesRing, primes_first_n, prime_pi, dimension_new_cusp_forms, prime_powers, inverse_mod, PolynomialRing, Gamma1, RealNumber, RDF, QQ
+from sage.all import prime_range, pi, ZZ, CDF, I, prod, exp, sqrt, ComplexBallField, RealIntervalField, gcd, Infinity, RR, srange, spline, PowerSeriesRing, primes_first_n, prime_pi, dimension_new_cusp_forms, prime_powers, inverse_mod, PolynomialRing, Gamma1, RealNumber, QQ
 from sage.databases.cremona import cremona_letter_code
 
 to_compute = 2000 #coeffs/traces that we compute
@@ -930,7 +930,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['z' + str(i + 1)] = (RealNumber(str(zeros_as_int[i]) + ".")/2**prec).str()
 
         row['plot_delta'] = Ldbrow['valuesdelta']
-        row['plot_values'] = [RDF(CDF(elt).real_part()) for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
+        row['plot_values'] = [float(CDF(elt).real_part()) for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
 
 
 
