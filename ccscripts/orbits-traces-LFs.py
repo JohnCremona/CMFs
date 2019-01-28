@@ -658,7 +658,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             if not is_trivial:
                 z, bytes_read = read_gmp_int(coeffblob, offset)
                 offset = offset + bytes_read
-                imag_part = I*CCC(z)*2**exponent
+                imag_part = CCC.gens()[0]*CCC(z)*2**exponent
                 if prec != MF_PREC_EXACT:
                     imag_part = imag_part.add_error(2**prec)
             print real_part + imag_part
