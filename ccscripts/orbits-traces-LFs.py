@@ -958,7 +958,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         # only 30
         row['euler_factors'] = map( lambda x : map(CBF_to_pair, x), euler_factors[(chi, j)][:30])
-        row['bad_lfactors'] = map( lambda x: [x[0], map(CBF_to_pair, x[1])], bad_euler_factors[(chi, j)])
+        row['bad_lfactors'] = map( lambda x: [int(x[0]), map(CBF_to_pair, x[1])], bad_euler_factors[(chi, j)])
 
         for key in schema_lf:
             assert key in row, "%s not in row = %s" % (key, row)
