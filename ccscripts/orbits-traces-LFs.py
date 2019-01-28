@@ -642,8 +642,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         j = result['j']
         offset = 0
         coeffblob = result['coefficients']
-        exponent = int(result['exponent'])
-        prec = int(result['prec'])
+        exponent = QQ(result['exponent'])
+        prec = QQ(result['prec'])
         print prec, exponent
         _coeffs = [CCC(0)] * (to_compute + 1)
         #for k in range(35): # number of prime powers < 100
