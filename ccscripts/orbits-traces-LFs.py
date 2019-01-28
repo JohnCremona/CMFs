@@ -468,7 +468,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
                 charval = 1
             elif charval.contains_exact(ZZ(-1)):
                 charval = -1
-            a = (p**(weight-1))*charval
+            a = (p**QQ(weight-1))*charval
             euler.append([c,b,a])
             # alpha solves T^2 - a_p T + chi(p)*p^(k-1)
             sqrt_disc = sqrt_hack(b**2 - 4*a*c)
@@ -489,10 +489,12 @@ def angles_euler_factors(coeffs, level, weight, chi):
             else:
                 match = ((coeffs[p**2] -(b**2 - a)).abs()/coeffs[p**2].abs()).mid() < 1e-5
             assert match,\
-            "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p),
+            "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s\na=%s\nb = %s\n" % ((level, weight, chi, p),
                     CDF(coeffs[p**2]), CDF(b**2 - a),
                     coeffs[p**2] -(b**2 - a), b**2 - a,
-                    coeffs[p**2])
+                    coeffs[p**2],
+                    CDF(a),
+                    CDF(b))
     an_f = map(CBF_to_pair, coeffs[:to_store + 1])
     return an_f, angles, euler, bad_euler
 
