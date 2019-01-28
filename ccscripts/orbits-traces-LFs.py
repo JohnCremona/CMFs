@@ -721,8 +721,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         traces_bound = to_compute + 1
         traces = [RRR(0)] * traces_bound
-        print traces
-        print original_chi, mforbit
         for chi, j in mforbit:
             #if inverse_mod(chi, level) < chi:
             #    continue
@@ -734,7 +732,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 traces[i] = z.unique_integer()
             except ValueError:
                 traces = traces[:i]
-                print z
+                print (level, weight, original_chi)
+                print i, z
                 break;
         traces_lists[(level, weight, original_chi)].append((traces[1:], mforbit))
     Ldb = sqlite3.connect(os.path.join(Ldbinfile))
