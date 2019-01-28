@@ -661,7 +661,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 imag_part = CCC.gens()[0]*CCC(z)*2**exponent
                 if prec != MF_PREC_EXACT:
                     imag_part = imag_part.add_error(2**prec)
-            print real_part + imag_part
+            #print real_part + imag_part
             _coeffs[pp] = real_part + imag_part
         #print coeffs
         _coeffs[1] = CCC(1)
