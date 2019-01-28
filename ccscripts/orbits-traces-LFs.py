@@ -489,7 +489,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             else:
                 match = ((coeffs[p**2] -(b**2 - a)).abs()/coeffs[p**2].abs()).mid() < 1e-5
             if not match:
-                print zip(range(len(coeffs), map(CDF, coeffs)))
+                print zip(range(len(coeffs)), map(CDF, coeffs))
                 print "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s\na=%s\nb = %s\nap = %s" % ((level, weight, chi, p),
                     CDF(coeffs[p**2]), CDF(b**2 - a),
                     coeffs[p**2] -(b**2 - a), b**2 - a,
