@@ -644,7 +644,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         coeffblob = result['coefficients']
         exponent = QQ(result['exponent'])
         prec = QQ(result['prec'])
-        print prec, exponent
+        # print prec, exponent
         _coeffs = [CCC(0)] * (to_compute + 1)
         #for k in range(35): # number of prime powers < 100
         for pp in prime_powers(to_compute):
@@ -1160,10 +1160,22 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         with open(lfunctions_filename, 'a') as LF:
             for key, row in rows.iteritems():
-                LF.write("\t".join(map(json_hack, row)) + "\n")
+                try:
+                    LF.write("\t".join(map(json_hack, row)) + "\n")
+                except TypeError:
+                    for elt in row:
+                        print elt
+                        print json_hack(elt)
+                    raise
 
             for key, row in rational_rows.iteritems():
-                LF.write("\t".join(map(json_hack, row)) + "\n")
+                try:
+                    LF.write("\t".join(map(json_hack, row)) + "\n")
+                except TypeError:
+                    for elt in row:
+                        print elt
+                        print json_hack(elt)
+                    raise
         with open(instances_filename, 'a') as IF:
             for key, row in instances.iteritems():
                 IF.write("\t".join(map(json_hack, row)) + "\n")

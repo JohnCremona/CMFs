@@ -653,7 +653,8 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
                 rows[elt][root_number] = rows[elt][root_number].str(style="question").replace('?', '')
 
             # for now skip degree > 80
-            if len(labels) > 80: # the real limit is 87
+            # no more, now the limit is 40
+            if len(labels) > 20: # the real limit is 87
                 continue
             degree = 2*len(labels)
             row = constant_lf(level, weight, degree)
