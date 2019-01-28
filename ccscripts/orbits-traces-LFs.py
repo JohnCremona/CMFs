@@ -497,6 +497,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
                     CDF(a),
                     CDF(b),
                     CDF(coeffs[p]))
+                assert False
     an_f = map(CBF_to_pair, coeffs[:to_store + 1])
     return an_f, angles, euler, bad_euler
 
