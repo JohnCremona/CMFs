@@ -735,6 +735,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 print (level, weight, original_chi, orbit_labels[original_chi])
                 print degree_lists[(level, weight, original_chi)]
                 print i, z
+                print traces[:i]
                 break;
         traces_lists[(level, weight, original_chi)].append((traces[1:], mforbit))
     Ldb = sqlite3.connect(os.path.join(Ldbinfile))
