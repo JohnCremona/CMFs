@@ -150,7 +150,7 @@ char_orbit_label | text | string encoding i (with a=1).
 char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit_index | integer | char_orbit for the primitive version of this character
 char_order | integer | the order of the character
-conrey_index | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
+conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_degree | integer | Degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
