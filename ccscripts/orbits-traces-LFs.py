@@ -779,7 +779,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         nzeros = result['nzeros']
         prec = result['zeroprec']
         chi = result['chi']
-        if only_orbit is not None and only_orbit != orbit_labels[original_chi]:
+        if only_orbit is not None and only_orbit != orbit_labels[chi]:
             continue
         j = result['j']
         #print result['level'], result['weight'], chi, j
