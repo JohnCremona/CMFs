@@ -12,6 +12,7 @@ to_compute = 2000 #coeffs/traces that we compute
 to_store = 1000  # that we store
 
 
+orbits_to_avoid = [1]
 # folders
 import socket
 hostname = socket.gethostname()
@@ -633,9 +634,12 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     for result in mfdb.execute('SELECT prec, exponent, ncoeffs, coefficients, chi, j FROM modforms WHERE level={} AND weight={};'.format(level, weight)):
         chi = result['chi']
         chibar = inverse_mod(chi, level)
-        if only_orbit is not None:
-            if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
-                    continue
+        if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
+                continue
+        if orbit_labels[chi] in orbits_to_avoid and\
+                orbit_labels[chibar] in orbits_to_avoid:
+            continue
+
 
         is_trivial = False
         #is_quadratic = False
@@ -696,8 +700,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         weight = result['weight']
         chi = result['chi']
         original_chi = chi
-        if only_orbit is not None:
-            if only_orbit != orbit_labels[original_chi]:
+        if only_orbit != orbit_labels[original_chi] or\
+                orbit_labels[original_chi] in orbits_to_avoid:
                     continue
 
         if (level, weight, chi) not in degree_lists:
