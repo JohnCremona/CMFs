@@ -639,7 +639,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     for result in mfdb.execute('SELECT prec, exponent, ncoeffs, coefficients, chi, j FROM modforms WHERE level={} AND weight={};'.format(level, weight)):
         chi = result['chi']
         chibar = inverse_mod(chi, level)
-        if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
+        if only_orbit is not None and only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
                 continue
 
 
@@ -702,7 +702,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         weight = result['weight']
         chi = result['chi']
         original_chi = chi
-        if only_orbit != orbit_labels[original_chi]:
+        if only_orbit is not None and only_orbit != orbit_labels[original_chi]:
             continue
 
         if (level, weight, chi) not in degree_lists:
@@ -779,6 +779,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         nzeros = result['nzeros']
         prec = result['zeroprec']
         chi = result['chi']
+        if only_orbit is not None and only_orbit != orbit_labels[original_chi]:
+            continue
         j = result['j']
         #print result['level'], result['weight'], chi, j
         _zeros = []
