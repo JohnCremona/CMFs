@@ -12,7 +12,6 @@ to_compute = 2000 #coeffs/traces that we compute
 to_store = 1000  # that we store
 
 
-orbits_to_avoid = [1]
 # folders
 import socket
 hostname = socket.gethostname()
@@ -548,19 +547,25 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         print '{} not found'.format(Ldbinfile)
         notfound = True
 
+    if only_orbit is not None:
+        print "N = %s, k = %s, orbit = %s" % (level, weight, only_orbit)
+        if lfun_filename is None:
+            lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d_%d_%d.txt' % (level, weight, only_orbit))
+        if instances_filename is None:
+            instances_filename = os.path.join(base_export, 'CMF_instances_%d_%d_%d.txt' % (level, weight, only_orbit))
+        if hecke_filename is None:
+            hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d_%d_%d.txt' % (level, weight, only_orbit))
+        if traces_filename is None:
+            traces_filename = os.path.join(base_export, 'CMF_traces_%d_%d_%d.txt' % (level, weight, only_orbit))
     if lfun_filename is None:
         lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (level*weight**2))
     if instances_filename is None:
         instances_filename = os.path.join(base_export, 'CMF_instances_%d.txt' % (level*weight**2))
     if hecke_filename is None:
         hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d.txt' % (level*weight**2))
-        if only_orbit is not None:
-            print "N = %s, k = %s, orbit = %s" % (level, weight, only_orbit)
-            hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d_%d_%d.txt' % (level, weight, only_orbit))
-            instances_filename = None
-            lfun_filename = None
     if traces_filename is None:
         traces_filename = os.path.join(base_export, 'CMF_traces_%d.txt' % (level*weight**2))
+
 
     def write_traces(traces_filename):
         with open(traces_filename, 'a') as F:
@@ -636,9 +641,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         chibar = inverse_mod(chi, level)
         if only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
                 continue
-        if orbit_labels[chi] in orbits_to_avoid and\
-                orbit_labels[chibar] in orbits_to_avoid:
-            continue
 
 
         is_trivial = False
@@ -700,9 +702,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         weight = result['weight']
         chi = result['chi']
         original_chi = chi
-        if only_orbit != orbit_labels[original_chi] or\
-                orbit_labels[original_chi] in orbits_to_avoid:
-                    continue
+        if only_orbit != orbit_labels[original_chi]:
+            continue
 
         if (level, weight, chi) not in degree_lists:
             degree_lists[(level, weight, chi)] = []
@@ -769,7 +770,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     zeros = {}
     Ldbresults = {}
-    if only_traces or only_orbit is not None:
+    if only_traces:
         cur = []
     else:
         cur = Ldb.execute('SELECT level, weight, chi, j, rank, zeroprec, nzeros, zeros, valuesdelta, nvalues, Lvalues, signarg from modformLfunctions')
@@ -1191,9 +1192,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 IF.write("\t".join(map(json_hack, row)) + "\n")
 
 
-    if only_orbit is not None:
-        write_hecke_cc(hecke_filename)
-        return 0
     populate_complex_rows()
     populate_conjugates()
     populate_rational_rows()
