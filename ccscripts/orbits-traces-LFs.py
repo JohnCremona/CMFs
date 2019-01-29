@@ -732,7 +732,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 traces[i] = z.unique_integer()
             except ValueError:
                 traces = traces[:i]
-                print (level, weight, original_chi)
+                print (level, weight, original_chi, orbit_labels[original_chi])
                 print i, z
                 break;
         traces_lists[(level, weight, original_chi)].append((traces[1:], mforbit))
