@@ -246,6 +246,14 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z
 
+Table name: `mf_hecke_lpolys`
+
+Column | Type | Notes
+-------|------|------
+hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
+p | integer | prime identifying L-poly L_p(T) = prod_(sigma in Gal(Q(f)/Q) (1 - sigma(a_p(f))T + chi(p)p^(k-1)T^2))
+lpoly | numeric[] | integer coefficients of L_p(t) (total of 2*dim+1 coeffs at good p, either 1 or dim+1 at bad p)
+
 Table name: `mf_hecke_newspace_traces`
 
 Column | Type | Notes
