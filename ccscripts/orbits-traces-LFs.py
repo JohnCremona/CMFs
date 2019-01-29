@@ -5,7 +5,7 @@ import struct
 import json
 
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
-from sage.all import prime_range, pi, ZZ, CDF, I, prod, exp, sqrt, ComplexBallField, RealIntervalField, gcd, Infinity, RR, srange, spline, PowerSeriesRing, primes_first_n, prime_pi, dimension_new_cusp_forms, prime_powers, inverse_mod, PolynomialRing, Gamma1, RealNumber, QQ
+from sage.all import prime_range, pi, ZZ, CDF, I, prod, exp, sqrt, ComplexBallField, RealIntervalField, gcd, Infinity, RR, srange, spline, PowerSeriesRing, primes_first_n, prime_pi, dimension_new_cusp_forms, prime_powers, inverse_mod, PolynomialRing, Gamma1, RealNumber, QQ, Set
 from sage.databases.cremona import cremona_letter_code
 
 to_compute = 2000 #coeffs/traces that we compute
@@ -569,7 +569,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     def write_traces(traces_filename):
         with open(traces_filename, 'a') as F:
-            for ol in orbit_labels.values():
+            for ol in Set(orbit_labels.values()):
                 if only_orbit is not None:
                     if ol != only_orbit:
                         continue
