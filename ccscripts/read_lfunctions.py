@@ -46,7 +46,7 @@ def RIF_to_float(x):
         return 0
     else:
         fx = float(x)
-        if fx == Infinity:
+        if fx == Infinity or fx == -Infinity:
             return repr(RR(x))
         else:
             return float(x)
