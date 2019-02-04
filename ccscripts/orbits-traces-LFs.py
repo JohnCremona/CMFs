@@ -16,7 +16,7 @@ to_store = 1000  # that we store
 # folders
 import socket
 hostname = socket.gethostname()
-assert hostname in ['saint-germain', 'LEGENDRE']
+assert hostname in ['saint-germain', 'LEGENDRE', 'zeus']
 base_export = None
 base_import = None
 if hostname == 'LEGENDRE':
