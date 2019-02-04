@@ -1199,12 +1199,11 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
     populate_complex_rows()
-    populate_conjugates()
-    populate_rational_rows()
-    
-    export_complex_rows(lfun_filename, instances_filename)
+    #populate_conjugates()
+    #populate_rational_rows()
+    #export_complex_rows(lfun_filename, instances_filename)
     write_hecke_cc(hecke_filename)
-    write_traces(traces_filename)
+    #write_traces(traces_filename)
     return 0
 
 
