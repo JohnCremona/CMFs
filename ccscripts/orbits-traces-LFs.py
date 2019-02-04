@@ -1,3 +1,4 @@
+# time parallel --memfree 50 GB --retries 10 --joblog joblog --eta --progress sage -python ~/CMFs/ccscripts/orbits-traces-LFs.py ::: {1..4000}
 import sqlite3
 import os
 import sys
@@ -21,7 +22,7 @@ base_import = None
 if hostname == 'LEGENDRE':
     base_export = "/scratch/importing/CMF"
     base_import = "/scratch/home/bober"
-elif hostname == 'saint-germain':
+elif hostname in ['saint-germain', 'zeus']:
     base_import = "/home/edgarcosta/bober"
     base_export = "/home/edgarcosta/export/CMF"
 else:
