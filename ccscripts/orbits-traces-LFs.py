@@ -499,7 +499,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
                     CDF(b),
                     CDF(coeffs[p]))
                 assert False
-    an_f = [CBF_to_pair(RRR(n)**(QQ((weight - 1))/2) * c) for n, c in enumerate(coeffs[:to_store + 1], 1)]
+    an_f = [CBF_to_pair(RRR(n)**(QQ(-(weight - 1))/2) * c) for n, c in enumerate(coeffs[:to_store + 1])]
     return an_f, angles, euler, bad_euler
 
 
