@@ -490,6 +490,7 @@ def angles_euler_factors(coeffs, level, weight, chi):
             else:
                 match = ((coeffs[p**2] -(b**2 - a)).abs()/coeffs[p**2].abs()).mid() < 1e-5
             if not match:
+                print "coeffs[p**2] doesn't match euler recursion" 
                 print zip(range(len(coeffs)), map(CDF, coeffs))
                 print "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s\na=%s\nb = %s\nap = %s" % ((level, weight, chi, p),
                     CDF(coeffs[p**2]), CDF(b**2 - a),
@@ -742,10 +743,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                 traces[i] = z.unique_integer()
             except ValueError:
                 traces = traces[:i]
-                print (level, weight, original_chi, orbit_labels[original_chi])
-                print degree_lists[(level, weight, original_chi)]
-                print i, z
-                print traces[:i]
+                #print (level, weight, original_chi, orbit_labels[original_chi])
+                #print degree_lists[(level, weight, original_chi)]
+                #print i, z
+                #print traces[:i]
                 break;
         traces_lists[(level, weight, original_chi)].append((traces[1:], mforbit))
     Ldb = sqlite3.connect(os.path.join(Ldbinfile))
