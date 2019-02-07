@@ -1,6 +1,34 @@
 Spaces
 ======
 
+Table name: `mf_boxes`.
+
+This table stores metadata describing sets of newspaces determined by constraints on level N, weight k, character order o, Nk^2, dimension D, and for each set lists counts of newspaces, newforms (when known), and embeddings in the set, along with a series of boolean flags indicating what data is available for newforms in the set.
+
+Column | Type | Notes
+-------|------|------
+Nmin | integer | lower bound on the level N
+Nmax | integer | upper bound on the level N
+kmin | integer | lower bound on the weight k
+kmax | integer | upper bound on the weight k
+omin | integer | lower bound on the character order o
+omax | integer | upper bound on the character order o
+Nk2min | integer | lower bound on Nk^2
+Nk2max | integer | upper bound on Nk^2
+Dmin | integer | lower bound on newspace Q-dimension
+Dmax | integer | upper bound on newspace Q-dimension
+newspace_count | integer | total number of newspaces in this box
+nonzero_newspace_count | integer | total number of nonzero newspaces in this box
+newform_count | integer | total number of newforms in this box (if known, may be null)
+embeddings | bigint | total number of complex embeddings of newforms in this box
+straces | boolean | set if space trace forms are stored
+split | boolean | set if list of dimensions of irreducible subspaces (newforms) are stored
+traces | boolean | set if newform trace forms are stored
+eigenvalues | boolean | set if eigenvalue data of newforms of small dimension are stored
+embeddings | boolean | set if complex embeddings are stored
+lfunctions | boolean | set if lfunctions have been computed
+
+
 Table name: `mf_newspaces`.
 
 This table represents (Galois orbits of) spaces of newforms `S_k^new(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Character orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
