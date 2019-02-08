@@ -207,7 +207,7 @@ trace_hash | bigint | linear combination of the a_p between 2^12 and 2^13 reduce
 trace_zratio | double precision | proportion of zero a_p values for p <= 2^13 (rounded to three decimal places)
 trace_moments | numeric[] | list of moments of a_p/p^((k-1)/2) computed over p <= 2^13 (rounded to three decimal places)
 related_objects | text[] | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
-analytic_rank | smallint |
+analytic_rank | smallint | order of vanishing of L-function at s=1 (an upper bound, tight if analytic_rank_proved is set)
 analytic_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
 self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
 is_self_twist | boolean | whether this form is a self twist
@@ -217,7 +217,7 @@ self_twist_discs | integer[] | list of discriminants giving self twists (either 
 cm_discs | integer[] | list of CM discriminants (the negative discriminants listed in self_twist_discs)
 rm_discs | integer[] | list of RM discriminants (the positive discriminants listed in self_twist_discs)
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
-has_non_self_twist | boolean | true if newform admits an inner twist that is not a self twist
+has_non_self_twist | smallint | 1 if form admits a non-trivial inner twist, -1 if it does not, 0 if unknown
 inner_twists | jsonb | List of septuples <b,m,M,o,parity,order,disc> where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
 inner_twist_count | integer | number of inner twists (includes proved and unproved), null if inner twists have not been computed (this applies to all forms of dimension > 20 and weight > 1)
 atkin_lehner_eigenvals | integer[] | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
