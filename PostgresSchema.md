@@ -185,7 +185,7 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 
 **Validataion** for `mf_gamma1_portraits`:
 
-* check that label matches level,weight and is unique
+* check that label matches level, weight and is unique
 * check that there is a portrait present for every record in mf_gamma1 with dim > 0 and level <= 4000
 
 **Table** `mf_subspaces`:
@@ -214,6 +214,8 @@ sub_mult | integer | Multiplicity of`S_k^{new}(M, [\psi])` as a direct summand o
 * check that char_orbit_label matches level, char_orbit_index
 * check that conrey_index matches galois_orbit for char_orbit_label in char_dir_orbits
 * check that sub_label matches sub_level, weight, sub_char_orbit_index
+* check that pair (label,sub_label) is a unique identifier
+* check that sub_level divides level
 * chack that sub_char_orbit_label matches sub_level, sub_char_orbit_index
 * check that sub_conrey_index matches galois_orbit for sub_char_orbit_label in char_dir_orbits
 * check that sub_dim = S_k^new(sub_level,sub_char_orbit_index) and is positive
@@ -234,6 +236,8 @@ sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand o
 **Validation** for `mf_subspaces`:
 
 * check that label matches level, weight
+* check that (level, weight, sub_level) is a unique identifier
+* check that sub_lelve divides level
 * check that sub_dim = S_k^new(Gamma1(sub_level)) and is positive
 * check that summing sub_dim * sub_mult over rows with same label gives dim S_k^(Gamma1(N)) (old+new), for k=1 use cusp_dim in mf_gamma1 to do this check
 
@@ -377,7 +381,7 @@ portrait | text | base-64 encoded image of the newform (plot created by portrait
 
 **Validation** for `mf_newform_portraits`:
 
-* check that there is exactly one record in mf_newform_portraits for each record in mf_newforms
+* check that there is exactly one record in mf_newform_portraits for each record in mf_newforms, uniquely identified by label
 * check that label matches level, weight, char_orbit_index, hecke_orbit
 
 Hecke eigenvalues
@@ -425,8 +429,9 @@ trace_an | numeric | trace of a_n down to Z
 
 **Validation** for `mf_hecke_traces`:
 
-* there should be at least 1000 records present for each record in mf_newforms
+* there should be exactly 1000 records present for each record in mf_newforms
 * check that hecke_orbit_code is present in mf_newforms
+* check that (hecke_orbit_code,n) is a unique identifier
 * check that trace_an matches traces[n] in mf_newforms record
 
 **Table** `mf_hecke_lpolys`:
@@ -435,12 +440,12 @@ Column | Type | Notes
 -------|------|------
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 p | integer | prime identifying L-poly L_p(T) = prod_(sigma in Gal(Q(f)/Q) (1 - sigma(a_p(f))T + chi(p)p^(k-1)T^2))
-lpoly | numeric[] | integer coefficients of L_p(t) (total of 2*dim+1 coeffs at good p, either 1 or dim+1 at bad p)
+lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs at good p, either 1 or dim+1 at bad p)
 
 **Validation** for `mf_hecke_lpolys`:
 
 * there should be at least 25 records present for each recod in mf_newforms with field_poly set
-* each row should be uniquely identified by the pari hecke_orbit_code,p
+* check that (hecke_orbit_code,p) is a unique identifier
 * check that every prime p < 100 occurs exactly once for each hecke_orbit_code
 * check that hecke_orbit_code is present in mf_newforms
 * check that degree of lpoly is twice the dimension in mf_newforms
@@ -456,8 +461,9 @@ trace_an | numeric | trace of a_n down to Z, where a_n is the sum of a_n over al
 
 **Validation** for `mf_hecke_newspace_traces`:
 
-* there should be at least 1000 records present for each record in mf_newfspaces in a box that has straces set
+* there should be exactly 1000 records present for each record in mf_newfspaces in a box that has straces set
 * check that hecke_orbit_code is present in mf_newspaces
+* check that (hecke_orbit_code,n) is a unique identifier
 * check that trace_an matches traces[n] in mf_newspaces record
 
 **Table**`mf_hecke_cc`:
@@ -478,7 +484,7 @@ angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if 
 
 * there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them)
 * check that hecke_orbit_code is present in mf_newforms
-* check that lfunction_label is consistent with hecke_orbit_code, conrey_lebel, embedding_index
+* check that lfunction_label is consistent with hecke_orbit_code, conrey_lebel, embedding_index and is unique
 * check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
 * check that embedding_root_real, and embedding_root_image are present whenever field_poly is present in mf_newforms record and that they approximate a root
 * check that an_normalized is a list of pairs of doubles of length at least 1000
