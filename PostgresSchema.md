@@ -186,8 +186,7 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 **Validataion** for `mf_gamma1_portraits`:
 
 * check that label matches level,weight and is unique
-* check that there is a portrait present for every nonempty newspace in box where straces is set and there are no dimension constraints defining the box
-
+* check that there is a portrait present for every record in mf_gamma1 with dim > 0 and level <= 4000
 
 **Table** `mf_subspaces`:
 
