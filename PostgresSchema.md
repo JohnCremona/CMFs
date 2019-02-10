@@ -174,7 +174,7 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 * check that there is a portrait present for every newspace in box where straces is set
 
 
-Table name: `mf_gamma1_portraits`.
+**Table**`mf_gamma1_portraits`:
 
 Column | Type | Notes
 -------|------|------
@@ -189,7 +189,7 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 * check that there is a portrait present for every newspace in box where straces is set and there are no dimension constraints defining the box
 
 
-Table name: `mf_subspaces`.
+**Table** `mf_subspaces`:
 
 This table represents embeddings of newspaces at level M into cusp spaces at level N (these will be old at level N except when M=N).
 
@@ -221,7 +221,7 @@ sub_mult | integer | Multiplicity of`S_k^{new}(M, [\psi])` as a direct summand o
 * check that sub_mult is positive
 * check that summing sub_dim * sub_mult over rows with a given label gives S_k(N,chi) (old+new), for k=1 use cusp_dim in mf_newspaces to do this check
 
-Table name: `mf_gamma1_subspaces`.
+**Table** `mf_gamma1_subspaces`:
 
 Column | Type | Notes
 -------|------|------
@@ -241,7 +241,7 @@ sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand o
 Newforms
 ========
 
-Table name: `mf_newforms`
+**Table** `mf_newforms`:
 
 Column | Type | Notes
 -------|------|------
@@ -313,7 +313,7 @@ artin_field | numeric[] | for weight 1 forms, list of integer coefficients of po
 artin_field_label | text | LMFDB label of artin field (if present)
 sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present for weight k > 1)
 
-Table name: `mf_newform_portraits`
+**Table** `mf_newform_portraits`:
 
 Column | Type | Notes
 -------|------|------
