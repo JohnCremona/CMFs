@@ -168,7 +168,7 @@ weight | smallint | weight k
 char_orbit_index | integer | index of the character orbit `[\chi]` n the sorted list of character orbits of modulus N
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
 
-**Validataion** for `mf_newspace_portraits`:
+**Validation** for `mf_newspace_portraits`:
 
 * check that label matches level,weight,char_orbit_index and is unique
 * check that there is a portrait present for every newspace in box where straces is set
@@ -182,6 +182,12 @@ label | text | label N.k for the space `S_k^new(Gamma1(N))`
 level | integer | level N
 weight | smallint | weight k
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
+
+**Validataion** for `mf_gamma1_portraits`:
+
+* check that label matches level,weight and is unique
+* check that there is a portrait present for every newspace in box where straces is set and there are no dimension constraints defining the box
+
 
 Table name: `mf_subspaces`.
 
@@ -203,6 +209,18 @@ sub_conrey_indexes | integer[] | list of Conrey indexes n of the characters M.n 
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
 sub_mult | integer | Multiplicity of`S_k^{new}(M, [\psi])` as a direct summand of `S_k(N, [\chi])` (this is just the number of divisors of N/M).  Summing dimensions of embedded newspaces with multiplicity gives the dimension of the cusp space.
 
+**Validation** for `mf_subspaces`:
+
+* check that label matches level, weight char_orbit_index
+* check that char_orbit_label matches level, char_orbit_index
+* check that conrey_index matches galois_orbit for char_orbit_label in char_dir_orbits
+* check that sub_label matches sub_level, weight, sub_char_orbit_index
+* chack that sub_char_orbit_label matches sub_level, sub_char_orbit_index
+* check that sub_conrey_index matches galois_orbit for sub_char_orbit_label in char_dir_orbits
+* check that sub_dim = S_k^new(sub_level,sub_char_orbit_index) and is positive
+* check that sub_mult is positive
+* check that summing sub_dim * sub_mult over rows with a given label gives S_k(N,chi) (old+new), for k=1 use cusp_dim in mf_newspaces to do this check
+
 Table name: `mf_gamma1_subspaces`.
 
 Column | Type | Notes
@@ -213,6 +231,12 @@ weight | smallint | weight k of the space S_k(Gamma_1(N))
 sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed in S^k(Gamma_1(N))
 sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
 sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
+
+**Validation** for `mf_subspaces`:
+
+* check that label matches level, weight
+* check that sub_dim = S_k^new(Gamma1(sub_level)) and is positive
+* check that summing sub_dim * sub_mult over rows with same label gives dim S_k^(Gamma1(N)) (old+new), for k=1 use cusp_dim in mf_gamma1 to do this check
 
 Newforms
 ========
