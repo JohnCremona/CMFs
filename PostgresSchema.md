@@ -250,6 +250,10 @@ space_label | text | (N.k.i)
 level | integer | the level N of the modular form
 level_radical | integer | product of prime divisors of N
 level_primes | integer[] | list of prime divisors of N
+level_is_prime | boolean | true if N is prime (1 is not prime)
+level_is_prime_power | boolean | true if N is a prime power (1 is not a prime power, primes are prime powers)
+level_is_squarefree | boolean | true if N is squarefree (1 is squarefree)
+level_is_square | boolean | true if N is a square (1 is a square)
 weight | smallint | the weight k of the modular form
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
