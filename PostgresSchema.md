@@ -81,7 +81,7 @@ hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as 
 
 **Validation** for `mf_newspaces`:
 
-* there should be exactly one row for every newspace in mf_boxes (so check counts of box queries sum to count of table)
+* there should be exactly one row for every newspace in mf_boxes; for each box performing mf_newspaces.count(box query) should match newspace_count for box, and mf_newspaces.count() should be the sum of these
 * check that label matches level, weight, char_orbit_index and is unique
 * check level_* attributes (radical,primes,is_prime,...)
 * check weight_parity, analytic_conductor, Nk2
