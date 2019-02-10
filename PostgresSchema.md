@@ -383,7 +383,7 @@ portrait | text | base-64 encoded image of the newform (plot created by portrait
 Hecke eigenvalues
 =================
 
-Table name: `mf_hecke_nf`
+**Table** `mf_hecke_nf`:
 
 Column | Type | Notes
 -------|------|------
@@ -402,7 +402,20 @@ an | jsonb | list of a1,...,a100, where each an is either a list of integers enc
 ap | jsonb | list of lists of integers expressing a_p for p=2,3,5,...,pmax in same format as an
 maxp | integer | largest prime p for which ap is stored
 
-Table name: `mf_hecke_traces`
+**Validation** for `mf_hecke_nf`:
+
+* there should be a record present for every record in mf_newforms that has field_poly set (and no others, check count)
+* check that label matches hecke_orbit_code and is present in mf_newforms
+* check that field_poly matches field_poly in mf_newforms
+* check that hecke_ring_rank = deg(field_poly)
+* if hecke_ring_power_basis is set, check that hecke_ring_cyclotomic_generator is 0 and hecke_ring_numerators, ... are null
+* if hecke_ring_cyclotomic_generator is greater than 0 check that hecke_ring_power_baiss is false and hecke_ring_numerators, ... are null, and that field_poly_is_cyclotomic is set in mf_newforms record.
+* check that hecke_ring_character_values has the correct format, depending on whether hecke_ring_cyclotomic_generator is set or not
+* check that an has length 100 and that each entry is either a list of integers of length hecke_ring_rank (if hecke_ring_cyclotomic_generator=0) or a list of pairs
+* check that ap has length pi(maxp) and that each entry is formatted correctly (as for an)
+* check that maxp is at least 997
+
+**Table** `mf_hecke_traces`:
 
 Column | Type | Notes
 -------|------|------
@@ -410,7 +423,13 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z
 
-Table name: `mf_hecke_lpolys`
+**Validation** for `mf_hecke_traces`:
+
+* there should be at least 1000 records present for each record in mf_newforms
+* check that hecke_orbit_code is present in mf_newforms
+* check that trace_an matches traces[n] in mf_newforms record
+
+**Table** `mf_hecke_lpolys`:
 
 Column | Type | Notes
 -------|------|------
@@ -418,7 +437,16 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 p | integer | prime identifying L-poly L_p(T) = prod_(sigma in Gal(Q(f)/Q) (1 - sigma(a_p(f))T + chi(p)p^(k-1)T^2))
 lpoly | numeric[] | integer coefficients of L_p(t) (total of 2*dim+1 coeffs at good p, either 1 or dim+1 at bad p)
 
-Table name: `mf_hecke_newspace_traces`
+**Validation** for `mf_hecke_lpolys`:
+
+* there should be at least 25 records present for each recod in mf_newforms with field_poly set
+* each row should be uniquely identified by the pari hecke_orbit_code,p
+* check that every prime p < 100 occurs exactly once for each hecke_orbit_code
+* check that hecke_orbit_code is present in mf_newforms
+* check that degree of lpoly is twice the dimension in mf_newforms
+* check that linear coefficient of lpoly is -trace(a_p) and constant coefficient is 1
+
+**Table** `mf_hecke_newspace_traces`:
 
 Column | Type | Notes
 -------|------|------
@@ -426,7 +454,13 @@ hecke_orbit_code | bigint | encoding of the tuple (N.k.i) into 64 bits (this is 
 n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z, where a_n is the sum of a_n over all newforms in the space
 
-Table name: `mf_hecke_cc`
+**Validation** for `mf_hecke_newspace_traces`:
+
+* there should be at least 1000 records present for each record in mf_newfspaces in a box that has straces set
+* check that hecke_orbit_code is present in mf_newspaces
+* check that trace_an matches traces[n] in mf_newspaces record
+
+**Table**`mf_hecke_cc`:
 
 Column | Type | Notes
 -------|------|------
@@ -437,13 +471,24 @@ embedding_index | integer | enumeration of which embedding (shows up in L-functi
 embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
-an | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = x + iy` for `n \in [1,1000]`
+normalized_an | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
 angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if `p` is bad, and for good `p` we have `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; indexed by increasing primes p < 1000, where `-0.5 < \theta_p <= 0.5`. Furthermore, we store the minimum value of the two options for `\theta_p` in that interval.
+
+**Validation** for `mf_hecke_cc`:
+
+* there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them)
+* check that hecke_orbit_code is present in mf_newforms
+* check that lfunction_label is consistent with hecke_orbit_code, conrey_lebel, embedding_index
+* check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
+* check that embedding_root_real, and embedding_root_image are present whenever field_poly is present in mf_newforms record and that they approximate a root
+* check that an_normalized is a list of pairs of doubles of length at least 1000
+* check that summing (unnormalized) an over embeddings with a given hcekc_orbit_code gives an approximation to tr(a_n)
+* check that angles lie in (-0.5,0.5] and are null for p dividing the level
 
 Dirichlet characters
 ====================
 
-Table name: `char_dir_orbits`
+**Table** `char_dir_orbits`:
 
 Column | Type | Notes
 -------|------|------
@@ -459,7 +504,19 @@ is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
 char_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
 
-Table name: `char_dir_values`
+**Validation** for `char_dir_orbits`:
+
+* there should be a record present for every character orbit of modulus up to 10,000 (there are 768,512)
+* check that orbit_label is consistent with modulus and orbit_index and is unique
+* check that orbit_index=1 if and only if char_order=1
+* check that conductor divides modulus
+* check that orbit specified by conductor,prim_orbit_index is present
+* check order and parity by constructing a Conrey character in Sage (use the first index in galois_orbit)
+* check that is_real is true if and only if order <= 2
+* check that char_degree = euler_phi(order) and is equal to len(Galois_orbit)
+* check that is_primitive is true if and only if modulus=conductor
+
+**Table** `char_dir_values`:
 
 Note that the values in this table are stored as integers m so that the actual value is `e^{2\pi i m/d}` where `d` is the `order`.
 
@@ -471,3 +528,14 @@ prim_label | text | the label of primitive character inducing this one
 order | smallint
 values | integers[] | list of pairs [x,m] giving first twelve values e(m/n) on x=-1,1, then the next ten integers relatively prime to the modulus, where n is the order of the character
 values_gens | integers[] | list of pairs [x, m] giving values on generators x of the unit group
+
+**Validation** for `char_dir_values`
+
+* Total number of records should be sum of len(galois_orbit) over records in char_dir_orbits
+* label should uniquely identify each record
+* Conrey index n in label should appear in galois_orbit for record in char_dir_orbits with this orbit_label
+* order should match order in char_dir_orbits for this orbit_label
+* The x's listed in values and values_gens should be coprime to the modulus N in the label
+* the value on -1 should agree with the parity for this char_orbit_index in char_dir_orbits
+* for x's that appear in both values and values_gens, the value should be the same.
+
