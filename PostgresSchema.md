@@ -1,7 +1,7 @@
 Spaces
 ======
 
-Table name: `mf_boxes`.
+**Table** `mf_boxes`:
 
 This table stores metadata describing sets of newspaces determined by constraints on level N, weight k, character order o, Nk^2, dimension D, and for each set lists counts of newspaces, newforms (when known), and embeddings in the set, along with a series of boolean flags indicating what data is available for newforms in the set.
 
@@ -29,7 +29,7 @@ embeddings | boolean | set if complex embeddings are stored
 lfunctions | boolean | set if lfunctions have been computed
 
 
-Table name: `mf_newspaces`.
+**Table** `mf_newspaces`.
 
 This table represents (Galois orbits of) spaces of newforms `S_k^new(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Character orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
 
@@ -79,7 +79,30 @@ s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
 a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as a key in mf_hecke_newspace_traces.  N + (k<<24) + ((i-1)<<36); this is the same as the Hecke orbit code of the first newform in the space.
 
-Table name: `mf_gamma1`.
+**Validation** for `mf_newspaces`:
+
+* there should be exactly one row for every newspace in mf_boxes (so check counts of box queries sum to count of table)
+* check that label matches level, weight, char_orbit_index and is unique
+* check level_* attributes (radical,primes,is_prime,...)
+* check weight_parity, analytic_conductor, Nk2
+* check that char_* atrributes match data in char_dir_orbits table (in particular, conrey_indexes should match galois_orbit)
+* check that sturm_bound is exactly floor(k*Index(Gamma0(N))/12)
+* check that trace_bound is set whenever spaces is in a box with traces set, and trace_bound=0 if num_forms=1 and trace_bound=1 if hecke_orbit_dims set and all dims distinct
+* for k > 1 check that dim is the Q-dimension of S_k^new(N,chi) (using sage dimension formula)
+* check that relative_dim = dim / char_degree (and that char_degree divides dim)
+* check that num_forms and hecke_orbit_dims are set whenever space is in a box with traces set and that len(hecke_orbit_dims) = num_forms and sum(hecke_orbit_dims) = dim
+* check that hecke_orbit_dims is sorted in increasing order
+* check that if dim = 0 then num_forms = 0 and hecke_orbit_dims = [] (no matter what box we are in)
+* for k > 1 check each of eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas (when applicable)
+* for all k check that eis_dim + cusp_dim = mf_dim and eis_new_dim+dim=mf_new_dim
+* check that AL_dims and plus_dim is set whenever char_orbit_index=1, and check that AL_dims sum to dim
+* check that traces is set and has length at least 1000 if space is in a box with straces set
+* check that traces_display is set whenever traces is set
+* check that hecke_cutter_primes is set whenever space is in a box with eigenvalues set and min(dims) <= 20
+* for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
+* check that hecke_orbit_code matches level,weight,char_orbit_index
+
+**Table** `mf_gamma1`:
 
 This table contains data for spaces of newforms `S_k^new(Gamma1(N))`, most of which is computed by summing the corresponding rows in mf_newspaces.
 
@@ -116,7 +139,26 @@ a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
 s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
 a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 
-Table name: `mf_newspace_portraits`
+**Validation** for `mf_gamma1`:
+
+* there should be a row present for every pair (N,k) satisfying a box constraint on N,k,Nk2
+* check that label matches level and weight and is unique
+* check level_* attributes
+* check weight_parity, analytic_conductor, Nk2
+* check that sturm_bound is exactly floor(k*Index(Gamma1(N))/12)
+* check that dim = dim S_k^new(Gamma1(N))
+* if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
+* if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
+* check that num_spaces matches number of char_orbits of level N and number of records in mf_newspaces with this level and weight
+* check that newspace_dims is equal to the (sorted) concatenation of dim over newspaces with this level and weight
+* for k > 1 check eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas
+* check that eis_dim + cusp_dim = mf_dim and eis_new_dim + mf_new_dim = dim
+* check that traces is present and has length at least 1000 whenever (N,k) lie in a box with straces set and no dimension constraint
+* check that trace_display is present whenever traces is
+* for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
+
+
+**Table** `mf_newspace_portraits`:
 
 Column | Type | Notes
 -------|------|------
@@ -125,6 +167,12 @@ level | integer | level N
 weight | smallint | weight k
 char_orbit_index | integer | index of the character orbit `[\chi]` n the sorted list of character orbits of modulus N
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
+
+**Validataion** for `mf_newspace_portraits`:
+
+* check that label matches level,weight,char_orbit_index and is unique
+* check that there is a portrait present for every newspace in box where straces is set
+
 
 Table name: `mf_gamma1_portraits`.
 
