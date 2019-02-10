@@ -29,7 +29,7 @@ embeddings | boolean | set if complex embeddings are stored
 lfunctions | boolean | set if lfunctions have been computed
 
 
-**Table** `mf_newspaces`.
+**Table** `mf_newspaces`:
 
 This table represents (Galois orbits of) spaces of newforms `S_k^new(N, [\chi])`, where `\chi` is a Dirichlet character of modulus N and `[\chi]` denotes its conjugacy class under the action of G_Q.  Character orbits are sorted by order and traces of values on [1..N] (lexicographically), so that 1 is the index of the orbit of the trivial character.
 
