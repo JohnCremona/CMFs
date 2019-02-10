@@ -171,7 +171,7 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 **Validation** for `mf_newspace_portraits`:
 
 * check that label matches level,weight,char_orbit_index and is unique
-* check that there is a portrait present for every newspace in box where straces is set
+* check that there is a portrait present for every nonempty newspace in box where straces is set
 
 
 **Table**`mf_gamma1_portraits`:
@@ -186,7 +186,7 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 **Validataion** for `mf_gamma1_portraits`:
 
 * check that label matches level,weight and is unique
-* check that there is a portrait present for every newspace in box where straces is set and there are no dimension constraints defining the box
+* check that there is a portrait present for every nonempty newspace in box where straces is set and there are no dimension constraints defining the box
 
 
 **Table** `mf_subspaces`:
