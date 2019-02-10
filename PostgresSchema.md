@@ -444,7 +444,7 @@ lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs 
 
 **Validation** for `mf_hecke_lpolys`:
 
-* there should be at least 25 records present for each recod in mf_newforms with field_poly set
+* there should be exactly 25 records present for each recod in mf_newforms with field_poly set
 * check that (hecke_orbit_code,p) is a unique identifier
 * check that every prime p < 100 occurs exactly once for each hecke_orbit_code
 * check that hecke_orbit_code is present in mf_newforms
