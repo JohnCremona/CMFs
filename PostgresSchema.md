@@ -52,7 +52,7 @@ char_orbit_label | text | string encoding the char_orbit i via 1->a, 2->b, ... 2
 conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit | integer | char_orbit for the primitive version of this character
+prim_orbit_index | integer | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
