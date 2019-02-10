@@ -255,6 +255,7 @@ level_is_prime_power | boolean | true if N is a prime power (1 is not a prime po
 level_is_squarefree | boolean | true if N is squarefree (1 is squarefree)
 level_is_square | boolean | true if N is a square (1 is a square)
 weight | smallint | the weight k of the modular form
+weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
 char_orbit_index | integer | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
