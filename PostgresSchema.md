@@ -332,7 +332,7 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
 * check that is_polredabs is present whenever field_poly is, and if nf_label is set, check that is_polredabs is true
 * if nf_label is present, check that there is a record in nf_fields and that mf_newforms field_poly matches nf_fields coeffs, and check that is_self_dual agrees with signature, and field_poly_disc agrees with disc_sign * disc_abs in nf_fields
 * if nf_label is not present and field_poly is present, check whether is_self_dual is correct (if feasible)
-* if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual
+* if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual and/or check that the lfunction self_dual attribute is consistent
 * if present, verify that hecke_ring_index_factorization matches hecke_ring_index
 * if hecke_ring_index_proved is set, verify that field_poly_disc is set
 * check that hecke_ring_generator_nbound is set and positive whenever field_poly is set
