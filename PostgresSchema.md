@@ -344,7 +344,8 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
 * check that self_twist_type is in {0,1,2,3} and matches is_cm and is_rm
 * check that self_twist_discs is consistent with self_twist_type (e.g. if self_twist_type is 3, there should be 3 self_twist_discs, one pos, two neg)
 * check that cm_discs and rm_discs have correct signs and that their union is self_twist_discs
-* check that self_twist_proved is set (log wraning if not)
+* check that self_twist_proved is set (log wraning if not, currently there are 10-20 where it is not set)
+* for each discriminant D in self_twist_discs, check that for each prime p not dividing the level for which (D/p) = -1, check that traces[p] = 0 (we could also check values in mf_hecke_nf and/or mf_hecke_cc, but this would be far more costly)
 * check that has_non_self_twist is consistent with inner_twist_count and self_twist_type
 * check that inner_twists is consistent with inner_twist_count and that both are present if field_poly is set
 * check that each level M in inner twists divides the level and that M.o identifies a character orbit in char_dir_orbits with the listed parity
@@ -482,8 +483,8 @@ angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if 
 * check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
 * check that embedding_root_real, and embedding_root_image are present whenever field_poly is present in mf_newforms record and that they approximate a root
 * check that an_normalized is a list of pairs of doubles of length at least 1000
-* check that summing (unnormalized) an over embeddings with a given hcekc_orbit_code gives an approximation to tr(a_n)
 * check that angles lie in (-0.5,0.5] and are null for p dividing the level
+* (optional) check that summing (unnormalized) an over embeddings with a given hcekc_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
 
 Dirichlet characters
 ====================
