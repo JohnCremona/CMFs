@@ -85,7 +85,7 @@ hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as 
 * check that label matches level, weight, char_orbit_index and is unique
 * check level_* attributes (radical,primes,is_prime,...)
 * check weight_parity, analytic_conductor, Nk2
-* check that char_* atrributes match data in char_dir_orbits table (in particular, conrey_indexes should match galois_orbit)
+* check that char_* atrributes and prim_orbit_index match data in char_dir_orbits table (conrey_indexes should match galois_orbit)
 * check that sturm_bound is exactly floor(k*Index(Gamma0(N))/12)
 * check that trace_bound is set whenever spaces is in a box with traces set, and trace_bound=0 if num_forms=1 and trace_bound=1 if hecke_orbit_dims set and all dims distinct
 * for k > 1 check that dim is the Q-dimension of S_k^new(N,chi) (using sage dimension formula)
