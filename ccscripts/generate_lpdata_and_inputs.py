@@ -145,7 +145,7 @@ def write_inputs(inputs, real_filename,  base_dir, inputs_dir, chunk = 100):
                 I.write("%d\t%s\n" % (weight, inputsfilename))
 
     print "now set LFUNCTIONS and run:"
-    print r"""parallel -a %s  --colsep '\t' --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
+    print r"""parallel -a %s  --colsep '\t' --eta --progress ${LFUNCTIONS}/euler_factors 11 200  ${LFUNCTIONS}/gamma_files/mf.{1} {2} 100""" % (parallel_inputs,)
 
 
 if len(sys.argv) == 2:

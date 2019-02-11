@@ -1,4 +1,5 @@
-# time parallel --memfree 50 GB --retries 10 --joblog joblog --eta --progress sage -python ~/CMFs/ccscripts/orbits-traces-LFs.py ::: {1..4000}
+# time parallel --shuf --memfree 50 GB --retries 10 --joblog joblog --eta --progress sage -python ~/CMFs/ccscripts/orbits-traces-LFs.py ::: {1..4000}
+# sort -k1,1n -k2,2n -k3,3n --field-separator=: -u
 import sqlite3
 import os
 import sys

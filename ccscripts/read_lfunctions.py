@@ -607,7 +607,7 @@ def rational_euler_factors(euler_factors_cc, level, weight, an_list_bound = 11):
             bad_lfactors.append([int(p), efzz])
             if p_index < 30:
                 euler_factors.append(efzz)
-        if p < 11:
+        if p < an_list_bound:
             k = RR(an_list_bound).log(p).floor()+1
             foo = (1/PS(efzz)).padded_list(k)
             for i in range(1, k):
