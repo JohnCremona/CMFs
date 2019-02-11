@@ -397,17 +397,10 @@ field_poly | numeric[] | list of integers of defining polynomial for Hecke field
 hecke_ring_rank | integer | rank of Hecke ring as a free Z-module (same as dimension of form, degree of field_poly)
 hecke_ring_power_basis | boolean | if true the chanage of basis matrix is the (implicit) identity matrix, in which case hecke_ring_numerators, ..., hecke_ring_inverse_denominators are set to null
 hecke_ring_cyclotomic_generator | integer | either zero or an integer m such that the an and ap are encoded as sparse integer polynomials in zeta_m (typically same as field_poly_root_of_unity but this is not required)
-<<<<<<< HEAD
-hecke_ring_numerators | jsonb | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
-hecke_ring_denominators | jsonb | List of integers, giving the denominators of the basis
-hecke_ring_inverse_numerators | jsonb | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
-hecke_ring_inverse_denominators | jsonb | List of integers, giving the denominators of the inverse basis
-=======
 hecke_ring_numerators | numeric[] | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | numeric[] | List of integers, giving the denominators of the basis
 hecke_ring_inverse_numerators| numeric[] | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | numeric[] | List of integers, giving the denominators of the inverse basis
->>>>>>> 98e5fc2b11b5c4b63575eb9a6ba12388c884b514
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis or in cyclotomic representation [[c,e]] encoding c x zeta_m^e where m is hecke_ring_cyclotomic_generator
 an | jsonb | list of a1,...,a100, where each an is either a list of integers encoding an in the Hecke ring basis described above or a list of pairs [[c1,e1],...,[cr,er]] encoding an = c1 x zeta_m^e1 + ... + cr x zeta_m^er, where m is the value of hecke_ring_cyclotomic_generator (if nonzero)
 ap | jsonb | list of lists of integers expressing a_p for p=2,3,5,...,pmax in same format as an
