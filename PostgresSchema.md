@@ -83,33 +83,43 @@ hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as 
 
 * Uniqueness constraints
   * label
-  * (level, weight, char_orbit_index)
+  * (level, weight, char_orbit)
+  * (level, weight, char_orbit_label)
 * Overall
   * there should be exactly one row for every newspace in mf_boxes; for each box performing mf_newspaces.count(box query) should match newspace_count for box, and mf_newspaces.count() should be the sum of these
-  * check that label matches level, weight, char_orbit_index
-  * check that traces_display is set whenever traces is set
-  * check that traces is set and has length at least 1000 if space is in a box with straces set
-  * check that trace_bound is set whenever spaces is in a box with traces set, and trace_bound=0 if num_forms=1 and trace_bound=1 if hecke_orbit_dims set and all dims distinct
   * check that hecke_cutter_primes is set whenever space is in a box with eigenvalues set and `min(dims) <= 20`
+  * check that traces is set if space is in a box with traces set
+  * check that trace_bound is set whenever spaces is in a box with traces set
+  * check that num_forms and hecke_orbit_dims are set whenever space is in a box with traces set
+  * check that label matches level, weight, char_orbit_label
+  * check that char_orbit matches char_orbit_label
+  * check that traces_display is set whenever traces is set
+  * if present, check that traces has length at least 1000
+  * check that trace_bound=0 if num_forms=1
   * check that AL_dims and plus_dim is set whenever char_orbit_index=1
   * check that if dim = 0 then num_forms = 0 and hecke_orbit_dims = [] (no matter what box we are in)
-  * for all k check that eis_dim + cusp_dim = mf_dim and eis_new_dim+dim=mf_new_dim
-  * check that relative_dim = dim / char_degree (and that char_degree divides dim)
+  * check that eis_dim + cusp_dim = mf_dim
+  * check that eis_new_dim+dim=mf_new_dim
   * for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
-  * check that num_forms and hecke_orbit_dims are set whenever space is in a box with traces set and that len(hecke_orbit_dims) = num_forms and sum(hecke_orbit_dims) = dim
+  * check that char_degree * relative_dim = dim
+  * if present, check that len(hecke_orbit_dims) = num_forms
+  * if present, check that sum(hecke_orbit_dims) = dim
   * if AL_dims is set, check that AL_dims sum to dim
+  * check Nk2
+  * check weight_parity
+  * check that char_* atrributes and prim_orbit_index match data in char_dir_orbits table (conrey_indexes should match galois_orbit)
+  * check that hecke_orbit_code matches level, weight, char_orbit_index
 * Per row
-  * local
-    * check weight_parity, analytic_conductor, Nk2
-    * check level_* attributes (radical,primes,is_prime,...)
+  * fast
+    * check analytic_conductor
+  * slow
+    * check level_* attributes (radical, primes, is_prime,...)
     * check that sturm_bound is exactly floor(k*Index(Gamma0(N))/12)
-    * check that hecke_orbit_code matches level, weight, char_orbit_index
     * check that hecke_orbit_dims is sorted in increasing order
     * check that trace_bound=1 if hecke_orbit_dims set and all dims distinct
     * for k > 1 check that dim is the Q-dimension of S_k^new(N,chi) (using sage dimension formula)
     * for k > 1 check each of eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas (when applicable)
-  * char_dir_orbits
-    * check that char_* atrributes and prim_orbit_index match data in char_dir_orbits table (conrey_indexes should match galois_orbit)
+    * check that trace_bound=1 if hecke_orbit_dims set and all dims distinct
 
 
 **Table** `mf_gamma1`:
@@ -357,49 +367,63 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
 
 **Validation** for `mf_newforms`:
 
-* there should be exactly one row for every newform in a box listed in mf_boxes with newform_count set; for each such box performing mf_newforms.count(box query) should match newform_count for box, and mf_newforms.count() should be the sum of these
-* check that label matches level, weight, char_orbit_index, hecke_orbit and is unique
-* check that space_label matches level, weight, char_orbit_index and is present in mf_newspaces
-* check that all columns mf_newforms has in common with mf_newspaces other than label, dim, relative_dim match (this covers all atributes that depend only on level, weight, char)
-* check that dim is present in hecke_orbit_dims array in newspace record and that summing dim over rows with the same space label gives newspace dim
-* check that char_degree * relative_dim = dim
-* if present, check that field_disc_factorization matches field_disc
-* if present, check that field_poly is monic, irreducible, and of degree dim
-* if field_poly_is_cyclotomic or field_poly_is_real_cycolotomic are set, verify this
-* check that is_polredabs is present whenever field_poly is, and if nf_label is set, check that is_polredabs is true
-* if nf_label is present, check that there is a record in nf_fields and that mf_newforms field_poly matches nf_fields coeffs, and check that is_self_dual agrees with signature, and field_poly_disc agrees with disc_sign * disc_abs in nf_fields
-* if nf_label is not present and field_poly is present, check whether is_self_dual is correct (if feasible)
-* if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual and/or check that the lfunction self_dual attribute is consistent
-* if present, verify that hecke_ring_index_factorization matches hecke_ring_index
-* if hecke_ring_index_proved is set, verify that field_poly_disc is set
-* check that hecke_ring_generator_nbound is set and positive whenever field_poly is set
-* check that URLS in related_objects are valid and identify objects present in the LMFDB
-* if k=2, char_orbit_index=1 and dim=1 check that elliptic curve isogeny class of conductor N is present in related_objects
-* if related_objects contains an Artin rep, check that k=1 and that conductor of artin rep matches level N
-* if newform is in a box with lfunctions set, check that analytic_rank is set and matches order_of_vanishing in lfunctions record
-* check that analytic_rank_proved is set (log warning if not)
-* check that self_twist_type is in {0,1,2,3} and matches is_cm and is_rm
-* check that self_twist_discs is consistent with self_twist_type (e.g. if self_twist_type is 3, there should be 3 self_twist_discs, one pos, two neg)
-* check that cm_discs and rm_discs have correct signs and that their union is self_twist_discs
-* check that self_twist_proved is set (log wraning if not, currently there are 10-20 where it is not set)
-* for each discriminant D in self_twist_discs, check that for each prime p not dividing the level for which (D/p) = -1, check that traces[p] = 0 (we could also check values in mf_hecke_nf and/or mf_hecke_cc, but this would be far more costly)
-* check that has_non_self_twist is consistent with inner_twist_count and self_twist_type
-* check that inner_twists is consistent with inner_twist_count and that both are present if field_poly is set
-* check that each level M in inner twists divides the level and that M.o identifies a character orbit in char_dir_orbits with the listed parity
-* check that disc is present in tuple in inner_twists if and only if it is a self_twist and when this is the case, that precisely the discs in self_twist_disc appear
-* check that atkin_lehner_eigenvalues, atkin_lehner_string, and fricke_eigenval are present if and only if char_orbit_index=1 (trivial character)
-* check that fricke_eigenval is product of atkin_lehner_eigenvals
-* check that qexp_display is present whenever field_poly is present
-* check that trace_display is present and has length at least 4
-* check that traces is present and has length at least 10000
-* for k=1 check that projective_image_type is present,
-* if present, check that projective_image is consistent with projective_image_type
-* if present, check that projective_field has degree matching projective_image (4 for A4,S4, 5 for A5, 2n for Dn)
-* if present, check that projective_field_label identifies a number field in nf_fields with coeffs = projective_field
-* if present, check that artin_image is consistent with artin_degree and projective_image (quotient of artin_image by its center should give projective_image)
-* if present, check that aritn_field has degree equal to aring_degree
-* if present, check that artin_field_label identifies a number field in nf_fields with coeffs = artin_field
-* for k>1 check that sato_tate_group is set and consistent with is_cm and char_order (it should be 1.2.3.cn where n=char_order if is_cm is false, and 1.2.1.dn if is_cm is true)
+* Unique
+  * label
+  * level, weight, char_orbit_index, hecke_orbit
+  * hecke_ring_generator_nbound > 0
+* Overall
+  * there should be exactly one row for every newform in a box listed in mf_boxes with newform_count set; for each such box performing mf_newforms.count(box query) should match newform_count for box, and mf_newforms.count() should be the sum of these
+  * check that label matches level, weight, char_orbit_index, hecke_orbit
+  * check that space_label matches level, weight, char_orbit_index
+  * check that char_degree * relative_dim = dim
+  * check that all columns mf_newforms has in common with mf_newspaces other than label, dim, relative_dim match (this covers all atributes that depend only on level, weight, char) (this implies) check that space_label is present in mf_newspaces
+  * check that if nf_label is set, then is_polredabs is true
+  * check that is_polredabs is present whenever field_poly is
+  * check that hecke_ring_generator_nbound is set whenever field_poly is set
+  * check that traces is present and has length at least 10000
+  * check that trace_display is present and has length at least 4
+  * check that qexp_display is present whenever field_poly is present
+  * if nf_label is present, check that there is a record in nf_fields and that mf_newforms field_poly matches nf_fields coeffs, and check that is_self_dual agrees with signature, and field_poly_disc agrees with disc_sign * disc_abs in nf_fields
+  * if hecke_ring_index_proved is set, verify that field_poly_disc is set
+  * check that analytic_rank_proved is set (log warning if not)
+  * check that self_twist_type is in {0,1,2,3} and matches is_cm and is_rm
+  * check that self_twist_discs is consistent with self_twist_type (e.g. if self_twist_type is 3, there should be 3 self_twist_discs, one pos, two neg)
+  * check that cm_discs and rm_discs have correct signs and that their union is self_twist_discs
+  * check that self_twist_proved is set (log warning if not, currently there are 10-20 where it is not set)
+  * check that fricke_eigenval is product of atkin_lehner_eigenvals
+  * for k>1 check that sato_tate_group is set
+  * for k>1 check that sato_tate_group is consistent with is_cm and char_order (it should be 1.2.3.cn where n=char_order if is_cm is false, and 1.2.1.dn if is_cm is true)
+  * for k=1 check that projective_image_type is present,
+  * if present, check that projective_image is consistent with projective_image_type
+  * if present, check that projective_field_label identifies a number field in nf_fields with coeffs = projective_field
+  * if present, check that artin_field_label identifies a number field in nf_fields with coeffs = artin_field
+  * if present, check that artin_field has degree equal to artin_degree
+  * check that atkin_lehner_eigenvalues, atkin_lehner_string, and fricke_eigenval are present if and only if char_orbit_index=1 (trivial character)
+  * check that inner_twists is consistent with inner_twist_count and that both are present if field_poly is set
+  * check that has_non_self_twist is consistent with inner_twist_count and self_twist_type
+* Per row
+  * local
+    * if present, check that field_disc_factorization matches field_disc
+    * if present, verify that hecke_ring_index_factorization matches hecke_ring_index
+    * if present, check that projective_field has degree matching projective_image (4 for A4,S4, 5 for A5, 2n for Dn)
+  * lfunc_lfunctions
+    * if newform is in a box with lfunctions set, check that analytic_rank is set and matches order_of_vanishing in lfunctions record
+    * check that disc is present in tuple in inner_twists if and only if it is a self_twist and when this is the case, that precisely the discs in self_twist_disc appear
+  * slow
+    * for each discriminant D in self_twist_discs, check that for each prime p not dividing the level for which (D/p) = -1, check that traces[p] = 0 (we could also check values in mf_hecke_nf and/or mf_hecke_cc, but this would be far more costly)
+    * if present, check that field_poly is monic, irreducible, and of degree dim
+    * if field_poly_is_cyclotomic or field_poly_is_real_cycolotomic are set, verify this
+    * check that URLS in related_objects are valid and identify objects present in the LMFDB
+    * if k=2, char_orbit_index=1 and dim=1 check that elliptic curve isogeny class of conductor N is present in related_objects
+    * if related_objects contains an Artin rep, check that k=1 and that conductor of artin rep matches level N
+  * extra slow
+    * if nf_label is not present and field_poly is present, check whether is_self_dual is correct (if feasible)
+    * if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual and/or check that the lfunction self_dual attribute is consistent
+    * if present, check that artin_image is consistent with artin_degree and projective_image (quotient of artin_image by its center should give projective_image)
+  * newspace
+    * check that dim is present in hecke_orbit_dims array in newspace record and that summing dim over rows with the same space label gives newspace dim
+  * char_dir_orbits
+    * check that each level M in inner twists divides the level and that M.o identifies a character orbit in char_dir_orbits with the listed parity
 
 
 **Table** `mf_newform_portraits`:
