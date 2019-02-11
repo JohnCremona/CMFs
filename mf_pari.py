@@ -2,6 +2,7 @@ from char import NChars, char_orbit_index_to_DC_number
 from mf_compare import polredbest_stable#, polredbest, polredabs
 
 from sage.all import pari,ZZ,QQ, Rational,RR, GF, PolynomialRing, cyclotomic_polynomial, euler_phi, NumberField, Matrix, prime_range
+from sage.rings.finite_rings.integer_mod import mod
 from sage.libs.pari.convert_sage import gen_to_sage
 from sage.libs.pari.all import PariError
 import sys
@@ -78,10 +79,16 @@ def is_semisimple_modular(M, m,  nprimes=5):
         if np>nprimes:
             #print("op not semisimple modulo {} primes, so returning False".format(nprimes))
             return False
-        zmodp = pol.roots(GF(p))[0][0]
+        zmodp = pari(pol.roots(GF(p))[0][0])
+        #print("zmodp = {}".format(zmodp))
         try:
-            Mmodp = M.lift().subst(pt,zmodp)
-            if Mmodp.charpoly().issquarefree():
+            Mmodp = M.lift()*pari(mod(1,p))
+            #print("Lifted matrix = {}".format(Mmodp))
+            Mmodp = Mmodp.subst(pt,zmodp)
+            #print("matrix (mod {}) = {}".format(p,Mmodp))
+            modpcharpoly = Mmodp.charpoly()
+            #print("char poly (mod {}) = {}".format(p,modpcharpoly))
+            if modpcharpoly.issquarefree():
                 #print("op is semisimple mod {}".format(p))
                 return True
             else:

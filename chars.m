@@ -15,9 +15,15 @@ intrinsic Degree (chi::GrpDrchElt) -> RngIntElt
     return EulerPhi(Order(chi));
 end intrinsic;
 
+intrinsic UnitGenerators (chi::GrpDrchElt) -> SeqEnum[RngIntElt]
+{ Lift to Z of standard generators for (Z/NZ)* where N is the modulus of chi. }
+    return UnitGenerators(Parent(chi));
+end intrinsic;
+
 intrinsic NumberOfCharacterOrbits (N::RngIntElt) -> RngIntElt
 { The number of Galois orbits of Dirichlet characters of modulus N. }
-    // this could be made faster but it is already plenty fast for N up to 10^5
+    require N gt 0: "Modulus N must be a positive integer";
+    // this could be made faster but it is already pretty fast for N up to 10^5
     return Integers()! &+[1/EulerPhi(Order(g)):g in MultiplicativeGroup(Integers(N))];
 end intrinsic;
 
@@ -37,7 +43,7 @@ intrinsic CompareCharacters (chi1::GrpDrchElt,chi2::GrpDrchElt) -> RngIntElt
     N := Modulus(chi1);  assert Modulus(chi2) eq N;
     n1 := Order(chi1); n2 := Order(chi2);
     if n1 ne n2 then return n1-n2; end if;
-    // this will be very slow if characters are actually conjugate, avoid this use case
+    // this will be very slow when the characters are actually conjugate, try to avoid this use case
     for a:=2 to N-1 do
         if GCD(a,N) ne 1 then continue; end if;
         t1 := Trace(chi1(a));  t2 := Trace(chi2(a));
@@ -46,44 +52,20 @@ intrinsic CompareCharacters (chi1::GrpDrchElt,chi2::GrpDrchElt) -> RngIntElt
     return 0;
 end intrinsic;
 
-/*    
-intrinsic CharacterOrbitVector(chi::GrpDrchElt) -> SeqEnum[RngIntElt]
-{ The list [Order(chi)] cat [Trace(chi(n)): n in [1..Modulus(chi)] used to sort and uniquely identify Galois orbits of Dirichlet characters. }
-    return [Order(chi)] cat [Trace(z):z in ValueList(chi)];
-end intrinsic;
-
-intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false) -> List, Assoc
+intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false,OrderBound:=0) -> List, Assoc
 { The list of Galois orbit representatives of the full Dirichlet group of modulus N with minimal codomains sorted by order and trace vectors.
   If the optional boolean argument RepTable is set then a table mapping Dirichlet characters to indexes in this list is also returned. }
-    G := [* MinimalBaseRingCharacter(chi): chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N)) *];
-    T := Sort([<CharacterOrbitVector(G[i]),i>:i in [1..#G]]);
-    if RepTable then
-        H := Elements(FullDirichletGroup(N));
-        S := Sort([<CharacterOrbitVector(MinimalBaseRingCharacter(H[i])),i>:i in [1..#H]]);
-        j := 1;
-        A := AssociativeArray(Parent(H[1]));
-        for i:=1 to #S do
-            while T[j][1] ne S[i][1] do j+:=1; end while;
-            A[H[S[i][2]]] := j;
-        end for;
-        return [* G[T[i][2]] : i in [1..#G] *],A;
-    else
-        return [* G[T[i][2]] : i in [1..#G] *],_;
-    end if;
-end intrinsic;
-*/
-
-intrinsic CharacterOrbitReps(N::RngIntElt:RepTable:=false) -> List, Assoc
-{ The list of Galois orbit representatives of the full Dirichlet group of modulus N with minimal codomains sorted by order and trace vectors.
-  If the optional boolean argument RepTable is set then a table mapping Dirichlet characters to indexes in this list is also returned. }
+    require N gt 0: "Modulus N must be a positive integer";
+    if OrderBound eq 1 then chi1:=DirichletGroup(N)!1; if RepTable then T:=AssociativeArray(Parent(chi1)); T[chi1]:=1; return [chi1],T; else return [chi1]; end if; end if;
     G := [* MinimalBaseRingCharacter(chi): chi in GaloisConjugacyRepresentatives(FullDirichletGroup(N)) *];
     X := [i:i in [1..#G]];
     X := Sort(X,func<i,j|CompareCharacters(G[i],G[j])>);
-    G := [* G[i] : i in X *];
+    G := OrderBound eq 0 select [* G[i] : i in X *] else [* G[i] : i in X | Order(G[i]) le OrderBound *];
     if not RepTable then return G; end if;
     A := AssociativeArray();
     for i:=1 to #G do v:=[OrderOfRootOfUnity(a,Order(G[i])):a in ValuesOnUnitGenerators(G[i])]; if IsDefined(A,v) then Append(~A[v],i); else A[v]:=[i]; end if; end for;
     H := Elements(FullDirichletGroup(N));
+    if OrderBound gt 0 then H := [chi : chi in H | Order(chi) le OrderBound]; end if;
     T := AssociativeArray(Parent(H[1]));
     for h in H do
         v := [OrderOfRootOfUnity(a,Order(h)):a in ValuesOnUnitGenerators(h)];
@@ -99,17 +81,27 @@ end intrinsic;
 
 intrinsic CharacterOrbit(chi::GrpDrchElt) -> RngIntElt
 { The index of the orbit of the specified Dirichlet character in the list of orbit representatives returned by CharacterOrbitReps (this can also be determined using the RepTable parameter). }
+    m := Order(chi);
+    if m eq 1 then return 1; end if;
+    v := [Trace(z):z in ValueList(MinimalBaseRingCharacter(chi))];
     G := CharacterOrbitReps(Modulus(chi));
-    m := Order(chi); v := [Trace(z):z in ValueList(MinimalBaseRingCharacter(chi))];
     M := [i : i in [1..#G] | Order(G[i]) eq m and [Trace(z):z in ValueList(G[i])] eq v];
     assert #M eq 1;
     return M[1];
 end intrinsic;
     
+intrinsic Conjugates(chi::GrpDrchElt:RepTable:=AssociativeArray()) -> RngIntElt
+{ Returns a list of conjugate characters.  For faster performance, use optional RepTable parameter. }
+    if not IsDefined(RepTable,chi) then _,RepTable:=CharacterOrbitReps(Modulus(chi):RepTable); end if;
+    n := RepTable[chi]; return [*x:x in Keys(RepTable)|RepTable[x] eq n*];
+end intrinsic;
+
 intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCycElt
 { The value chi_q(n,m) of the Dirichlet character with Conry label q.n at the integer m. }
+    require q gt 0: "Modulus q must be positive";
+    require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     if q eq 1 then return 1; end if;
-    if GCD(q,n) ne 1 or GCD(q,m) ne 1 then return 0; end if;
+    if GCD(q,m) ne 1 then return 0; end if;
     if n mod q eq 1 or m mod q eq 1 then return 1; end if;
     b,p,e:= IsPrimePower(q);
     if not b then return &*[$$(a[1]^a[2],n,m):a in Factorization(q)]; end if;
@@ -132,10 +124,11 @@ intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCyc
     end if;
 end intrinsic;
 
-intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum[FldCycElt]
+intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum[RntIntElt]) -> SeqEnum[FldCycElt]
 { The list of values of the Dirichlet character with Conrey label q.n on the integers in S. }
+    require q gt 0: "Modulus q must be positive";
+    require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     if q eq 1 then return [1:i in S]; end if;
-    if GCD(q,n) ne 1 then return [0:i in S]; end if;
     if n mod q eq 1 then return [GCD(i,q) eq 1 select 1 else 0 : i in S]; end if;
     b,p,e:= IsPrimePower(q);
     if not b then 
@@ -173,8 +166,10 @@ end function;
 
 intrinsic ConreyCharacterAngle(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldRatElt
 { The rational number r such that chi_q(n,m) = e(r) or 0 (returns 1 for 1 not 0). }
+    require q gt 0: "Modulus q must be positive";
+    require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     if q eq 1 then return 1; end if;
-    if GCD(q,n) ne 1 or GCD(q,m) ne 1 then return 0; end if;
+    if GCD(q,m) ne 1 then return 0; end if;
     if n mod q eq 1 or m mod q eq 1 then return 1; end if;
     b,p,e:= IsPrimePower(q);
     if not b then return normalize_angle(&+[$$(a[1]^a[2],n,m):a in Factorization(q)]); end if;
@@ -202,8 +197,10 @@ intrinsic ConreyCharacterComplexValue(q::RngIntElt,n::RngIntElt,m::RngIntElt,CC:
     return Exp(2*Pi(CC)*CC.1*ConreyCharacterAngle(q,n,m));
 end intrinsic;
 
-intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum[FldCycElt]
+intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,S::SeqEnum[RngIntElt]) -> SeqEnum[FldCycElt]
 { The list of values of the Dirichlet character with Conrey label q.n on the integers in S. }
+    require q gt 0: "Modulus q must be positive";
+    require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     if q eq 1 then return [1:i in S]; end if;
     if GCD(q,n) ne 1 then return [0:i in S]; end if;
     if n mod q eq 1 then return [GCD(i,q) eq 1 select 1 else 0 : i in S]; end if;
@@ -231,7 +228,7 @@ intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,S::SeqEnum) -> SeqEnum
     end if;
 end intrinsic;
 
-intrinsic ConreyCharacterComplexValues(q::RngIntElt,n::RngIntElt,S::RngIntElt,CC::FldCom) -> SeqEnum[FldComElt]
+intrinsic ConreyCharacterComplexValues(q::RngIntElt,n::RngIntElt,S::SeqEnum[RngIntElt],CC::FldCom) -> SeqEnum[FldComElt]
 { List of values of chi_q(n,m) for m in S in specified complex field. }
     return [Exp(2*Pi(CC)*CC.1*t): t in ConreyCharacterAngles(q,n,S)];
 end intrinsic;
@@ -241,9 +238,10 @@ intrinsic ConreyCharacterAngles(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEn
     return ConreyCharacterAngles(q,n,[1..M]);
 end intrinsic;
 
-intrinsic ConreyCharacter(q::RngIntElt,n::RngIntElt) -> GrpDrchElt
+intrinsic CyclotomicConreyCharacter(q::RngIntElt,n::RngIntElt) -> GrpDrchElt
 { The Dirichlet character with Conrey label q.n. }
-    assert GCD(q,n) eq 1;
+    require q gt 0: "Modulus q must be positive";
+    require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     G,pi := MultiplicativeGroup(Integers(q));  psi := Inverse(pi);  S := Generators(G);
     m := Order(psi(n));  F := CyclotomicField(m);
     H := Elements(DirichletGroup(q,F));
@@ -253,8 +251,22 @@ intrinsic ConreyCharacter(q::RngIntElt,n::RngIntElt) -> GrpDrchElt
     return M[1];
 end intrinsic;
 
+intrinsic ComplexConreyCharacter(q::RngIntElt,n::RngIntElt,CC::FldCom) -> Map
+{ The Dirichlet character with Conrey label q.n. }
+    chi := CyclotomicConreyCharacter(q,n);
+    F := Codomain(chi);
+    phi := hom<F->CC|Conjugates(F.1:Precision:=Precision(CC))[1]>;
+    xi := map<Integers()->CC|n:->phi(chi(n))>;
+    U := UnitGenerators(chi);
+    V := ConreyCharacterComplexValues(q,n,U,CC);
+    assert &and[Abs(xi(U[i])-V[i]) lt 10.0^-(Precision(CC)-1):i in [1..#U]];
+    return xi;
+end intrinsic;
+
 intrinsic ConreyTraces(q::RngIntElt,n::RngIntElt) -> SeqEnum[RngIntElt]
 { The list of traces of values of the Dirichlet character with Conrey label q.n on the integers 1,2,...q. }
+    require q gt 0: "Modulus q must be positive";
+    require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     G,pi := MultiplicativeGroup(Integers(q));
     F := CyclotomicField(Order(Inverse(pi)(Integers(q)!n)));
     return [Trace(F!z):z in ConreyCharacterValues(q,n,q)];
@@ -288,6 +300,8 @@ end intrinsic;
 
 intrinsic ConreyCharacterOrbitIndex (q::RngIntElt,n::RngIntElt) -> RngIntElt
 { The index of representative of the Galois orbit of the Conrey character q.n in the list returned by CharacterOrbitReps(q). }
+    require q gt 0: "Modulus q must be positive";
+    require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     _,pi := MultiplicativeGroup(Integers(q)); m := Order(Inverse(pi)(n));
     G := CharacterOrbitReps(q);
     v := ConreyTraces(q,n);
@@ -305,14 +319,80 @@ function ConjugateAngles(z,n)
     return [ normalize_angle(Round(n*Argument(c)/(2*pi))/n) : c in C];
 end function;
 
-intrinsic ConreyConjugates (chi::GrpDrchElt, phi::Map: ConreyLabelList:=ConreyLabels(chi)) -> SeqEnum[RngIntElt]
-{ Given a Dirichlet character chi and an embedding phi of Q(chi) into a number field K, returns a list of the Conrey labels corresponding to the embeddings of K in C, as ordered by Conjugates. }
-    if #ConreyLabelList eq 1 then return [ConreyLabelList[1]:i in [1..Degree(Codomain(phi))]]; end if;
+intrinsic ConreyConjugates (chi::GrpDrchElt, xi::Map: ConreyLabelList:=ConreyLabels(chi)) -> SeqEnum[RngIntElt]
+{ Given a Dirichlet character chi embedded as xi with values in a number field K, returns a list of the Conrey labels corresponding to the embeddings of K in C, as ordered by Conjugates. }
+    if #ConreyLabelList eq 1 then return [ConreyLabelList[1]:i in [1..Degree(Codomain(xi))]]; end if;
     q := Modulus(chi);  e := Order(chi);
-    S := UnitGenerators(Parent(chi));
+    S := UnitGenerators(chi);
     T := AssociativeArray();
     for n in ConreyLabelList do T[ConreyCharacterAngles(q,n,S)] := n; end for;
-    A := [ConjugateAngles(phi(chi(m)),e) : m in S];
+    A := [ConjugateAngles(xi(m),e) : m in S];
     return [T[[A[i][j] : i in [1..#S]]] : j in [1..#A[1]]];
 end intrinsic;
+
+intrinsic DirichletCharacterFromValues (N::RngIntElt,n::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum[RngIntElt]) -> GrpDrchElt
+{ Given a modulus N, a positive integer n, a list of integers u giving standard generates for (Z/NZ)*, and a suitable list of integers v, returns the Dirichlet character with values in Q(zeta_n) mapping u[i] to zeta_n^v[i]. }
+    if u ne UnitGenerators(DirichletGroup(N)) then error Sprintf("Specified generators %o do not match Magma's generators %o", u, UnitGenerators(DirichletGroup(N))); end if;
+    F := CyclotomicField(n);
+    return DirichletCharacterFromValuesOnUnitGenerators(DirichletGroup(N,F),[F|F.1^n:n in v]);
+end intrinsic;
+
+intrinsic CharacterFromValues (N::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum:Orbit:=false) -> Map
+{ Given a modulus N, a list of generators of (Z/NZ)*, and a corresponding list of roots of unity in a number/cyclotomic field K, returns a map ZZ -> K for the Dirichlet character. }
+    require N gt 0: "Modulus must be a positive integer";
+    require #u eq #v: "List of unit generators and values must be lists of the same length";
+    K := Universe(v);
+    if N le 2 then psi:=map< Integers()->K | x :-> GCD(N,x) eq 1 select 1 else 0 >; if Orbit then return psi,1; else return psi; end if; end if;
+    A,pi := UnitGroup(Integers(N)); ipi:=Inverse(pi);
+    u0 := [pi(A.i):i in [1..NumberOfGenerators(A)]];
+    if u ne u0 then error Sprintf("Specified generators %o do not match standard generators %o, conversion not implmented.", u, u0); end if;
+    psi := map< Integers()->K | x :-> GCD(N,x) eq 1 select &*[v[i]^(Eltseq(ipi(x))[i]):i in [1..#v]] else K!0>;
+    if not Orbit then return psi; end if;
+    // if Orbit flag is set, determine the character orbit by comparing traces (note that we need tot take traces from the subfield of K generated by the image of psi)
+    m := LCM([Min([d:d in Divisors(EulerPhi(N))|z^d eq 1]):z in v]);
+    d := EulerPhi(m); e := ExactQuotient(Degree(K),d);
+    t := [ExactQuotient(Trace(psi(n)),e) : n in [1..N]];
+    G := CharacterOrbitReps(N);
+    M := [i : i in [1..#G] | Order(G[i]) eq m and [Trace(z):z in ValueList(G[i])] eq t];
+    assert #M eq 1;
+    return psi,M[1];
+end intrinsic;
+
+intrinsic Order (xi::Map, N::RngIntElt) -> RngIntElt
+{ Given a map xi:ZZ -> K that is a Dirichlet character of modulus N, returns its order (results are undefined if xi is not of modulus N). }
+    e := Exponent(MultiplicativeGroup(Integers(N)));
+    U := UnitGenerators(DirichletGroup(N));
+    return LCM([Min([d: d in Divisors(e)|a^d eq 1]) where a:=xi(u) : u in U]);
+end intrinsic;
+
+intrinsic Conductor (xi::Map, N::RngIntElt) -> RngIntElt
+{ Given a map ZZ -> K that is a Dirichlet character of modulus N, returns its conductor (results are undefined if xi is not of modulus N). }
+    U := UnitGenerators(DirichletGroup(N));
+    V := [xi(u):u in U];
+    if Set(V) eq {1} then return 1; end if;
+    if IsPrime(N) then return N; end if;
+    return Min([M : M in Divisors(N) | M gt 2 and &and[&and[xi(u) eq xi(u+r*M):r in [1..ExactQuotient(N,M)-1]]:u in U]]);
+end intrinsic;
+
+intrinsic Degree (xi::Map, N::RngIntElt) -> RngIntElt
+{ Given a map ZZ -> K that is a Dirichlet character of modulus N, returns the degree of the (cyclotomic) subfield of K generated by its image. }
+    U := UnitGenerators(DirichletGroup(N));
+    if #U eq 0 then return 1; end if;
+    if Codomain(xi) eq Rationals() then return {xi(u):u in U} eq {1} select 1 else 2; end if;
+    return Degree(sub<Codomain(xi) | [xi(u) : u in U]>);
+end intrinsic;
+
+intrinsic Parity (xi::Map) -> RngIntElt
+{ Given a map ZZ -> K that is a Dirichlet character, returns its parity xi(-1). }
+    return Integers()!xi(-1);
+end intrinsic;
+
+intrinsic IsReal (xi::Map, N::RngIntElt) -> Bool
+{ Given a map ZZ -> K that is a Dirichlet character, returns a boolean indicating whether the character takes only real values (trivial or quadratic) or not. }
+    return Order(xi,N) le 2;
+end intrinsic;
+
+
+
+
 

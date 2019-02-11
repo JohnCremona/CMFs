@@ -150,3 +150,35 @@ Total time = 5514976.131
 Max time = 223959.730 for space (2948, 1, 37)
 Average time (all spaces)      = 441.587
 Average time (nonzero spaces)  = 3955.256
+
+---------------------
+
+Weight 1 3001-4000 [69627 spaces] using parallel:
+
+3001-3100 [6990 spaces]: complete in wt1.3001-3100
+3101-3200 [6630 spaces]: complete in wt1.3101-3200
+3201-3300 [6619 spaces]: complete in wt1.3201-3300
+3301-3400 [6846 spaces]: complete in wt1.3301-3400
+3401-3500 [6892 spaces]: complete in wt1.3401-3500
+3501-3600 [6766 spaces]: complete in wt1.3501-3600
+3601-3700 [7038 spaces]: complete in wt1.3601-3700
+3701-3750 [3474 spaces]: complete in wt1.3701-3750
+3751-3800 [3854 spaces]: complete in wt1.3751-3800
+3701-3800 [7328 spaces]: complete in wt1.3701-3800
+3801-3900 [7178 spaces]: complete in wt1.3801-3900
+3901-4000 [7340 spaces]: complete in wt1.3901-4000
+
+NB 3841.1.12 and 3901.1.24 are very large so we also have
+
+wt1.3801-3900.x.3841.1.12 (all except tone large space)
+wt1.3841.1.12.gz (just one space)
+wt1.3901.gz (level 3901 only, all characters)
+wt1.3902-4000 (all spaces in this level range)
+
+The last 4 are in the repository, while the complete files
+wt1.3801-3900 and wt1.3901-4000 are not.
+
+
+          3900 1 124 0 1000 on hecke   (185h..., 47%)
+          gp character = [0, 1, 4, 4]~
+

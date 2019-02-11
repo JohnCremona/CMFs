@@ -27,7 +27,7 @@ def str_nested_list_to_nested_list(s, level=1, T=ZZ, closed=True):
     delim = "]"*(level-1) + "," + "["*(level-1)
     return [str_nested_list_to_nested_list(a,level-1,T,False)  for a in s.split(delim)]
 
-def decode_ALs(s):
+def read_ALs(s):
     # input is a string representing a list of list of pairs <p,eps>
     if s=='[]':
         return []
@@ -35,7 +35,7 @@ def decode_ALs(s):
         return []
     return str_nested_list_to_nested_list(s.replace("<","[").replace(">","]"),3)
 
-def decode_eigdata(s, key):
+def read_eigdata(s, key):
     # input is a string representing a list of <pol,bas,n,m,e> where
     # pol is a list of ints, bas is a list of lists of rationals, n &
     # m are ints, and e is a list of lists of lists of ints, i.e.
@@ -47,7 +47,7 @@ def decode_eigdata(s, key):
         return []
     parts = s[2:-2].split(">,<")
     # now each part is a single intlist, ratlistlist, int, int, intlistlist with no "<"...">"
-    def decode_one(part):
+    def read_one(part):
         pol, rest = part[1:-2].split("],[[")
         #print("pol part is {}".format(pol))
         pol = [ZZ(c) for c in pol.split(",")]
@@ -70,7 +70,7 @@ def decode_eigdata(s, key):
             #print("ans = {}".format(ans))
         return {'poly':pol, 'basis':bas, 'n':n, 'm':m, 'ans':ans}
 
-    return [decode_one(part) for part in parts]
+    return [read_one(part) for part in parts]
 
 
     # NB We must be careful since eval('1/2') gives 0. so the following cheat does not work!
@@ -107,9 +107,9 @@ def read_dtp(fname):
         tot_time += t
         dims =   str_nested_list_to_nested_list(fields[4])
         traces = str_nested_list_to_nested_list(fields[5],2)
-        ALs = decode_ALs(fields[6])
+        ALs = read_ALs(fields[6])
         polys =  str_nested_list_to_nested_list(fields[7],2)
-        eigdata = decode_eigdata(fields[9], key)
+        eigdata = read_eigdata(fields[9], key)
 
         data[key] = {'dims':dims, 'traces':traces, 'ALs': ALs, 'polys':polys, 'eigdata':eigdata}
         nspaces += 1
@@ -204,6 +204,23 @@ def polredbest_stable(pol):
     while f!=oldf:
         oldf, f = f, f.polredbest()
     return sagepol(f,x)
+
+def decode_eigdata(k, ed, detail=1):
+    if detail:
+        print("Decoding eigdata for space {}".format(k))
+    Qx = PolynomialRing(QQ,'x')
+    pol = Qx(ed['poly'])
+    F = NumberField(pol,'a')
+    if detail:
+        print("Field = {}".format(F))
+    basis = [F(co) for co in ed['basis']]
+    if detail:
+        print("Basis = {}".format(basis))
+    ans = [sum(b*a for a,b in zip(an,basis)) for an in ed['ans']]
+    if detail:
+        print("ans = {} (first 10 only)".format(ans[:10]))
+
+    return {'field': F, 'basis': basis, 'ans': ans}
 
 def compare_eigdata(k, ed1, ed2, debug=1):
     #if k==(90,2,12): debug=1
