@@ -77,30 +77,40 @@ dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for 
 a4_dim | integer | total dimension of A4 Hecke orbits (only set for weight 1)
 s4_dim | integer | total dimension of S4 Hecke orbits (only set for weight 1)
 a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
-hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as a key in mf_hecke_newspace_traces.  N + (k<<24) + ((i-1)<<36); this is the same as the Hecke orbit code of the first newform in the space.
+hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as a key in mf_hecke_newspace_traces.  `N + (k<<24) + ((i-1)<<36)` this is the same as the Hecke orbit code of the first newform in the space.
 
 **Validation** for `mf_newspaces`:
 
-* there should be exactly one row for every newspace in mf_boxes; for each box performing mf_newspaces.count(box query) should match newspace_count for box, and mf_newspaces.count() should be the sum of these
-* check that label matches level, weight, char_orbit_index and is unique
-* check level_* attributes (radical,primes,is_prime,...)
-* check weight_parity, analytic_conductor, Nk2
-* check that char_* atrributes and prim_orbit_index match data in char_dir_orbits table (conrey_indexes should match galois_orbit)
-* check that sturm_bound is exactly floor(k*Index(Gamma0(N))/12)
-* check that trace_bound is set whenever spaces is in a box with traces set, and trace_bound=0 if num_forms=1 and trace_bound=1 if hecke_orbit_dims set and all dims distinct
-* for k > 1 check that dim is the Q-dimension of S_k^new(N,chi) (using sage dimension formula)
-* check that relative_dim = dim / char_degree (and that char_degree divides dim)
-* check that num_forms and hecke_orbit_dims are set whenever space is in a box with traces set and that len(hecke_orbit_dims) = num_forms and sum(hecke_orbit_dims) = dim
-* check that hecke_orbit_dims is sorted in increasing order
-* check that if dim = 0 then num_forms = 0 and hecke_orbit_dims = [] (no matter what box we are in)
-* for k > 1 check each of eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas (when applicable)
-* for all k check that eis_dim + cusp_dim = mf_dim and eis_new_dim+dim=mf_new_dim
-* check that AL_dims and plus_dim is set whenever char_orbit_index=1, and check that AL_dims sum to dim
-* check that traces is set and has length at least 1000 if space is in a box with straces set
-* check that traces_display is set whenever traces is set
-* check that hecke_cutter_primes is set whenever space is in a box with eigenvalues set and min(dims) <= 20
-* for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
-* check that hecke_orbit_code matches level,weight,char_orbit_index
+* Uniqueness constraints
+  * label
+  * (level, weight, char_orbit_index)
+* Overall
+  * there should be exactly one row for every newspace in mf_boxes; for each box performing mf_newspaces.count(box query) should match newspace_count for box, and mf_newspaces.count() should be the sum of these
+  * check that label matches level, weight, char_orbit_index
+  * check that traces_display is set whenever traces is set
+  * check that traces is set and has length at least 1000 if space is in a box with straces set
+  * check that trace_bound is set whenever spaces is in a box with traces set, and trace_bound=0 if num_forms=1 and trace_bound=1 if hecke_orbit_dims set and all dims distinct
+  * check that hecke_cutter_primes is set whenever space is in a box with eigenvalues set and `min(dims) <= 20`
+  * check that AL_dims and plus_dim is set whenever char_orbit_index=1
+  * check that if dim = 0 then num_forms = 0 and hecke_orbit_dims = [] (no matter what box we are in)
+* Per row
+  * local
+    * check weight_parity, analytic_conductor, Nk2
+    * check level_* attributes (radical,primes,is_prime,...)
+    * check that sturm_bound is exactly floor(k*Index(Gamma0(N))/12)
+    * check that relative_dim = dim / char_degree (and that char_degree divides dim)
+    * for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
+    * check that hecke_orbit_code matches level, weight, char_orbit_index
+    * if AL_dims is set, check that AL_dims sum to dim
+    * check that num_forms and hecke_orbit_dims are set whenever space is in a box with traces set and that len(hecke_orbit_dims) = num_forms and sum(hecke_orbit_dims) = dim
+    * check that hecke_orbit_dims is sorted in increasing order
+    * for all k check that eis_dim + cusp_dim = mf_dim and eis_new_dim+dim=mf_new_dim
+    * check that trace_bound=1 if hecke_orbit_dims set and all dims distinct
+    * for k > 1 check that dim is the Q-dimension of S_k^new(N,chi) (using sage dimension formula)
+    * for k > 1 check each of eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas (when applicable)
+  * char_dir_orbits
+    * check that char_* atrributes and prim_orbit_index match data in char_dir_orbits table (conrey_indexes should match galois_orbit)
+
 
 **Table** `mf_gamma1`:
 
