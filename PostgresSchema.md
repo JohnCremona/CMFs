@@ -187,8 +187,12 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 
 **Validation** for `mf_newspace_portraits`:
 
-* check that label matches level,weight,char_orbit_index and is unique
-* check that there is a portrait present for every nonempty newspace in box where straces is set
+* Uniqueness
+  * label
+  * level,weight,char_orbit_index
+* Overall
+  * check that label matches level,weight,char_orbit_index
+  * check that there is a portrait present for every nonempty newspace in box where straces is set
 
 
 **Table**`mf_gamma1_portraits`:
@@ -202,8 +206,12 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
 
 **Validataion** for `mf_gamma1_portraits`:
 
-* check that label matches level, weight and is unique
-* check that there is a portrait present for every record in mf_gamma1 with dim > 0 and level <= 4000
+* Uniqueness
+  * label
+  * level, weight
+* Overall
+  * check that label matches level, weight
+  * check that there is a portrait present for every record in mf_gamma1 with `dim > 0` and `level <= 4000`
 
 **Table** `mf_subspaces`:
 
@@ -227,17 +235,21 @@ sub_mult | integer | Multiplicity of`S_k^{new}(M, [\psi])` as a direct summand o
 
 **Validation** for `mf_subspaces`:
 
-* check that label matches level, weight char_orbit_index
-* check that char_orbit_label matches level, char_orbit_index
-* check that conrey_index matches galois_orbit for char_orbit_label in char_dir_orbits
-* check that sub_label matches sub_level, weight, sub_char_orbit_index
-* check that pair (label,sub_label) is a unique identifier
-* check that sub_level divides level
-* chack that sub_char_orbit_label matches sub_level, sub_char_orbit_index
-* check that sub_conrey_index matches galois_orbit for sub_char_orbit_label in char_dir_orbits
-* check that sub_dim = S_k^new(sub_level,sub_char_orbit_index) and is positive
-* check that sub_mult is positive
-* check that summing sub_dim * sub_mult over rows with a given label gives S_k(N,chi) (old+new), for k=1 use cusp_dim in mf_newspaces to do this check
+* Unique
+  * (label,sub_label)
+  * sub_mult is positive
+* Overall
+  * check that label matches level, weight char_orbit_index
+  * check that char_orbit_label matches level, char_orbit_index
+  * check that sub_label matches sub_level, weight, sub_char_orbit_index
+  * check that sub_level divides level
+  * check that sub_char_orbit_label matches sub_level, sub_char_orbit_index
+* Per row
+  * char_dir_orbits
+    * check that conrey_index matches galois_orbit for char_orbit_label in char_dir_orbits
+    * check that sub_conrey_index matches galois_orbit for sub_char_orbit_label in char_dir_orbits
+  * mf_newspaces
+    * check that summing sub_dim * sub_mult over rows with a given label gives S_k(N,chi) (old+new), for k=1 use cusp_dim in mf_newspaces to do this check
 
 **Table** `mf_gamma1_subspaces`:
 
@@ -252,11 +264,16 @@ sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand o
 
 **Validation** for `mf_subspaces`:
 
-* check that label matches level, weight
-* check that (level, weight, sub_level) is a unique identifier
-* check that sub_lelve divides level
-* check that sub_dim = S_k^new(Gamma1(sub_level)) and is positive
-* check that summing sub_dim * sub_mult over rows with same label gives dim S_k^(Gamma1(N)) (old+new), for k=1 use cusp_dim in mf_gamma1 to do this check
+* Unique
+  * (level, weight, sub_level)
+* Overall
+  * check that label matches level, weight
+  * check that sub_level divides level
+* Per row
+  * local
+    * check that sub_dim = S_k^new(Gamma1(sub_level)) and is positive
+  * mf_gamma1
+    * check that summing sub_dim * sub_mult over rows with same label gives dim S_k^(Gamma1(N)) (old+new), for k=1 use cusp_dim in mf_gamma1 to do this check
 
 Newforms
 ========
@@ -288,7 +305,7 @@ char_degree | integer | Degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  N + (k<<24) + ((i-1)<<36) + ((x-1)<<52).
+hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  `N + (k<<24) + ((i-1)<<36) + ((x-1)<<52)`.
 dim | integer | the Q-dimension of this Galois orbit
 relative_dim | integer | the Q(chi)-dimension of this Hecke orbit (=dim/char_degree)
 field_disc | numeric | discriminant of the coefficient field, if known
