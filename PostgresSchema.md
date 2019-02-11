@@ -157,20 +157,22 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 * Overall
   * there should be a row present for every pair (N,k) satisfying a box constraint on N,k,Nk2
   * check that label matches level and weight
-* Per row
-  * check level_* attributes
-  * check weight_parity, analytic_conductor, Nk2
   * for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
-  * check that sturm_bound is exactly floor(k*Index(Gamma1(N))/12)
-  * check that dim = dim S_k^new(Gamma1(N))
-* if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
-* if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
-* check that num_spaces matches number of char_orbits of level N and number of records in mf_newspaces with this level and weight
-* check that newspace_dims is equal to the (sorted) concatenation of dim over newspaces with this level and weight
-* for k > 1 check eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas
-* check that eis_dim + cusp_dim = mf_dim and eis_new_dim + mf_new_dim = dim
-* check that traces is present and has length at least 1000 whenever (N,k) lie in a box with straces set and no dimension constraint
-* check that trace_display is present whenever traces is
+  * check that trace_display is present whenever traces is
+  * check that traces is present and has length at least 1000 whenever (N,k) lie in a box with straces set and no dimension constraint
+  * check that eis_dim + cusp_dim = mf_dim and eis_new_dim + mf_new_dim = dim
+* Per row
+  * local
+    * check level_* attributes
+    * check weight_parity, analytic_conductor, Nk2
+    * check that sturm_bound is exactly floor(k*Index(Gamma1(N))/12)
+    * check that dim = dim S_k^new(Gamma1(N))
+    * for k > 1 check eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas
+  * mf_newspaces
+    * if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
+    * if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
+    * check that newspace_dims is equal to the (sorted) concatenation of dim over newspaces with this level and weight
+    * check that num_spaces matches number of char_orbits of level N and number of records in mf_newspaces with this level and weight
 
 
 **Table** `mf_newspace_portraits`:
