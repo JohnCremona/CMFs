@@ -93,18 +93,18 @@ hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as 
   * check that hecke_cutter_primes is set whenever space is in a box with eigenvalues set and `min(dims) <= 20`
   * check that AL_dims and plus_dim is set whenever char_orbit_index=1
   * check that if dim = 0 then num_forms = 0 and hecke_orbit_dims = [] (no matter what box we are in)
+  * for all k check that eis_dim + cusp_dim = mf_dim and eis_new_dim+dim=mf_new_dim
+  * check that relative_dim = dim / char_degree (and that char_degree divides dim)
+  * for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
+  * check that num_forms and hecke_orbit_dims are set whenever space is in a box with traces set and that len(hecke_orbit_dims) = num_forms and sum(hecke_orbit_dims) = dim
+  * if AL_dims is set, check that AL_dims sum to dim
 * Per row
   * local
     * check weight_parity, analytic_conductor, Nk2
     * check level_* attributes (radical,primes,is_prime,...)
     * check that sturm_bound is exactly floor(k*Index(Gamma0(N))/12)
-    * check that relative_dim = dim / char_degree (and that char_degree divides dim)
-    * for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
     * check that hecke_orbit_code matches level, weight, char_orbit_index
-    * if AL_dims is set, check that AL_dims sum to dim
-    * check that num_forms and hecke_orbit_dims are set whenever space is in a box with traces set and that len(hecke_orbit_dims) = num_forms and sum(hecke_orbit_dims) = dim
     * check that hecke_orbit_dims is sorted in increasing order
-    * for all k check that eis_dim + cusp_dim = mf_dim and eis_new_dim+dim=mf_new_dim
     * check that trace_bound=1 if hecke_orbit_dims set and all dims distinct
     * for k > 1 check that dim is the Q-dimension of S_k^new(N,chi) (using sage dimension formula)
     * for k > 1 check each of eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas (when applicable)
@@ -151,12 +151,18 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 
 **Validation** for `mf_gamma1`:
 
-* there should be a row present for every pair (N,k) satisfying a box constraint on N,k,Nk2
-* check that label matches level and weight and is unique
-* check level_* attributes
-* check weight_parity, analytic_conductor, Nk2
-* check that sturm_bound is exactly floor(k*Index(Gamma1(N))/12)
-* check that dim = dim S_k^new(Gamma1(N))
+* Uniqueness
+  * label
+  * (level, weight)
+* Overall
+  * there should be a row present for every pair (N,k) satisfying a box constraint on N,k,Nk2
+  * check that label matches level and weight
+* Per row
+  * check level_* attributes
+  * check weight_parity, analytic_conductor, Nk2
+  * for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
+  * check that sturm_bound is exactly floor(k*Index(Gamma1(N))/12)
+  * check that dim = dim S_k^new(Gamma1(N))
 * if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
 * if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
 * check that num_spaces matches number of char_orbits of level N and number of records in mf_newspaces with this level and weight
@@ -165,7 +171,6 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 * check that eis_dim + cusp_dim = mf_dim and eis_new_dim + mf_new_dim = dim
 * check that traces is present and has length at least 1000 whenever (N,k) lie in a box with straces set and no dimension constraint
 * check that trace_display is present whenever traces is
-* for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
 
 
 **Table** `mf_newspace_portraits`:
