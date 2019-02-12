@@ -310,7 +310,7 @@ fricke_eigenval | smallint | product of the Atkin-Lehner eigenvalues (NULL if no
 hecke_cutters | jsonb | a list of pairs [p, F_p] where F_p is a list of integers encoding a polynomial; the intersection of the kernels of F_p(T_p) is this Hecke orbit
 qexp_display | text | latexed string for display on search page results
 trace_display | numeric[] | list of traces tr(a_2), tr(a_3), tr(a_5), tr(a_7) for display on search page results
-traces | numeric[] | full list of traces tr(a_n) for n from 1 to 1000
+traces | numeric[] | full list of traces tr(a_n) for n from 1 to 1000 (or more)
 projective_image_type | text | for weight 1 forms, one of "Dn", "A4", "S4", "A5"
 projective_image | text | for weight 1 forms, isomorphism class of project image (e.g. which Dn)
 projective_field | numeric[] | for weight 1 forms, list of integer coefficients of polynomial whose splitting field is the fixed field of the kernel of the projective Galois rep (subfield of the artin field fixed be the center of its Galois group)

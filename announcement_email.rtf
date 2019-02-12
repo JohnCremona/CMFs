@@ -1,0 +1,287 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf830
+{\fonttbl\f0\fswiss\fcharset0 ArialMT;\f1\fnil\fcharset0 LucidaGrande;}
+{\colortbl;\red255\green255\blue255;\red26\green26\blue26;\red255\green255\blue255;\red16\green60\blue192;
+\red26\green26\blue26;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\cssrgb\c13333\c13333\c13333;\cssrgb\c100000\c100000\c100000;\cssrgb\c6667\c33333\c80000;
+\cssrgb\c13333\c13333\c13333;\cssrgb\c100000\c100000\c100000;}
+\margl1440\margr1440\vieww13400\viewh18700\viewkind0
+\deftab720
+\pard\pardeftab720\sl220\partightenfactor0
+
+\f0\fs20 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 We have been working on an update to the LMFDB's classical modular forms since a workshop in August, and are now ready for feedback from the community.\'a0 Please feel free to reply to this e-mail with suggestions, or to comment on the pull request (ADD LINK TO PR).\'a0 We include below a summary of the changes; you can also see a live version at\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/}}.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl320\partightenfactor0
+
+\b\fs28 \cf2 \cb3 Extent and size
+\b0\fs20 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb3 Boxes
+\i0 \
+Rather than choosing 
+\i N
+\i0  and 
+\i k
+\i0  in boxes, we organize by 
+\i \cf5 \cb6 \outl0\strokewidth0 Nk\'b2
+\i0 \cf2 \cb3 \outl0\strokewidth0 \strokec2 , which is asymptotically proportional to the\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/knowledge/show/mf.elliptic.analytic_conductor"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 analytic conductor}}\'a0of the newform (a good measure of its complexity).\'a0 Our tabulation is\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/Completeness"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 complete}}\'a0within the following ranges\
+ - 
+\i Nk\'b2
+\i0  \uc0\u8804  4000\
+ - 
+\i Nk\'b2
+\i0  \uc0\u8804  40000, 
+\i \uc0\u967 
+\i0 =1\
+ - 
+\i Nk\'b2
+\i0  \uc0\u8804  40000, 
+\i N
+\i0  \uc0\u8804  24\
+ - 
+\i Nk\'b2
+\i0  \uc0\u8804  14400, 
+\i N
+\i0  \uc0\u8804  100, 
+\i k
+\i0  \uc0\u8804  12\
+ - 
+\i Nk\'b2
+\i0  \uc0\u8804  100000, 
+\i N
+\i0  \uc0\u8804  10\
+ - 
+\i Nk\'b2
+\i0  \uc0\u8804  40000, 
+\i k
+\i0  > 1, dimension \uc0\u8804  50\
+These boxes were chosen to include everything currently in the LMFDB and other existing tables of modular forms.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Counts
+\i0 \
+\'a0- 331,961 newspaces 
+\i S
+\i0 _
+\i k
+\i0 (
+\i N
+\i0 , 
+\i \cf5 \cb6 \outl0\strokewidth0 \uc0\u967 
+\i0 \cf2 \cb3 \outl0\strokewidth0 \strokec2 ) (50,098 nonzero)\
+\'a0- 245,805 Galois orbits of newforms (48,382 with rational coefficients, 19,306 of weight 1)\
+\'a0- 14,398,359 complex embedded newforms\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Database size
+\i0 \
+\'a0- 219 GiB of embedded modular forms (
+\i q
+\i0 -expansions in C)\
+\'a0- 69 GiB of trace data (traces of 
+\i q
+\i0 -expansions down to Q)\
+\'a0- 42 GiB of portraits (complex graphs of 
+\i q
+\i0 -expansions)\
+\'a0- 2 GiB of exact 
+\i q
+\i0 -expansion data (when dim <= 20)\
+\'a0- 1.2 GiB of other newspace data\
+\'a0- 0.7 GiB of other newform data\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Computation time
+\i0 \
+We spent about a CPU decade this fall spent computing the above data.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Representation
+\i0 \
+Exact coefficients are stored using either a\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/1620/1/bp/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 sparse cyclotomic representation}}\'a0or in terms of an\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/6877/2/a/s/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 LLL-reduced basis for the coefficient ring}}.\'a0 We have exact coefficients in weight 1 or if the dimension is at most 20.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb3 We compute complex 
+\i q
+\i0 -expansions for all embeddings into the complex numbers, even when the dimension is\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/983/2/c/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 large}}.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/Reliability"}}{\fldrslt 
+\i \cf4 \cb3 \ul \ulc4 \strokec4 Reliability}}\cb3 \
+Many computations were duplicated in Magma and Pari, providing a check for their correctness.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl320\partightenfactor0
+
+\b\fs28 \cf2 \cb3 User interface
+\b0\fs20 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 We have rewritten the front end through which a visitor to the LMFDB interacts with the data.\cb1 \
+\
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Searches
+\i0 \
+\'a0- You can obtain a list of\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?search_type=List"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 newforms}}\'a0or of\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?search_type=Spaces"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 newspaces}}\'a0satisfying various constraints (e.g.\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?dim=1&search_type=List"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 rational forms}}).\
+\'a0- You can view dimensions of\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?search_type=Dimensions"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 newforms}}\'a0or of\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?search_type=SpaceDimensions"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 newspaces}}\'a0in a table organized by 
+\i N
+\i0  and 
+\i k
+\i0 .\'a0 You can add\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?char_order=2&search_type=Dimensions"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 constraints}}\'a0and change the\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?level=90-150&weight=1-10&search_type=Dimensions"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 ranges of N and k}}\'a0displayed.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 - You can browse\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?weight=2-&search_type=Traces"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 newforms}}\'a0and\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?weight=2-&dim=1-&search_type=SpaceTraces"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 newspaces}}\'a0using a searchable table of traces for their q-expansions, that can be used both integer and mod-p modes.\'a0 An application: if you know a curve is modular, you can pin down an associated newform by looking at the trace table at small primes.\'a0 Counting points mod p is easy, but computing Euler factors is hard in high genus.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \'a0- You can get a random form satisfying specificed constraints (e.g.\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?level_primes=2&cm=yes&search_type=Random"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 CM with level a power of 2}}).\
+\'a0-\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/?dim=1-&num_forms=10-&char_order=1&search_type=Spaces"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 Search results}}\'a0for spaces include decomposition into newforms and into Atkin-Lehner eigenspaces.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Browse
+\i0 \
+The\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 front page}}\'a0includes a curated lists of interesting newforms and newspaces with hovertext describing why these forms and spaces were chosen\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Statistics
+\i0 \
+We've added\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/stats"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 statistics}}, as well as a new dynamic statistics feature allowing you to view custom statistics (e.g. statistics on\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/dynamic_stats?cm=yes&col1=level&buckets1=1%2C2-10%2C11-100%2C101-1000%2C1001-2000%2C2001-4000%2C4001-6000%2C6001-8000%2C8001-10000&totals1=yes&proportions=recurse&col2=weight&buckets2=1%2C2%2C3%2C4%2C5-8%2C9-16%2C17-32%2C33-64%2C65-316&totals2=yes&search_type=DynStats"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 weight and level for forms with CM}})\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Downloads
+\i0 \
+Downloads are now more broadly available, and you can download various things from homepages (trace forms, 
+\i q
+\i0 -expansions, all stored data) and from search results.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb3 We give linear operators on 
+\i S
+\i0 _
+\i k
+\i0 (
+\i N
+\i0 , 
+\i \uc0\u967 
+\i0 ), expressed as polynomial expressions of Hecke operators, so that the newform is the intersection of their kernels.\'a0 This can sometimes speed up construction of the newform in Magma.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Form homepages
+\i0 \
+\'a0- 
+\i q
+\i0 -expansions are more readable due to changes in representation.\'a0 Defaults to showing 10 coefficients, expandable to 100 coefficients on the page, 1000+ coefficients available for download.\
+\'a0- trace expansions are also shown, even when the dimension is\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/983/2/c/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 large}}\
+\'a0- include projective image type for weight 1 forms, including\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/124/1/i/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 A_4}},\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/148/1/f/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 S_4}},\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/1763/1/p/b/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 A_5}},\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/3600/1/e/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 D_2}}\'a0and\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/3997/1/cz/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 large dihedral}}.\'a0 You can also search for forms with a specified type.\
+\'a0- Matched\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/385/1/q/b/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 weight 1 forms}}\'a0with\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ArtinRepresentation/2.5_7_11.6t5.1c1"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 Artin representations}}\'a0when present in the LMFDB\
+\'a0- include Sato-Tate groups for all newforms of weight larger than 1\
+\'a0- include provable analytic ranks (e.g.\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/2/42/a/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 rational form of weight 42}}\'a0and\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/8/14/b/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 form of weight 14 with analytic rank 1}})\
+\'a0- include CM/RM fields for newforms with\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/39/1/d/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 self twists}}\
+\'a0- include\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/1089/1/r/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 inner twists}}\'a0for twists by characters that yield other forms in the same Galois orbit\
+\'a0- for forms with exact 
+\i q
+\i0 -expansions, we provide the\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/630/2/bv/c/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 values of the character}}\'a0in the same representation\
+\'a0- We have portraits for both newforms and newspaces, giving plots of the trace form on the Poincare disc.\
+\'a0- change in label scheme but we support\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/10/8/1/a"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 old labels}}\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 Space homepages
+\i0 \
+\'a0- We give decompositions of\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/9075/2/a/"}}{\fldrslt 
+\i \cf4 \ul \ulc4 \strokec4 S
+\i0 _
+\i k
+\i0 ^new(
+\i N
+\i0 , \uc0\u967 ) into newforms}}, of\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/9075/2/"}}{\fldrslt 
+\i \cf4 \ul \ulc4 \strokec4 S
+\i0 _
+\i k
+\i0 ^new(\uc0\u915 
+\f1 \uc0\u8321 
+\f0 (
+\i N
+\i0 )) into newspaces}}\'a0and 
+\i S
+\i0 _
+\i k
+\i0 ^old(
+\i N
+\i0 , 
+\i \uc0\u967 
+\i0 ) and 
+\i S
+\i0 _
+\i k
+\i0 ^old(\uc0\u915 
+\f1 \uc0\u8321 
+\f0 (
+\i N
+\i0 )) into lower level pieces.  \
+\'a0- Give dimensions for new and old, Eisenstein and cuspidal subspaces\
+\'a0- Show the trace form\
+\'a0- Give bounds on how many a_n are needed to distinguish newforms within a space.\'a0 In addition to the standard Sturm bound, we also provide a computed trace bound based on the forms that actually occur.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+
+\i \cf2 \cb3 L-functions
+\i0 \
+\'a0- both arithmetic and analytic normalizations are available\
+\'a0- analytic ranks\
+\'a0-\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/L/ModularForm/GL2/Q/holomorphic/5/27/c/a/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 Euler factors}}\'a0at primes up to 100\
+\'a0- zeros on critical line have more precision and are stored in the database rather than computed on the fly, making it easier to find connections to other objects in the LMFDB\
+\'a0- change in label scheme but we support old labels\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl320\partightenfactor0
+
+\b\fs28 \cf2 \cb3 Experimental features
+\b0\fs20 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb3 We have used classical modular forms as a testing ground for some new features which are applicable to other areas of the LMFDB.\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb3 *\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/dynamic_stats?cm=yes&col1=level&buckets1=1%2C2-10%2C11-100%2C101-1000%2C1001-2000%2C2001-4000%2C4001-6000%2C6001-8000%2C8001-10000&totals1=yes&proportions=recurse&col2=weight&buckets2=1%2C2%2C3%2C4%2C5-8%2C9-16%2C17-32%2C33-64%2C65-316&totals2=yes&search_type=DynStats"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 Dynamic statistics}}\'a0described above.\
+* A variant on knowls used when displaying very long mathematical content.\'a0 You can see the results in the 
+\i q
+\i0 -expansions, basis descriptions, coefficient fields and Hecke kernels for some\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/2/218/a/b/"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 high weight newforms}}\'a0and in various other places on classical modular form pages.\
+* Some nice features for\'a0{\field{\*\fldinst{HYPERLINK "http://modularform/GL2/Q/holomorphic/?level=1-150&search_type=Dimensions"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 2-d tables}}: sticky headers and rotated labels.\'a0 They're currently implemented in a somewhat ad-hoc manner, but can be abstracted if more widely used.\
+* You can change the sort order on search results\
+* The ability to get a random object satisfying search constraints\
+* Multiple search result views (e.g. trace tables, dimension tables)\
+* There is more modularity in the templates, allowing the same search interface to be used on multiple pages\
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 \cb1 \
+\pard\pardeftab720\sl320\partightenfactor0
+
+\b\fs28 \cf2 \cb3 Mongo to Postgres
+\b0\fs20 \
+\pard\pardeftab720\sl220\partightenfactor0
+\cf2 While working on classical modular forms, we've fixed various issues with the transition from Mongo to Postgres, and eliminated the last dependencies on Mongo.\
+}
