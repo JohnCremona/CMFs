@@ -1,12 +1,14 @@
-import sqlite < 10003
+# time parallel --shuf --memfree 50 GB --retries 10 --joblog joblog --eta --progress sage -python ~/CMFs/ccscripts/orbits-traces-LFs.py ::: {1..4000}
+# sort -k1,1n -k2,2n -k3,3n --field-separator=: -u
+import sqlite3
 import os
 import sys
 import struct
 import json
 
-from dirichlet_conrey import *
-from sage.all import prime_range, pi
-from sage.databases.cremona import cremona_letter_code, class_to_int
+from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
+from sage.all import prime_range, pi, ZZ, CDF, I, prod, exp, sqrt, ComplexBallField, RealIntervalField, gcd, Infinity, RR, srange, spline, PowerSeriesRing, primes_first_n, prime_pi, dimension_new_cusp_forms, prime_powers, inverse_mod, PolynomialRing, Gamma1, RealNumber, QQ, Set
+from sage.databases.cremona import cremona_letter_code
 
 to_compute = 2000 #coeffs/traces that we compute
 to_store = 1000  # that we store
@@ -15,13 +17,13 @@ to_store = 1000  # that we store
 # folders
 import socket
 hostname = socket.gethostname()
-assert hostname in ['saint-germain', 'LEGENDRE']
+assert hostname in ['saint-germain', 'LEGENDRE', 'zeus']
 base_export = None
 base_import = None
 if hostname == 'LEGENDRE':
     base_export = "/scratch/importing/CMF"
     base_import = "/scratch/home/bober"
-elif hostname == 'saint-germain':
+elif hostname in ['saint-germain', 'zeus']:
     base_import = "/home/edgarcosta/bober"
     base_export = "/home/edgarcosta/export/CMF"
 else:
@@ -34,7 +36,7 @@ def index_above(n, k ,c):
     if c == n - 1 and  (n % 2 == 1 or n % 4 == 0):
         return n**k, n**k - 1
     else:
-        # DirichletGroup_conrey is to slow!
+        # DirichletGroup_conrey is too slow!
         return n, c
 
 import subprocess
@@ -121,7 +123,7 @@ schema_lf = [
         'credit', # empty string
         'gamma_factors', # jsonb,
         'values', # special values, format???
-        'dirichlet_coefficients', # the ap traces as algebraic numbers
+        'dirichlet_coefficients', # the ap as algebraic numbers or complex
         'coefficient_field', # the label of the Hecke field
         'trace_hash'
         ]
@@ -213,7 +215,7 @@ schema_instances_types.pop('id')
 # sqrt hack for ComplexBallField
 def sqrt_hack(foo):
     if not foo.real().contains_zero() and foo.real().mid() < 0:
-        return foo.parent().0*(-foo).sqrt()
+        return foo.parent().gens()[0]*(-foo).sqrt()
     else:
         return foo.sqrt()
 
@@ -238,15 +240,15 @@ def CBFlistcmp(L1, L2):
         x1, y1 = z1.real(), z1.imag()
         x2, y2 = z2.real(), z2.imag()
         if x1 < x2:
-            return -1r
+            return -1
         elif x1 > x2:
-            return 1r
+            return 1
         elif y1 < y2:
-            return -1r
+            return -1
         elif y1 > y2:
-            return 1r
+            return 1
 
-    return 0r
+    return 0
 
 def CBFlisteq(L1, L2):
     for (z1, z2) in zip(L1, L2):
@@ -295,15 +297,21 @@ def read_gmp_int(buf, offset):
     return number, bytes_read
 
 def read_orbit(orbitblob):
-    A = struct.unpack_from('i'*(len(orbitblob)/4r), orbitblob)
-    return [ (A[2*i], A[2*i+1]) for i in range(len(A)/2r) ]
+    A = struct.unpack_from('i'*(len(orbitblob)/4), orbitblob)
+    return [ (A[2*i], A[2*i+1]) for i in range(len(A)/2) ]
 
 def RIF_to_float(x):
     x = RRR(x)
     if x.contains_zero():
-        return 0
+        return int(0)
     else:
+        fx = float(x)
+        if fx == Infinity:
+            return repr(RR(x))
+        else:
+            return float(x)
         return float(x)
+
 def CBF_to_pair(x):
     a = CCC(x)
     return [RIF_to_float(a.real()), RIF_to_float(a.imag())]
@@ -326,8 +334,8 @@ def from_power_sums(ps):
     if len(ps) > 1:
         es[1] = ps[1]
         for k in range(2, len(ps)):
-            es[k] = sum( (-1)^(i -1) * es[k-i] * ps[i] for i in range(1, k + 1))/k
-        es = [(-1)^i * elt for i, elt in enumerate(es)]
+            es[k] = sum( (-1)**(i -1) * es[k-i] * ps[i] for i in range(1, k + 1))/k
+        es = [(-1)**i * elt for i, elt in enumerate(es)]
     return es
 
 
@@ -347,12 +355,12 @@ def prod_plot_values(factor_plot_deltas, factor_values):
 
 def rational_euler_factors(traces, euler_factors_cc, level, weight):
     dirichlet = [1]*11
+    dirichlet[0] = 0
     euler_factors = []
     bad_lfactors = []
     halfdegree = len(euler_factors_cc)
     PS = PowerSeriesRing(ZZ, "X")
     CCCx = PolynomialRing(CCC, "x")
-    x = CCCx.gen()
     todo = list(enumerate(primes_first_n(30)))
     for p in sorted(ZZ(level).prime_divisors()):
         p_index = prime_pi(p) - 1
@@ -371,7 +379,7 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
         root_powers = [None] * (halfdegree + 1)
         for j in range(1,halfdegree + 1):
             try:
-                root_powers[j] = RRR(sum( map(lambda z: (z^j).real(), roots) )).unique_integer()
+                root_powers[j] = RRR(sum( map(lambda z: (z**j).real(), roots) )).unique_integer()
             except ValueError:
                 root_powers = root_powers[:j]
                 break
@@ -394,14 +402,14 @@ def rational_euler_factors(traces, euler_factors_cc, level, weight):
 
 
         if level % p != 0:
-            sign = RRR(ef.list()[-1].real()/p^((halfdegree)*(weight - 1))).unique_integer()
-            assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p^((halfdegree)*(weight - 1)))
+            sign = RRR(ef.list()[-1].real()/p**((halfdegree)*(weight - 1))).unique_integer()
+            assert sign in [1,-1], "%s\n%s" % (RRR(prod( lf[p_index][2] for lf in euler_factors_cc).real()).unique_integer(),p**((halfdegree)*(weight - 1)))
             efzz2 = [None] * halfdegree
             for i, elt in enumerate(reversed(efzz[:-1])):
                 if elt is None:
                     efzz2[i] = None
                 else:
-                    efzz2[i] = int(sign*p^((i+1)*(weight - 1)) * elt)
+                    efzz2[i] = int(sign*p**((i+1)*(weight - 1)) * elt)
             efzz += efzz2
             euler_factors.append(efzz)
         else:
@@ -455,19 +463,20 @@ def angles_euler_factors(coeffs, level, weight, chi):
             bad_euler.append([p, [c, b]])
             euler.append([c,b])
             a = 0
+            angles.append(None)
         else:
-            charval = CCC(2*char.logvalue(p)).exppii()
-            if charval.contains_exact(1):
+            charval = CCC(2*char.logvalue(int(p))).exppii()
+            if charval.contains_exact(ZZ(1)):
                 charval = 1
-            elif charval.contains_exact(-1):
+            elif charval.contains_exact(ZZ(-1)):
                 charval = -1
-            a = (p**(weight-1))*charval
+            a = (p**QQ(weight-1))*charval
             euler.append([c,b,a])
             # alpha solves T^2 - a_p T + chi(p)*p^(k-1)
             sqrt_disc = sqrt_hack(b**2 - 4*a*c)
             thetas = []
             for sign in [1, -1]:
-                alpha = (-b + sign * sqrt_hack(b**2 - 4*a*c))/(2*c)
+                alpha = (-b + sign * sqrt_disc)/(2*c)
                 theta = (arg_hack(alpha) / (2*CCC.pi().real())).mid()
                 if theta > 0.5:
                     theta -=1
@@ -475,10 +484,24 @@ def angles_euler_factors(coeffs, level, weight, chi):
                     theta +=1
                 assert theta <= 0.5 and theta > -0.5, "%s %s %s" % (theta, arg_hack(alpha), alpha)
                 thetas.append(theta)
-            angles.append([p, float(min(thetas))])
+            angles.append(float(min(thetas)))
         if len(coeffs) > p**2:
-            assert (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5, "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s" % ((level, weight, chi, p), CDF(coeffs[p**2]), CDF(b**2 - a), coeffs[p**2] -(b**2 - a), b**2 - a, coeffs[p**2])
-    an_f = map(CBF_to_pair, coeffs[:to_store + 1])
+            if coeffs[p**2].abs().contains_zero():
+                match = (coeffs[p**2] -(b**2 - a)).abs().mid() < 1e-5
+            else:
+                match = ((coeffs[p**2] -(b**2 - a)).abs()/coeffs[p**2].abs()).mid() < 1e-5
+            if not match:
+                print "coeffs[p**2] doesn't match euler recursion" 
+                print zip(range(len(coeffs)), map(CDF, coeffs))
+                print "(level, weight, chi, p) = %s\n%s != %s\na_p2**2 -  (b**2 - a)= %s\n b**2  - a = %s\na_p2 = %s\na=%s\nb = %s\nap = %s" % ((level, weight, chi, p),
+                    CDF(coeffs[p**2]), CDF(b**2 - a),
+                    coeffs[p**2] -(b**2 - a), b**2 - a,
+                    coeffs[p**2],
+                    CDF(a),
+                    CDF(b),
+                    CDF(coeffs[p]))
+                assert False
+    an_f = [CBF_to_pair(RRR(n)**(QQ(-(weight - 1))/2) * c) for n, c in enumerate(coeffs[:to_store + 1])]
     return an_f, angles, euler, bad_euler
 
 
@@ -500,8 +523,8 @@ def write_header(lfunctions_filename, instances_filename, overwrite = False):
 
 
 def write_header_hecke_file(filename, overwrite = False):
-    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_m', 'embedding_root_real', 'embedding_root_imag', 'an', 'first_an', 'angles', 'first_angles']
-    types = ['bigint', 'text', 'integer', 'integer', 'integer', 'double precision', 'double precision', 'jsonb', 'jsonb', 'jsonb', 'jsonb']
+    columns = ['hecke_orbit_code', 'lfunction_label', 'conrey_label', 'embedding_index', 'embedding_m', 'embedding_root_real', 'embedding_root_imag', 'an', 'angles']
+    types = ['bigint', 'text', 'integer', 'integer', 'integer', 'double precision', 'double precision', 'double precision[]', 'double precision[]']
     if not os.path.exists(filename) or overwrite:
         with open(filename, "w") as FILE:
             FILE.write("\t".join(columns) + "\n")
@@ -509,7 +532,7 @@ def write_header_hecke_file(filename, overwrite = False):
             FILE.write("\n")
 
 
-def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None, only_traces = False):
+def do(level, weight, lfun_filename = None, instances_filename = None, hecke_filename = None, traces_filename = None, only_traces = False, only_orbit = None):
     print "N = %s, k = %s" % (level, weight)
     polyinfile = os.path.join(base_import, 'polydb/{}.{}.polydb'.format(level, weight))
     mfdbinfile = os.path.join(base_import, 'mfdb/{}.{}.mfdb'.format(level, weight))
@@ -527,6 +550,16 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         print '{} not found'.format(Ldbinfile)
         notfound = True
 
+    if only_orbit is not None:
+        print "N = %s, k = %s, orbit = %s" % (level, weight, only_orbit)
+        if lfun_filename is None:
+            lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d_%d_%d.txt' % (level, weight, only_orbit))
+        if instances_filename is None:
+            instances_filename = os.path.join(base_export, 'CMF_instances_%d_%d_%d.txt' % (level, weight, only_orbit))
+        if hecke_filename is None:
+            hecke_filename = os.path.join(base_export, 'CMF_hecke_cc_%d_%d_%d.txt' % (level, weight, only_orbit))
+        if traces_filename is None:
+            traces_filename = os.path.join(base_export, 'CMF_traces_%d_%d_%d.txt' % (level, weight, only_orbit))
     if lfun_filename is None:
         lfun_filename = os.path.join(base_export, 'CMF_Lfunctions_%d.txt' % (level*weight**2))
     if instances_filename is None:
@@ -536,9 +569,14 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     if traces_filename is None:
         traces_filename = os.path.join(base_export, 'CMF_traces_%d.txt' % (level*weight**2))
 
+
     def write_traces(traces_filename):
         with open(traces_filename, 'a') as F:
-            for ol in orbit_labels.values():
+            for ol in Set(orbit_labels.values()):
+                if only_orbit is not None:
+                    if ol != only_orbit:
+                        continue
+
                 F.write('{}:{}:{}:{}:{}\n'.format(level, weight, ol, degrees_sorted[ol], traces_sorted[ol]).replace(' ',''))
 
     #level_list = set()
@@ -607,19 +645,23 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     for result in mfdb.execute('SELECT prec, exponent, ncoeffs, coefficients, chi, j FROM modforms WHERE level={} AND weight={};'.format(level, weight)):
         chi = result['chi']
+        chibar = inverse_mod(chi, level)
+        if only_orbit is not None and only_orbit not in [orbit_labels[chi], orbit_labels[chibar]]:
+                continue
+
 
         is_trivial = False
-        is_quadratic = False
+        #is_quadratic = False
         if chi == 1:
             is_trivial = True
-        elif (chi*chi) % level == 1:
-            is_quadratic = True
+        #elif (chi*chi) % level == 1:
+        #    is_quadratic = True
 
         j = result['j']
         offset = 0
         coeffblob = result['coefficients']
-        exponent = result['exponent']
-        prec = result['prec']
+        exponent = QQ(result['exponent'])
+        prec = QQ(result['prec'])
         # print prec, exponent
         _coeffs = [CCC(0)] * (to_compute + 1)
         #for k in range(35): # number of prime powers < 100
@@ -627,30 +669,27 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             z, bytes_read = read_gmp_int(coeffblob, offset)
             #print z
             offset = offset + bytes_read
-            real_part = CCC(z*2^exponent)
+            real_part = CCC(z)*2**exponent
             if prec != MF_PREC_EXACT:
-                real_part = real_part.add_error(2^prec)
+                real_part = real_part.add_error(2**prec)
             imag_part = 0
             if not is_trivial:
                 z, bytes_read = read_gmp_int(coeffblob, offset)
                 offset = offset + bytes_read
-                imag_part = CCC(I*z*2^exponent)
+                imag_part = CCC.gens()[0]*CCC(z)*2**exponent
                 if prec != MF_PREC_EXACT:
-                    imag_part = imag_part.add_error(2^prec)
-            z = real_part + imag_part
-            _coeffs[pp] = z
-            #if not is_trivial and not is_quadratic:            # just for the moment...
-            #    z = 2*real_part
-            #traces[k] += z
+                    imag_part = imag_part.add_error(2**prec)
+            #print real_part + imag_part
+            _coeffs[pp] = real_part + imag_part
         #print coeffs
         _coeffs[1] = CCC(1)
         extend_multiplicatively(_coeffs)
         coeffs[(chi, j)] = _coeffs
-        chibar = inverse_mod(chi, level)
         if chibar > chi:
-            coeffs[(chibar, j)] = [z.conjugate() for z in _coeffs]
+            coeffs[(chibar, j)] = [elt.conjugate() for elt in _coeffs]
 
-    assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
+    if only_orbit is None:
+        assert len(coeffs) == dim, "%s != %s, keys = %s" % (len(coeffs), dim, coeffs.keys())
 
 
     if not only_traces:
@@ -670,25 +709,27 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         weight = result['weight']
         chi = result['chi']
         original_chi = chi
+        if only_orbit is not None and only_orbit != orbit_labels[original_chi]:
+            continue
 
         if (level, weight, chi) not in degree_lists:
             degree_lists[(level, weight, chi)] = []
             traces_lists[(level, weight, chi)] = []
         degree_lists[(level, weight, chi)].append(result['degree'])
 
-        whatever = result['whatevernumber']
+        #whatever = result['whatevernumber']
         label = result['labelnumber']
-        degree = result['degree']
+        #degree = result['degree']
         mforbit = read_orbit(result['mforbit'])
         #mforbits[original_chi] = mforbit
         #print level, weight, chi, whatever, label, degree, mforbit
 
-        is_trivial = False
-        is_quadratic = False
-        if chi == 1:
-            is_trivial = True
-        elif (chi*chi) % level == 1:
-            is_quadratic = True
+        #is_trivial = False
+        #is_quadratic = False
+        #if chi == 1:
+        #    is_trivial = True
+        #elif (chi*chi) % level == 1:
+        #    is_quadratic = True
 
         traces_bound = to_compute + 1
         traces = [RRR(0)] * traces_bound
@@ -697,17 +738,18 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             #    continue
             for k, z in enumerate(coeffs[(chi, j)][:traces_bound]):
                 traces[k] += RRR(z.real())
-                #if not is_trivial and not is_quadratic:
-                #    traces[k] += RRR(z.real())
 
         for i, z in enumerate(traces):
             try:
                 traces[i] = z.unique_integer()
             except ValueError:
                 traces = traces[:i]
+                #print (level, weight, original_chi, orbit_labels[original_chi])
+                #print degree_lists[(level, weight, original_chi)]
+                #print i, z
+                #print traces[:i]
                 break;
         traces_lists[(level, weight, original_chi)].append((traces[1:], mforbit))
-        #print original_chi, mforbit
     Ldb = sqlite3.connect(os.path.join(Ldbinfile))
     Ldb.row_factory = sqlite3.Row
 
@@ -734,7 +776,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
     '''
 
     zeros = {}
-    plots = {}
     Ldbresults = {}
     if only_traces:
         cur = []
@@ -745,6 +786,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         nzeros = result['nzeros']
         prec = result['zeroprec']
         chi = result['chi']
+        if only_orbit is not None and only_orbit != orbit_labels[chi]:
+            continue
         j = result['j']
         #print result['level'], result['weight'], chi, j
         _zeros = []
@@ -756,7 +799,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             offset = offset + nlimbs
             z = sum( [x * 2**(8*k) for (k, x) in enumerate(reversed(zdata))] )
             _zeros.append(z)
-        zeros[(chi,j)] = _zeros
+        zeros[(chi,j)] = map(ZZ, _zeros)
         Ldbresults[(chi,j)] = result
 
     '''
@@ -799,8 +842,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             chi_list = sorted(set( chi for (chi, j) in mforbit))
             coeffs_list = {}
             for chi in chi_list:
-                j_list = [j for (_, j) in mforbit if _ == chi]
-                coeffs_list[chi] = [(chi, j, coeffs[(chi,j)]) for j in j_list]
+                j_list = [elt for (_, elt) in mforbit if _ == chi]
+                coeffs_list[chi] = [(chi, elt, coeffs[(chi,elt)]) for elt in j_list]
                 coeffs_list[chi].sort(cmp=CBFlistcmp, key = lambda z : z[-1])
             d = len(j_list)
             m = 1
@@ -827,7 +870,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
                     assert CBFlisteq(coeffs_list[chibar][cn - 1][2], an_conjugate)
                     # orbit_labels[chi] start at 1
                     # mforbitlabel starts at 0
-                    hecke_orbit_code[(chi,j)] = level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52)
+                    hecke_orbit_code[(chi,j)] = int(level + (weight<<24) + ((orbit_labels[chi] - 1)<<36) + (mforbitlabel<<52))
                     all_the_labels[(chi,j)] = (level, weight, ol, sa, chi, sn)
                     converted_label = (chi, sa, sn)
                     labels[(chi, j)] = converted_label
@@ -840,13 +883,13 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         write_traces(traces_filename)
         return 0
 
-    for key, val in labels.iteritems():
-        print key,"  \t-new->\t", val
-    for key, val in conjugates.iteritems():
-        print key,"\t--c-->\t", val
+    #for key, val in labels.iteritems():
+    #    print key,"  \t-new->\t", val
+    #for key, val in conjugates.iteritems():
+    #    print key,"\t--c-->\t", val
 
-    for key, val in all_the_labels.iteritems():
-        print key," \t--->\t" + "\t".join( map(str, [val,hecke_orbit_code[key]]))
+    #for key, val in all_the_labels.iteritems():
+    #    print key," \t--->\t" + "\t".join( map(str, [val,hecke_orbit_code[key]]))
 
 
 
@@ -899,31 +942,33 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
         row['central_character'] = "%s.%s" % (level, chi)
         row['self_dual'] = self_dual(chi, a, n)
         row['conjugate'] = None
-        row['Lhash'] = str(zeros_as_int[0] * 2**(100-prec).round())
+        row['Lhash'] = str((zeros_as_int[0] * 2**(100-prec)).round())
         if prec < 100:
             row['Lhash'] = '_' + row['Lhash']
         Lhashes[(chi, a, n)] = row['Lhash']
         row['sign_arg'] = float(Ldbrow['signarg']/(2*pi))
         for i in range(0,3):
-            row['z' + str(i + 1)] = RealNumber(str(zeros_as_int[i]) + ".")/2**prec
+            row['z' + str(i + 1)] = (RealNumber(str(zeros_as_int[i]) + ".")/2**prec).str()
 
         row['plot_delta'] = Ldbrow['valuesdelta']
-        row['plot_values'] = [RDF(CDF(elt).real_part()) for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
+        row['plot_values'] = [float(CDF(elt).real_part()) for elt in struct.unpack('{}d'.format(len(Ldbrow['Lvalues'])/8), Ldbrow['Lvalues'])]
 
 
 
         row['leading_term'] = '\N'
         if row['self_dual']:
             row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            if row['root_number'] == str(1):
+                row['sign_arg'] = 0
+            elif row['root_number'] == str(-1):
+                row['sign_arg'] = 0.5
         else:
             row['root_number'] = str(CDF(exp(2*pi*I*row['sign_arg'])))
         #row['dirichlet_coefficients'] = [None] * 10
         #print label(chi,j)
         for i, ai in enumerate(coeffs[(chi, j)][2:12]):
-            ai = CDF(ai)
-            ai_jsonb = [ai.real_part(), ai.imag_part()]
             if i + 2 <= 10:
-                row['a' + str(i+2)] = ai_jsonb
+                row['a' + str(i+2)] = CBF_to_pair(ai)
                 # print 'a' + str(i+2), ai_jsonb
             #row['dirichlet_coefficients'][i] = ai_jsonb
 
@@ -932,7 +977,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         # only 30
         row['euler_factors'] = map( lambda x : map(CBF_to_pair, x), euler_factors[(chi, j)][:30])
-        row['bad_lfactors'] = map( lambda x: [x[0], map(CBF_to_pair, x[1])], bad_euler_factors[(chi, j)])
+        row['bad_lfactors'] = map( lambda x: [int(x[0]), map(CBF_to_pair, x[1])], bad_euler_factors[(chi, j)])
 
         for key in schema_lf:
             assert key in row, "%s not in row = %s" % (key, row)
@@ -960,10 +1005,8 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
     rational_rows = {}
     def populate_rational_rows():
-        CCCx = PolynomialRing(CCC, "x")
         order_of_vanishing = schema_lf_dict['order_of_vanishing']
         accuracy = schema_lf_dict['accuracy']
-        positive_zeros = schema_lf_dict['positive_zeros']
         sign_arg = schema_lf_dict['sign_arg']
         Lhash = schema_lf_dict['Lhash']
         plot_delta = schema_lf_dict['plot_delta']
@@ -1022,7 +1065,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             for i in range(0,3):
                 for elt in triples:
                     zeros_zi.append(rows[elt][schema_lf_dict['z' + str(i + 1)]])
-            zeros_zi.sort()
+            zeros_zi.sort(key = lambda x: RealNumber(x))
             for i in range(0,3):
                 row['z' + str(i + 1)] = zeros_zi[i]
 
@@ -1031,6 +1074,10 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             row['plot_delta'], row['plot_values'] = prod_plot_values(deltas, values)
             row['leading_term'] = '\N'
             row['root_number'] = str(RRR(CDF(exp(2*pi*I*row['sign_arg'])).real()).unique_integer())
+            if row['root_number'] == str(1):
+                row['sign_arg'] = 0
+            elif row['root_number'] == str(-1):
+                row['sign_arg'] = 0.5
             row['coefficient_field'] = '1.1.1.1'
 
             for chi, _, _ in triples:
@@ -1060,7 +1107,7 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             # fill in ai
             for i, ai in enumerate(dirichlet):
                 if i > 1:
-                    row['a' + str(i)] = dirichlet[i]
+                    row['a' + str(i)] = int(dirichlet[i])
                     #print 'a' + str(i), dirichlet[i]
 
 
@@ -1083,15 +1130,6 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
 
 
-
-
-
-
-
-
-
-
-
     def get_hecke_cc():
         # if field_poly exists then compute the corresponding embedding of the root
         # add the conrey label
@@ -1103,25 +1141,34 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
             ol = cremona_letter_code(orbit_labels[chi] - 1)
             lfuntion_label = ".".join( map(str, [level, weight] + [ol, a, chi, n]))
             hecke_cc[key] = [
-                    hecke_orbit_code[key],
+                    int(hecke_orbit_code[key]),
                     lfuntion_label, # N.k.c.x.n
-                    label[0], # conrey_label
-                    label[2], # embedding_index
-                    embedding_m[key],
+                    int(label[0]), # conrey_label
+                    int(label[2]), # embedding_index
+                    int(embedding_m[key]),
                     '\N', # embedding_root_real
                     '\N', # embedding_root_imag
                     coeffs_f[key][1:],
-                    coeffs_f[key][1:101],
                     angles[key],
-                    [pair for pair in angles[key] if pair[0] < 100],
                     ]
         return hecke_cc
 
+    def json_hack(elt):
+        if isinstance(elt, str):
+            return elt
+        else:
+            return json.dumps(elt)
     def write_hecke_cc(hecke_filename):
         write_header_hecke_file(hecke_filename)
         with open(hecke_filename, 'a') as HF:
             for v in get_hecke_cc().values():
-                HF.write("\t".join(map(json.dumps,v)) + "\n")
+                try:
+                    HF.write("\t".join(map(json_hack,v)).replace('[','{').replace(']','}') + "\n")
+                except TypeError:
+                    for elt in v:
+                        print elt
+                        print json_hack(elt)
+                    raise
 
 
 
@@ -1132,22 +1179,34 @@ def do(level, weight, lfun_filename = None, instances_filename = None, hecke_fil
 
         with open(lfunctions_filename, 'a') as LF:
             for key, row in rows.iteritems():
-                LF.write("\t".join(map(json.dumps,row)) + "\n")
+                try:
+                    LF.write("\t".join(map(json_hack, row)) + "\n")
+                except TypeError:
+                    for i, elt in enumerate(row):
+                        print schema_lf[i]
+                        print elt
+                        print json_hack(elt)
+                    raise
 
             for key, row in rational_rows.iteritems():
-                LF.write("\t".join(map(json.dumps,row)) + "\n")
+                try:
+                    LF.write("\t".join(map(json_hack, row)) + "\n")
+                except TypeError:
+                    for elt in row:
+                        print elt
+                        print json_hack(elt)
+                    raise
         with open(instances_filename, 'a') as IF:
             for key, row in instances.iteritems():
-                IF.write("\t".join(map(json.dumps,row)) + "\n")
+                IF.write("\t".join(map(json_hack, row)) + "\n")
 
 
     populate_complex_rows()
-    populate_conjugates()
-    populate_rational_rows()
-    
-    export_complex_rows(lfun_filename, instances_filename)
+    #populate_conjugates()
+    #populate_rational_rows()
+    #export_complex_rows(lfun_filename, instances_filename)
     write_hecke_cc(hecke_filename)
-    write_traces(traces_filename)
+    #write_traces(traces_filename)
     return 0
 
 
@@ -1157,7 +1216,7 @@ def do_Nk2(Nk2, only_traces = False):
     for N in ZZ(Nk2).divisors():
         k = sqrt(Nk2/N)
         if k in ZZ and k > 1:
-            if False: # (N,k) in [(780,2), (840,2)]:
+            if Nk2 > 4000 and (N > 100 or k > 12):
                 print "skipping N = %d k = %d" % (N , k)
             else:
                 todo.append((N, k))
@@ -1196,6 +1255,16 @@ elif len(sys.argv) == 3:
         N = int(sys.argv[1])
         k = int(sys.argv[2])
         do(N, k)
+elif len(sys.argv) == 4:
+    if sys.argv[1] == 'traces':
+        N = int(sys.argv[2])
+        k = int(sys.argv[3])
+        do(N, k, only_traces = True)
+    else:
+        N = int(sys.argv[1])
+        k = int(sys.argv[2])
+        orbit = int(sys.argv[3])
+        do(N, k, only_orbit = orbit)
 
 
 
