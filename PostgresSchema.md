@@ -145,7 +145,7 @@ trace_bound | integer | nonnegative integer n such that the traces from 1 up to 
 dim | integer | Q-dimension of S_k^new(Gamma1(N))
 num_forms | integer | number of (Hecke/Galois orbits of) newforms, only set when known
 hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits, only set when known
-num_spaces | integer | number of newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))` (=number of character orbits)
+num_spaces | integer | number of nozero newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))`
 newspace_dims | integer[] | list of Q-dimensions of newspaces `S_k^new(N,\chi)` in `S_k^new(Gamma1(N))` ordered by character orbit index
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1(N))`
@@ -182,7 +182,7 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
     * if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
     * if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
     * check that newspace_dims is equal to the (sorted) concatenation of dim over newspaces with this level and weight
-    * check that num_spaces matches number of char_orbits of level N and number of records in mf_newspaces with this level and weight
+    * check that num_spaces matches the number of rows in mf_newspaces of the same level and weight with dim > 0
 
 
 **Table** `mf_newspace_portraits`:
