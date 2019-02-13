@@ -20,7 +20,7 @@ Dmax | integer | upper bound on newspace Q-dimension
 newspace_count | integer | total number of newspaces in this box
 nonzero_newspace_count | integer | total number of nonzero newspaces in this box
 newform_count | integer | total number of newforms in this box (if known, may be null)
-embeddings | bigint | total number of complex embeddings of newforms in this box
+embedding_count | bigint | total number of complex embeddings of newforms in this box
 straces | boolean | set if space trace forms are stored
 split | boolean | set if list of dimensions of irreducible subspaces (newforms) are stored
 traces | boolean | set if newform trace forms are stored
@@ -507,7 +507,7 @@ lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs 
   * there should be exactly 25 records present for each recod in mf_newforms with field_poly set (attached to mf_newforms)
   * check that every prime p < 100 occurs exactly once for each hecke_orbit_code
   * check that hecke_orbit_code is present in mf_newforms
-  * check that degree of lpoly is twice the dimension in mf_newforms
+  * check that degree of lpoly is twice the dimension in mf_newforms for good primes
   * check that linear coefficient of lpoly is -trace(a_p) and constant coefficient is 1
 
 **Table** `mf_hecke_newspace_traces`:
@@ -538,19 +538,24 @@ embedding_index | integer | enumeration of which embedding (shows up in L-functi
 embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
-normalized_an | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
+an_normalized | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
 angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if `p` is bad, and for good `p` we have `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; indexed by increasing primes p < 1000, where `-0.5 < \theta_p <= 0.5`. Furthermore, we store the minimum value of the two options for `\theta_p` in that interval.
 
 **Validation** for `mf_hecke_cc`:
 
-* there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them)
-* check that hecke_orbit_code is present in mf_newforms
-* check that lfunction_label is consistent with hecke_orbit_code, conrey_lebel, embedding_index and is unique
-* check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
-* check that embedding_root_real, and embedding_root_image are present whenever field_poly is present in mf_newforms record and that they approximate a root
-* check that an_normalized is a list of pairs of doubles of length at least 1000
-* check that angles lie in (-0.5,0.5] and are null for p dividing the level
-* (optional) check that summing (unnormalized) an over embeddings with a given hcekc_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
+* Unique
+  * label
+* Oveall
+  * there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them)
+  * check that hecke_orbit_code is present in mf_newforms
+  * check that lfunction_label is consistent with hecke_orbit_code, conrey_lebel, embedding_index and is unique
+  * check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
+  * check that an_normalized is a list of pairs of doubles of length at least 1000
+  * check that the analytic ranks (from lfunc_lfunction.order_of_vanishing) are constant across hecke_orbit_code and match the analytic rank in mf_newform
+  * check that angles lie in (-0.5,0.5] and are null for p dividing the level
+* Slow
+  * check that embedding_root_real, and embedding_root_image are present whenever field_poly is present in mf_newforms record and that they approximate a root
+  * (optional) check that summing (unnormalized) an over embeddings with a given hecke_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
 
 Dirichlet characters
 ====================
