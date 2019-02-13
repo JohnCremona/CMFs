@@ -47,7 +47,7 @@ weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
-char_orbit | integer | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
+char_orbit_index | integer | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
 char_orbit_label | text | string encoding the char_orbit i via 1->a, 2->b, ... 26->z, 27->ba,... (note the shift, a is 1 not 0).
 conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
