@@ -166,23 +166,26 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
   * (level, weight)
 * Overall
   * there should be a row present for every pair (N,k) satisfying a box constraint on N,k,Nk2
+  * check that traces is set if space is in a box with traces set and no dimension constraint
   * check that label matches level and weight
   * for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
   * check that trace_display is present whenever traces is
-  * check that traces is present and has length at least 1000 whenever (N,k) lie in a box with straces set and no dimension constraint
-  * check that eis_dim + cusp_dim = mf_dim and eis_new_dim + mf_new_dim = dim
+  * if present, check that traces has length at least 1000
+  * check that eis_dim + cusp_dim = mf_dim
+  * check that eis_new_dim + mf_new_dim = dim
+  * check Nk2
+  * check weight_parity
+  * if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
+  * if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
+  * check that newspace_dims is equal to the (sorted) concatenation of dim over newspaces with this level and weight
+  * check that num_spaces matches number of char_orbits of level N and number of records in mf_newspaces with this level and weight
 * Per row
   * local
     * check level_* attributes
-    * check weight_parity, analytic_conductor, Nk2
+    * check analytic_conductor
     * check that sturm_bound is exactly floor(k*Index(Gamma1(N))/12)
     * check that dim = dim S_k^new(Gamma1(N))
     * for k > 1 check eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas
-  * mf_newspaces
-    * if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
-    * if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
-    * check that newspace_dims is equal to the (sorted) concatenation of dim over newspaces with this level and weight
-    * check that num_spaces matches number of char_orbits of level N and number of records in mf_newspaces with this level and weight
 
 
 **Table** `mf_newspace_portraits`:
@@ -201,7 +204,7 @@ portrait | text | base-64 encoded image of the newspace (plot created by portrai
   * label
   * level,weight,char_orbit_index
 * Overall
-  * check that label matches level,weight,char_orbit_index
+  * check that label matches level,weight,char_orbit_label
   * check that there is a portrait present for every nonempty newspace in box where straces is set
 
 
