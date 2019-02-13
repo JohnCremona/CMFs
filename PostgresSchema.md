@@ -20,7 +20,7 @@ Dmax | integer | upper bound on newspace Q-dimension
 newspace_count | integer | total number of newspaces in this box
 nonzero_newspace_count | integer | total number of nonzero newspaces in this box
 newform_count | integer | total number of newforms in this box (if known, may be null)
-embeddings | bigint | total number of complex embeddings of newforms in this box
+embedding_count | bigint | total number of complex embeddings of newforms in this box
 straces | boolean | set if space trace forms are stored
 split | boolean | set if list of dimensions of irreducible subspaces (newforms) are stored
 traces | boolean | set if newform trace forms are stored
@@ -109,13 +109,13 @@ hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as 
   * check weight_parity
   * check that char_* atrributes and prim_orbit_index match data in char_dir_orbits table (conrey_indexes should match galois_orbit)
   * check that hecke_orbit_code matches level, weight, char_orbit_index
+  * check that hecke_orbit_dims is sorted in increasing order
 * Per row
   * fast
     * check analytic_conductor
   * slow
     * check level_* attributes (radical, primes, is_prime,...)
     * check that sturm_bound is exactly floor(k*Index(Gamma0(N))/12)
-    * check that hecke_orbit_dims is sorted in increasing order
     * check that trace_bound=1 if hecke_orbit_dims set and all dims distinct
     * for k > 1 check that dim is the Q-dimension of S_k^new(N,chi) (using sage dimension formula)
     * for k > 1 check each of eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas (when applicable)
@@ -247,19 +247,17 @@ sub_mult | integer | Multiplicity of`S_k^{new}(M, [\psi])` as a direct summand o
 
 * Unique
   * (label,sub_label)
-  * sub_mult is positive
 * Overall
+  * sub_mult is positive
   * check that label matches level, weight char_orbit_index
   * check that char_orbit_label matches level, char_orbit_index
   * check that sub_label matches sub_level, weight, sub_char_orbit_index
   * check that sub_level divides level
   * check that sub_char_orbit_label matches sub_level, sub_char_orbit_index
-* Per row
-  * char_dir_orbits
-    * check that conrey_index matches galois_orbit for char_orbit_label in char_dir_orbits
-    * check that sub_conrey_index matches galois_orbit for sub_char_orbit_label in char_dir_orbits
-  * mf_newspaces
-    * check that summing sub_dim * sub_mult over rows with a given label gives S_k(N,chi) (old+new), for k=1 use cusp_dim in mf_newspaces to do this check
+  * check that conrey_indexes matches galois_orbit for char_orbit_label in char_dir_orbits
+  * check that sub_conrey_indexes matches galois_orbit for sub_char_orbit_label in char_dir_orbits
+  * check that sub_dim = dim S_k^new(sub_level, sub_chi)
+  * check that summing sub_dim * sub_mult over rows with a given label gives dim S_k^old(N,chi) (attached to mf_newspaces)
 
 **Table** `mf_gamma1_subspaces`:
 
@@ -272,18 +270,15 @@ sub_level | integer | level M of the newspace S_k^{new}(Gamma_1(M)) that embed i
 sub_dim | integer | dimension of S_k^{new}(Gamma_1(M))
 sub_mult | integer | multiplicity of S_k^{new}(Gamma_1(M)) as a direct summand of S_k^{Gamma_1(N)).  Summing dimensions of embedded newspaces S_k^{new}(Gamma_1(M)) with multiplicity gives the dimension of the cusp space S_k(Gamma_1(N).
 
-**Validation** for `mf_subspaces`:
+**Validation** for `mf_gamma1_subspaces`:
 
 * Unique
-  * (level, weight, sub_level)
+  * (label, sub_level)
 * Overall
   * check that label matches level, weight
   * check that sub_level divides level
-* Per row
-  * local
-    * check that sub_dim = S_k^new(Gamma1(sub_level)) and is positive
-  * mf_gamma1
-    * check that summing sub_dim * sub_mult over rows with same label gives dim S_k^(Gamma1(N)) (old+new), for k=1 use cusp_dim in mf_gamma1 to do this check
+  * check that sub_dim = dim S_k^new(Gamma1(sub_level)) and is positive
+  * check that summing sub_dim * sub_mult over rows with same label gives dim S_k^old(Gamma1(N)) (attached to mf_gamma1)
 
 Newforms
 ========
@@ -457,7 +452,7 @@ hecke_ring_power_basis | boolean | if true the chanage of basis matrix is the (i
 hecke_ring_cyclotomic_generator | integer | either zero or an integer m such that the an and ap are encoded as sparse integer polynomials in zeta_m (typically same as field_poly_root_of_unity but this is not required)
 hecke_ring_numerators | numeric[] | List of lists of integers, giving the numerators of a basis for the Hecke order in terms of the field generator specified by the field polynomial
 hecke_ring_denominators | numeric[] | List of integers, giving the denominators of the basis
-hecke_ring_inverse_numerators| numeric[] | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
+hecke_ring_inverse_numerators | numeric[] | List of lists of integers, giving the numerators of the inverse basis that specifies powers of nu in terms of the betas
 hecke_ring_inverse_denominators | numeric[] | List of integers, giving the denominators of the inverse basis
 hecke_ring_character_values | jsonb | list of pairs [[m1,[a11,...a1n]],[m2,[a12,...,a2n]],...] where [m1,m2,...,mr] are generators for Z/NZ and [ai1,...,ain] is the value of chi(mi) expressed in terms of the Hecke ring basis or in cyclotomic representation [[c,e]] encoding c x zeta_m^e where m is hecke_ring_cyclotomic_generator
 an | jsonb | list of a1,...,a100, where each an is either a list of integers encoding an in the Hecke ring basis described above or a list of pairs [[c1,e1],...,[cr,er]] encoding an = c1 x zeta_m^e1 + ... + cr x zeta_m^er, where m is the value of hecke_ring_cyclotomic_generator (if nonzero)
@@ -466,16 +461,18 @@ maxp | integer | largest prime p for which ap is stored
 
 **Validation** for `mf_hecke_nf`:
 
-* there should be a record present for every record in mf_newforms that has field_poly set (and no others, check count)
-* check that label matches hecke_orbit_code and is present in mf_newforms
-* check that field_poly matches field_poly in mf_newforms
-* check that hecke_ring_rank = deg(field_poly)
-* if hecke_ring_power_basis is set, check that hecke_ring_cyclotomic_generator is 0 and hecke_ring_numerators, ... are null
-* if hecke_ring_cyclotomic_generator is greater than 0 check that hecke_ring_power_baiss is false and hecke_ring_numerators, ... are null, and that field_poly_is_cyclotomic is set in mf_newforms record.
-* check that hecke_ring_character_values has the correct format, depending on whether hecke_ring_cyclotomic_generator is set or not
-* check that an has length 100 and that each entry is either a list of integers of length hecke_ring_rank (if hecke_ring_cyclotomic_generator=0) or a list of pairs
-* check that ap has length pi(maxp) and that each entry is formatted correctly (as for an)
-* check that maxp is at least 997
+* Overall
+  * there should be a record present for every record in mf_newforms that has field_poly set (and no others, check count)
+  * check that label matches hecke_orbit_code and is present in mf_newforms
+  * check that field_poly matches field_poly in mf_newforms
+  * check that hecke_ring_rank = deg(field_poly)
+  * if hecke_ring_power_basis is set, check that hecke_ring_cyclotomic_generator is 0 and hecke_ring_numerators, ... are null
+  * if hecke_ring_cyclotomic_generator is greater than 0 check that hecke_ring_power_basis is false and hecke_ring_numerators, ... are null, and that field_poly_is_cyclotomic is set in mf_newforms record.
+* Slow
+  * check that hecke_ring_character_values has the correct format, depending on whether hecke_ring_cyclotomic_generator is set or not
+  * check that an has length 100 and that each entry is either a list of integers of length hecke_ring_rank (if hecke_ring_cyclotomic_generator=0) or a list of pairs
+  * check that ap has length pi(maxp) and that each entry is formatted correctly (as for an)
+  * check that maxp is at least 997
 
 **Table** `mf_hecke_traces`:
 
@@ -487,10 +484,12 @@ trace_an | numeric | trace of a_n down to Z
 
 **Validation** for `mf_hecke_traces`:
 
-* there should be exactly 1000 records present for each record in mf_newforms
-* check that hecke_orbit_code is present in mf_newforms
-* check that (hecke_orbit_code,n) is a unique identifier
-* check that trace_an matches traces[n] in mf_newforms record
+* Unique
+  * (hecke_orbit_code,n)
+* Overall
+  * there should be exactly 1000 records present for each record in mf_newforms (attached to mf_newforms)
+  * check that hecke_orbit_code is present in mf_newforms (via checking surjectivity and fiber size)
+  * check that trace_an matches traces[n] in mf_newforms record
 
 **Table** `mf_hecke_lpolys`:
 
@@ -502,12 +501,14 @@ lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs 
 
 **Validation** for `mf_hecke_lpolys`:
 
-* there should be exactly 25 records present for each recod in mf_newforms with field_poly set
-* check that (hecke_orbit_code,p) is a unique identifier
-* check that every prime p < 100 occurs exactly once for each hecke_orbit_code
-* check that hecke_orbit_code is present in mf_newforms
-* check that degree of lpoly is twice the dimension in mf_newforms
-* check that linear coefficient of lpoly is -trace(a_p) and constant coefficient is 1
+* Unique
+  * (hecke_orbit_code,p)
+* Overall
+  * there should be exactly 25 records present for each recod in mf_newforms with field_poly set (attached to mf_newforms)
+  * check that every prime p < 100 occurs exactly once for each hecke_orbit_code
+  * check that hecke_orbit_code is present in mf_newforms
+  * check that degree of lpoly is twice the dimension in mf_newforms for good primes
+  * check that linear coefficient of lpoly is -trace(a_p) and constant coefficient is 1
 
 **Table** `mf_hecke_newspace_traces`:
 
@@ -519,10 +520,12 @@ trace_an | numeric | trace of a_n down to Z, where a_n is the sum of a_n over al
 
 **Validation** for `mf_hecke_newspace_traces`:
 
-* there should be exactly 1000 records present for each record in mf_newfspaces in a box that has straces set
-* check that hecke_orbit_code is present in mf_newspaces
-* check that (hecke_orbit_code,n) is a unique identifier
-* check that trace_an matches traces[n] in mf_newspaces record
+* Unique
+  * (hecke_orbit_code,n)
+* Overall
+  * there should be exactly 1000 records present for each record in mf_newfspaces in a box that has straces set
+  * check that hecke_orbit_code is present in mf_newspaces
+  * check that trace_an matches traces[n] in mf_newspaces record
 
 **Table**`mf_hecke_cc`:
 
@@ -535,19 +538,24 @@ embedding_index | integer | enumeration of which embedding (shows up in L-functi
 embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
-normalized_an | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
+an_normalized | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
 angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if `p` is bad, and for good `p` we have `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; indexed by increasing primes p < 1000, where `-0.5 < \theta_p <= 0.5`. Furthermore, we store the minimum value of the two options for `\theta_p` in that interval.
 
 **Validation** for `mf_hecke_cc`:
 
-* there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them)
-* check that hecke_orbit_code is present in mf_newforms
-* check that lfunction_label is consistent with hecke_orbit_code, conrey_lebel, embedding_index and is unique
-* check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
-* check that embedding_root_real, and embedding_root_image are present whenever field_poly is present in mf_newforms record and that they approximate a root
-* check that an_normalized is a list of pairs of doubles of length at least 1000
-* check that angles lie in (-0.5,0.5] and are null for p dividing the level
-* (optional) check that summing (unnormalized) an over embeddings with a given hcekc_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
+* Unique
+  * label
+* Oveall
+  * there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them)
+  * check that hecke_orbit_code is present in mf_newforms
+  * check that lfunction_label is consistent with hecke_orbit_code, conrey_lebel, embedding_index and is unique
+  * check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
+  * check that an_normalized is a list of pairs of doubles of length at least 1000
+  * check that the analytic ranks (from lfunc_lfunction.order_of_vanishing) are constant across hecke_orbit_code and match the analytic rank in mf_newform
+  * check that angles lie in (-0.5,0.5] and are null for p dividing the level
+* Slow
+  * check that embedding_root_real, and embedding_root_image are present whenever field_poly is present in mf_newforms record and that they approximate a root
+  * (optional) check that summing (unnormalized) an over embeddings with a given hecke_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
 
 Dirichlet characters
 ====================
