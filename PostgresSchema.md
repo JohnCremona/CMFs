@@ -20,7 +20,7 @@ Dmax | integer | upper bound on newspace Q-dimension
 newspace_count | integer | total number of newspaces in this box
 nonzero_newspace_count | integer | total number of nonzero newspaces in this box
 newform_count | integer | total number of newforms in this box (if known, may be null)
-embeddings_count | bigint | total number of complex embeddings of newforms in this box
+embedding_count | bigint | total number of complex embeddings of newforms in this box
 straces | boolean | set if space trace forms are stored
 split | boolean | set if list of dimensions of irreducible subspaces (newforms) are stored
 traces | boolean | set if newform trace forms are stored
@@ -145,7 +145,7 @@ trace_bound | integer | nonnegative integer n such that the traces from 1 up to 
 dim | integer | Q-dimension of S_k^new(Gamma1(N))
 num_forms | integer | number of (Hecke/Galois orbits of) newforms, only set when known
 hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits, only set when known
-num_spaces | integer | number of newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))` (=number of character orbits)
+num_spaces | integer | number of nozero newspaces `S_k^new(N,[\chi])` in `S_k^{new}(Gamma1(N))`
 newspace_dims | integer[] | list of Q-dimensions of newspaces `S_k^new(N,\chi)` in `S_k^new(Gamma1(N))` ordered by character orbit index
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1(N))`
@@ -186,6 +186,11 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
     * check that sturm_bound is exactly floor(k*Index(Gamma1(N))/12)
     * check that dim = dim S_k^new(Gamma1(N))
     * for k > 1 check eis_dim, eis_new_dim, cusp_dim, mf_dim, mf_new_dim using Sage dimension formulas
+  * mf_newspaces
+    * if num_forms is set verify that it is equal to the sum of num_forms over newspaces with matching level and weight
+    * if hecke_orbit_dims is set, verify that it is equal to the (sorted) concatenation of hecke_orbit_dims over newspaces with matching level and weight
+    * check that newspace_dims is equal to the (sorted) concatenation of dim over newspaces with this level and weight
+    * check that num_spaces matches the number of rows in mf_newspaces of the same level and weight with dim > 0
 
 
 **Table** `mf_newspace_portraits`:
@@ -518,8 +523,8 @@ lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs 
   * there should be exactly 25 records present for each recod in mf_newforms with field_poly set (attached to mf_newforms)
   * check that every prime `p < 100` occurs exactly once for each hecke_orbit_code
   * check that hecke_orbit_code is present in mf_newforms
-  * check that degree of lpoly is twice the dimension in mf_newforms
-  * check that linear coefficient of lpoly is `-trace(a_p)` and constant coefficient is 1
+  * check that degree of lpoly is twice the dimension in mf_newforms for good primes
+  * check that linear coefficient of lpoly is -trace(a_p) and constant coefficient is 1
 
 **Table** `mf_hecke_newspace_traces`:
 
@@ -549,21 +554,21 @@ embedding_index | integer | enumeration of which embedding (shows up in L-functi
 embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
-normalized_an | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
-angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if `p` is bad, and for good `p` we have `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; indexed by increasing primes `p < 1000`, where `-0.5 < \theta_p <= 0.5`. Furthermore, we store the minimum value of the two options for `\theta_p` in that interval.
+an_normalized | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
+angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if `p` is bad, and for good `p` we have `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; indexed by increasing primes p < 1000, where `-0.5 < \theta_p <= 0.5`. Furthermore, we store the minimum value of the two options for `\theta_p` in that interval.
 
 **Validation** for `mf_hecke_cc`:
 
-* Uniqueness
-  * lfunction_label
 * Overall
+
   * check that hecke_orbit_code is present in mf_newforms
   * check that lfunction_label is consistent with hecke_orbit_code
   * check that lfunction_label is consistent with conrey_lebel, embedding_index
-  * check that an_normalized is a list of pairs
-  * check that an_normalized is of length at least 1000
+  * check that an_normalized is a list of pairs of doubles of length at least 1000
+
 * Per row
   * check that angles lie in (-0.5,0.5] and are null for p dividing the level
+  * check that embedding_m is consistent with conrey_label and embedding_index (use conrey_indexes list in mf_newformes record to do this)
   * (optional) check that summing (unnormalized) an over embeddings with a given hecke_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
 
 Dirichlet characters
