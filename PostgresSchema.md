@@ -317,7 +317,8 @@ conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this
 char_degree | integer | Degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
-char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
+char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
+hecke_orbit | integer | (X) An integer that is encoded into x in the label via 1=a, 2=b, 26=z, 27=ba, 28=bb.  Note the shift: the letter is the Cremona code for X-1.
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  `N + (k<<24) + ((i-1)<<36) + ((x-1)<<52)`.
 dim | integer | the Q-dimension of this Galois orbit
 relative_dim | integer | the Q(chi)-dimension of this Hecke orbit (=dim/char_degree)
@@ -348,7 +349,7 @@ self_twist_discs | integer[] | list of discriminants giving self twists (either 
 cm_discs | integer[] | list of CM discriminants (the negative discriminants listed in self_twist_discs)
 rm_discs | integer[] | list of RM discriminants (the positive discriminants listed in self_twist_discs)
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
-has_non_self_twist | smallint | 1 if form admits a non-trivial inner twist, -1 if it does not, 0 if unknown
+has_non_self_twist | smallint | 1 if form admits a non-trivial inner twist, 0 if it does not, -1 if unknown
 inner_twists | jsonb | List of septuples <b,m,M,o,parity,order,disc> where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
 inner_twist_count | integer | number of inner twists (includes proved and unproved), -1 if inner twists have not been computed (this applies to all forms of dimension > 20 and weight > 1)
 atkin_lehner_eigenvals | integer[] | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
@@ -555,12 +556,14 @@ embedding_m | integer | enumeration of which embedding over all conrey labels in
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
 an_normalized | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
-angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if `p` is bad, and for good `p` we have `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; indexed by increasing primes p < 1000, where `-0.5 < \theta_p <= 0.5`. Furthermore, we store the minimum value of the two options for `\theta_p` in that interval.
+angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if `p` is bad, and for good `p` we have `a_p = p^{(k-1)/2} (e^{2\pi i \theta_p} + chi(p)e^{-2\pi i \theta_p})`; indexed by increasing primes `p < 1000`, where `-0.5 < \theta_p <= 0.5`. Furthermore, we store the minimum value of the two options for `\theta_p` in that interval.
 
 **Validation** for `mf_hecke_cc`:
 
+* Unique
+  * lfunction_label
 * Overall
-
+  * there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them)
   * check that hecke_orbit_code is present in mf_newforms
   * check that lfunction_label is consistent with hecke_orbit_code
   * check that lfunction_label is consistent with conrey_lebel, embedding_index
@@ -592,15 +595,21 @@ char_degree | smallint | degree of the cyclotomic field containing the image, ie
 
 **Validation** for `char_dir_orbits`:
 
-* there should be a record present for every character orbit of modulus up to 10,000 (there are 768,512)
-* check that orbit_label is consistent with modulus and orbit_index and is unique
-* check that orbit_index=1 if and only if char_order=1
-* check that conductor divides modulus
-* check that orbit specified by conductor,prim_orbit_index is present
-* check order and parity by constructing a Conrey character in Sage (use the first index in galois_orbit)
-* check that is_real is true if and only if `order <= 2`
-* check that char_degree = euler_phi(order) and is equal to len(Galois_orbit)
-* check that is_primitive is true if and only if modulus=conductor
+* Unique
+  * orbit_label
+* Overall
+  * there should be a record present for every character orbit of modulus up to 10,000 (there are 768,512)
+  * check that orbit_label is consistent with modulus and orbit_index
+  * check that orbit_index=1 if and only if order=1
+  * check that conductor divides modulus
+  * check that orbit specified by conductor,prim_orbit_index is present
+  * check that is_real is true if and only if `order <= 2`
+  * check that char_degee = len(Galois_orbit)
+  * check that is_primitive is true if and only if modulus=conductor
+* Fast
+  * check that char_degree = euler_phi(order)
+* Slow
+  * check order and parity by constructing a Conrey character in Sage (use the first index in galois_orbit)
 
 **Table** `char_dir_values`:
 
@@ -617,11 +626,14 @@ values_gens | integers[] | list of pairs [x, m] giving values on generators x of
 
 **Validation** for `char_dir_values`
 
-* Total number of records should be sum of len(galois_orbit) over records in char_dir_orbits
-* label should uniquely identify each record
-* Conrey index n in label should appear in galois_orbit for record in char_dir_orbits with this orbit_label
-* order should match order in char_dir_orbits for this orbit_label
-* The x's listed in values and values_gens should be coprime to the modulus N in the label
-* the value on -1 should agree with the parity for this char_orbit_index in char_dir_orbits
-* for x's that appear in both values and values_gens, the value should be the same.
+* Unique
+  * label
+* Overall
+  * The number of entries in char_dir_values matching a given orbit_label should be char_degree (checked in char_dir_values)
+  * order should match order in char_dir_orbits for this orbit_label
+* Fast
+  * Conrey index n in label should appear in galois_orbit for record in char_dir_orbits with this orbit_label
+  * The x's listed in values and values_gens should be coprime to the modulus N in the label
+  * the value on -1 should agree with the parity for this char_orbit_index in char_dir_orbits
+  * for x's that appear in both values and values_gens, the value should be the same.
 
