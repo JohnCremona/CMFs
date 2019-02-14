@@ -11,7 +11,7 @@ from lmfdb.db_backend import db
 
 def dirichlet_character_from_lmfdb_mf(data):
     G = DirichletGroup_conrey(data[u'level'])
-    return DirichletCharacter_conrey(G,data[u'char_labels'][0])
+    return DirichletCharacter_conrey(G,data[u'conrey_indexes'][0])
 
 def modular_symbols_ambient_from_lmfdb_mf(data):
     chi = dirichlet_character_from_lmfdb_mf(data)
@@ -82,7 +82,7 @@ def qexp_as_nf_elt(self,prec = None):
 
 
 if __name__ == "__main__":
-    todo = list(db.mf_newforms.search({u'analytic_rank':{'$gt':int(1)}}))
+    todo = list(db.mf_newforms.search({u'analytic_rank':{'$gt':int(1)},u'analytic_rank_proved':False}))
     todo2 = []
     for data in todo:
         print data[u'label']
