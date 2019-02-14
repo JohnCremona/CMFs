@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     assert len(todo2)==0
 
-    todo = list(db.mf_newforms.search({u'analytic_rank':int(1),u'is_self_dual':{'$ne':int(1)}}))
+    todo = list(db.mf_newforms.search({u'analytic_rank':int(1),u'is_self_dual':{'$ne':int(1)},u'analytic_rank_proved':False}))
     todo2 = []
     for data in todo:
         print data[u'label']
