@@ -382,7 +382,7 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
   * check_trace_display : check that trace_display is present and has length at least 4
   * check_number_field : if nf_label is present, check that there is a record in nf_fields and that mf_newforms field_poly matches nf_fields coeffs, and check that is_self_dual agrees with signature, and field_poly_disc agrees with disc_sign * disc_abs in nf_fields
   * check_field_poly_disc : if hecke_ring_index_proved is set, verify that field_poly_disc is set
-  * FIXME check_analytic_rank_proved : check that analytic_rank_proved is set (log warning if not)
+  * FIXME check_analytic_rank_proved : check that analytic_rank_proved is True  when analytic_rank is set (log warning if not)
   * check_self_twist_type : check that self_twist_type is in {0,1,2,3} and matches is_cm and is_rm
   * check_cmrm_discs : check that self_twist_discs is consistent with self_twist_type (e.g. if self_twist_type is 3, there should be 3 self_twist_discs, one pos, two neg)
   * check_self_twist_discs : check that cm_discs and rm_discs have correct signs and that their union is self_twist_discs
@@ -411,17 +411,16 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
     * TODO : for each discriminant D in self_twist_discs, check that for each prime p not dividing the level for which (D/p) = -1, check that traces[p] = 0 (we could also check values in mf_hecke_nf and/or mf_hecke_cc, but this would be far more costly)
     * check_related_objects : check that URLS in related_objects are valid and identify objects present in the LMFDB
     * check_related_objects : if related_objects contains an Artin rep, check that k=1 and that conductor of artin rep matches level N
-    * TODO : if k=2, char_orbit_index=1 and dim=1 check that elliptic curve isogeny class of conductor N is present in related_objects
+    * TODO : if k=2, char_orbit_index=1 and dim=1 check that elliptic curve isogeny class of conductor N is present in related_objects (add this one to the above)
   * extra slow
     * TODO : if nf_label is not present and field_poly is present, check whether is_self_dual is correct (if feasible)
     * TODO : if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual and/or check that the lfunction self_dual attribute is consistent
-    * TODO : if present, check that artin_image is consistent with artin_degree and projective_image (quotient of artin_image by its center should give projective_image)
+    * TODO : if present, check that artin_image is consistent with artin_degree and projective_image (quotient of artin_image by its center should give projective_image) (use GAP)
   * newspace
     * TODO : check that dim is present in hecke_orbit_dims array in newspace record and that summing dim over rows with the same space label gives newspace dim
   * char_dir_orbits
     * TODO : check that each level M in inner twists divides the level and that M.o identifies a character orbit in char_dir_orbits with the listed parity
-  * would nice if:
-    * if field_poly_is_real_cycolotomic is set, verify this
+    * TODO : if field_poly_is_real_cycolotomic is set, verify this (precompute table)
 
 
 **Table** `mf_newform_portraits`:
@@ -565,7 +564,7 @@ angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if 
 * Per row
   * check_angles : check that angles lie in (-0.5,0.5] and are null for p dividing the level
   * check_roots_are_roots : check that embedding_root_real, and embedding_root_image  approximate a root of field_poly (attached to mf_newforms)
-  * TODO : (optional) check that summing (unnormalized) an over embeddings with a given hecke_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
+  * TODO : (optional) check that summing (normalized) an over embeddings with a given hecke_orbit_code gives an approximation to tr(a_n)*n^{k-1}/2 -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
 
 Dirichlet characters
 ====================
