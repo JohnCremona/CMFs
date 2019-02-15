@@ -59,8 +59,8 @@ char_is_real | boolean | whether the character takes only real values (trivial o
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
 sturm_bound | integer | `\floor(k*Index(Gamma0(N))/12)`
 trace_bound | integer | nonnegative integer n such that the traces from 1 up to n distinguish all forms in this space (0 if space has one form, 1 if more than 1 form but dimensions are all distinct), only set when known
-dim | integer | Q-dimension of this newspace S_k^new(N,[chi])
-relative_dim | integer | Q(chi)-dimension of this newspace S_k^new(N,[chi]), equal to dim/degree(chi)
+dim | integer | Q-dimension of the newspace `S_k^new(N,[chi])`
+relative_dim | integer | Q(chi)-dimension of the newspace `S_k^new(N,[chi])`, equal to dim/degree(chi)
 num_forms | smallint | number of (Hecke/Galois orbits of ) newforms, only set when known
 hecke_orbit_dims | integer[] | Sorted list of Q-dimensions of Hecke orbits, only set when known
 eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(N, \chi)`
