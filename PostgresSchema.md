@@ -601,7 +601,9 @@ Note that the values in this table are stored as integers m so that the actual v
 
 Column | Type | Notes
 -------|------|------
-label | text | N.n where N is the modulus and n is the conrey label
+label | text | N.n where N is the modulus and n is the conrey index
+modulus | smallint | N
+conrey_index | smallint | n
 orbit_label | text | N.i where N is the modulus and i is the orbit_index
 prim_label | text | the label of primitive character inducing this one
 order | smallint
