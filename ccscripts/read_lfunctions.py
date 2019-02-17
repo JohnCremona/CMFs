@@ -948,7 +948,7 @@ def read_all(filename):
                 assert key in row, "%s not in row = %s" % (key, row)
             assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
             rows[label] = [row[key] for key in schema_lf]
-            instances[label] = (row['origin'], row['Lhash'], 'CMF')
+            instances[label] = (row['origin'], row['Lhash'], 'CMF', json.dumps(row['Lhash'].split(',')).replace('[','{').replace(']','}'))
             k += 1
             if linecount > 10:
                 if (k % (linecount//10)) == 0:
