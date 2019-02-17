@@ -1,0 +1,12 @@
+{
+    polredabs.m
+    utils.m
+    mfutils.m
+    chars.m
+    mfchars.m
+    mfdims.m
+    zbasis.m
+    cycrep.m
+    nfgen.m
+    hash.m
+}
