@@ -1,13 +1,13 @@
-intrinsic Polredabs(f::SeqEnum) -> SeqEnum
+intrinsic Polredabs(f::SeqEnum:DiscFactors:=[]) -> SeqEnum
 { Computes a smallest canonical defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
-    cmd := Sprintf("{print(Vecrev(Vec(polredabs(Pol(Vecrev(%o))))))}", f);
+    cmd := #DiscFactors eq 0 select Sprintf("{print(Vecrev(Vec(polredabs(Pol(Vecrev(%o))))))}", f) else  Sprintf("{print(Vecrev(Vec(polredabs([Pol(Vecrev(%o)),%o]))))}", f,DiscFactors);
     s := Pipe("gp -q", cmd);
     return [ StringToInteger(x) : x in Split(s, ", []\n") | x ne "" ];
 end intrinsic;
 
-intrinsic Polredabs(f::RngUPolElt) -> RngUPolElt
+intrinsic Polredabs(f::RngUPolElt:DiscFactors:=[]) -> RngUPolElt
 { Computes a smallest canonical defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
-    return Parent(f)!Polredabs(Coefficients(f));
+    return Parent(f)!Polredabs(Coefficients(f):DiscFactors:=DiscFactors);
 end intrinsic;
 
 intrinsic Polredbest(f::SeqEnum) -> SeqEnum
@@ -70,9 +70,9 @@ intrinsic PolredbestWithRoot(f::RngUPolElt) -> RngUPolElt, SeqEnum
 { Returns small polynomial as in Polredbest together with a root, using pari. }
     cmd := Sprintf("{u = polredbest(Pol(Vecrev(%o)),1); print(Vecrev(Vec(u[1])),Vecrev(Vec(lift(u[2]))))}", Coefficients(f));
     s := Pipe("gp -q", cmd);
-    c := Index(s,"][");
+    c := Index(s,"]");
     spol := s[1..c];
-    sroot := s[c+1..#s-1];
+    sroot := s[c+1..c+Index(s[c+1..#s],"]")];
     sspol := [ StringToInteger(x) : x in Split(spol, ", []\n") | x ne "" ];
     ssroot := [ StringToRational(x) : x in Split(sroot, ", []\n") | x ne "" ];
     ssroot cat:= [0 : i in [1..Degree(f)-#ssroot]];
@@ -85,7 +85,7 @@ intrinsic PolredabsWithRoot(f::RngUPolElt) -> RngUPolElt, SeqEnum
     s := Pipe("gp -q", cmd);
     c := Index(s,"][");
     spol := s[1..c];
-    sroot := s[c+1..#s-1];
+    sroot := s[c+1..c+Index(s[c+1..#s],"]")];
     sspol := [ StringToInteger(x) : x in Split(spol, ", []\n") | x ne "" ];
     ssroot := [ StringToRational(x) : x in Split(sroot, ", []\n") | x ne "" ];
     ssroot cat:= [0 : i in [1..Degree(f)-#ssroot]];

@@ -65,11 +65,13 @@ intrinsic UnEmbeddedCharacter (xi::Map, N::RngIntElt) -> GrpDrchElt, Map
     for chi in Elements(DirichletGroup(N,F)) do if Order(chi) eq e and [rho(chi(u)) : u in U] eq v then return chi,rho; end if; end for; assert false;
 end intrinsic;
 
+// One can do better than this for trivial character, N square free, and when cond(chi) is a proper divisor of N, see Stein 9.19,9.21,9.22,
+// but this bound (due to Buzzard) works for all spaces M_k(N,chi) and is best possible in some cases, see Stein 9.20
 intrinsic SturmBound (N::RngIntElt, k::RngIntElt) -> RngIntElt
-{ Sturm bound for space of modular forms of level N weight k (and any character). }
+{ Sturm bound for space of modular forms of level N weight k and any character. }
     require N ge 1 and k ge 1: "Level N and weight k must be positive integers";
     m := Index(Gamma0(N));
-    return Integers()!Floor(m*k/12-(m-1)/N);
+    return Integers()!Floor(k*m/12);
 end intrinsic;
 
 // Use Shimura 3.6.4 to get Sturm bound for twist of form of character chi by a character phi
@@ -97,36 +99,50 @@ intrinsic SelfTwistCandidates (a::SeqEnum, N::RngIntElt, k::RngIntElt) -> SeqEnu
     return D;
 end intrinsic;
 
-intrinsic SelfTwists (a::SeqEnum, S::ModSym) -> SeqEnum[RngIntElt]
+intrinsic SelfTwists (a::SeqEnum, S::ModSym: TraceHint:=[], pBound:=0) -> SeqEnum[RngIntElt], BoolElt
 { Given a (possibly empty) prefix of the q-expansion of an eigenform f for a space of modular symbols S returns a list of fundamental discriminants D for which f admits a self-twist by Kronecker(D,*).  In weight k >= 2 this list is either empty or contains a single negative discriminant.  }
     N := Level(S);  k := Weight(S);  chi := DirichletCharacter(S);
     assert k ge 2; // this ensures only one self twist (and it must be by a negative quadratic character)
-    if Order(chi) eq 1 and IsSquarefree(N) then return [Integers()|]; end if;  // apply Ribet Thm. 3.9 and Cor 3.10 if character is trivial
-    if #a le 10 then F := Eigenform(S,101); a:=[Coefficient(F,n) : n in [1..100]]; end if;
+    if Order(chi) eq 1 and IsSquarefree(N) then return [Integers()|],true; end if;  // apply Ribet Thm. 3.9 and Cor 3.10 if character is trivial
+    // If TraceHint is specified, try to use it to rule out self twists
+    if #TraceHint gt 0 then
+        DT := SelfTwistCandidates(TraceHint,N,k);
+        if #DT eq 0 then return [Integers()|],true; end if;
+    else
+        DT := [Integers()|];
+    end if;
+    if #a lt 7 then F := Eigenform(S,8); a:=[Coefficient(F,n) : n in [1..7]]; end if;
     D := SelfTwistCandidates(a,N,k);
-    if #D eq 0 then return [Integers()|]; end if;
+    if #DT gt 0 then D := [d:d in D|d in DT]; end if;
+    if #D eq 0 then return [Integers()|],true; end if;
     while #D gt 1 do 
         F := Eigenform(S,#a+1);
         a := [Coefficient(F,n) : n in [1..2*#a]];
         D := SelfTwistCandidates(a,N,k);
     end while;
-    if #D eq 0 then return [Integers()|]; end if;
+    if #D eq 0 then return [Integers()|],true; end if;
     D := D[1];
-    B := TwistSturmBound (N,k,Abs(D),Conductor(chi));
+    sB := TwistSturmBound (N,k,Abs(D),Conductor(chi));
+    if pBound gt 0 and sB gt pBound and sB gt #a then
+        printf "Specified prime bound %o is less than Sturm bound %o, returned result may not be provably correct (but is an upper limit)\n", pBound, sB;
+        B := pBound;
+    else
+        B := sB;
+    end if;
     P := PrimesInInterval(1,B);
     s := Cputime();
     if B le #a then 
-        for p in P do if KroneckerSymbol(D,p) eq -1 and a[p] ne 0 then return []; end if; end for;
-        return [D];
+        for p in P do if KroneckerSymbol(D,p) eq -1 and a[p] ne 0 then return [],true; end if; end for;
+        return [D],true;
     end if;
     if B gt 1000 then
-        printf "Computing a_p for p <= %o to check if dimension %o eigenform of level %o, weight %o, chi-conductor %o has CM by %o...\n", B, Dimension(S), N, k, Conductor(chi), D;
+        printf "Computing a_p for p <= %o to check if dimension %o eigenform of level %o, weight %o, chi-conductor %o admits self-twists by %o...\n", B, QDimension(S), N, k, Conductor(chi), D;
         s := Cputime();
     end if;
     F := Eigenform(S,P[#P]+1);
     if B gt 1000 then printf "Took %.3o seconds to compute %o eigenform coefficients\n", Cputime()-s, B; end if;
-    for p in P do if KroneckerSymbol(D,p) eq -1 and Coefficient(F,p) ne 0 then return [Integers()|]; end if; end for;
-    return [D];
+    for p in P do if KroneckerSymbol(D,p) eq -1 and Coefficient(F,p) ne 0 then return [Integers()|],true; end if; end for;
+    return [D],B eq sB;
 end intrinsic;
 
 intrinsic TwistingCharacters (x1::GrpDrchElt,x2::GrpDrchElt) -> List

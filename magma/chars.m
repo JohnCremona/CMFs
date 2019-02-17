@@ -20,11 +20,18 @@ intrinsic UnitGenerators (chi::GrpDrchElt) -> SeqEnum[RngIntElt]
     return UnitGenerators(Parent(chi));
 end intrinsic;
 
+intrinsic UnitGenerators (N::RngIntElt) -> SeqEnum[RngIntElt]
+{ Lift to Z of standard generators for (Z/NZ)*. }
+    return UnitGenerators(DirichletGroup(N));
+end intrinsic;
+
 intrinsic NumberOfCharacterOrbits (N::RngIntElt) -> RngIntElt
 { The number of Galois orbits of Dirichlet characters of modulus N. }
     require N gt 0: "Modulus N must be a positive integer";
     // this could be made faster but it is already pretty fast for N up to 10^5
-    return Integers()! &+[1/EulerPhi(Order(g)):g in MultiplicativeGroup(Integers(N))];
+    G := MultiplicativeGroup(Integers(N));
+    X := {*Order(g):g in G*};  S := Set(X);
+    return Integers()! &+[Multiplicity(X,n)/EulerPhi(n):n in S];
 end intrinsic;
 
 intrinsic IsConjugate (chi1::GrpDrchElt,chi2::GrpDrchElt) -> Boolean
@@ -124,7 +131,7 @@ intrinsic ConreyCharacterValue(q::RngIntElt,n::RngIntElt,m::RngIntElt) -> FldCyc
     end if;
 end intrinsic;
 
-intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum[RntIntElt]) -> SeqEnum[FldCycElt]
+intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum[RngIntElt]) -> SeqEnum[FldCycElt]
 { The list of values of the Dirichlet character with Conrey label q.n on the integers in S. }
     require q gt 0: "Modulus q must be positive";
     require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
@@ -154,10 +161,8 @@ intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,S::SeqEnum[RntIntElt])
     end if;
 end intrinsic;
 
-intrinsic ConreyCharacterValues(q::RngIntElt,n::RngIntElt,M::RngIntElt) -> SeqEnum[FldCycElt]
-{ The list of values of the Dirichlet character with Conrey label q.n on the integers 1..M. }
-    return ConreyCharacterValues(q,n,[1..M]);
-end intrinsic;
+// angles refer to rational numbers a/b that define a point zeta_b^a = exp(2*pi*i*a/b) on the unit circle.
+// we always normalize angles so that a/b lies in (0,1]
 
 function normalize_angle(r)
     b:=Denominator(r); a:=Numerator(r) mod b;
@@ -253,13 +258,14 @@ end intrinsic;
 
 intrinsic ComplexConreyCharacter(q::RngIntElt,n::RngIntElt,CC::FldCom) -> Map
 { The Dirichlet character with Conrey label q.n. }
+    assert Precision(CC) ge 10;
     chi := CyclotomicConreyCharacter(q,n);
     F := Codomain(chi);
     phi := hom<F->CC|Conjugates(F.1:Precision:=Precision(CC))[1]>;
     xi := map<Integers()->CC|n:->phi(chi(n))>;
     U := UnitGenerators(chi);
     V := ConreyCharacterComplexValues(q,n,U,CC);
-    assert &and[Abs(xi(U[i])-V[i]) lt 10.0^-(Precision(CC)-1):i in [1..#U]];
+    assert &and[Abs(xi(U[i])-V[i]) lt 10.0^-(Precision(CC) div 2):i in [1..#U]];
     return xi;
 end intrinsic;
 
@@ -269,7 +275,7 @@ intrinsic ConreyTraces(q::RngIntElt,n::RngIntElt) -> SeqEnum[RngIntElt]
     require GCD(q,n) eq 1: "Parameter n must be coprime to modulus q";
     G,pi := MultiplicativeGroup(Integers(q));
     F := CyclotomicField(Order(Inverse(pi)(Integers(q)!n)));
-    return [Trace(F!z):z in ConreyCharacterValues(q,n,q)];
+    return [Trace(F!z):z in ConreyCharacterValues(q,n,[1..q])];
 end intrinsic;
 
 intrinsic ConreyLabel(chi::GrpDrchElt) -> RngIntElt, RngIntElt
@@ -330,11 +336,70 @@ intrinsic ConreyConjugates (chi::GrpDrchElt, xi::Map: ConreyLabelList:=ConreyLab
     return [T[[A[i][j] : i in [1..#S]]] : j in [1..#A[1]]];
 end intrinsic;
 
+intrinsic CharacterAngles (N::RngIntElt, u::SeqEnum[RngIntElt], v::SeqEnum, U::SeqEnum[RngIntElt]) -> SeqEnum[FldRatElt]
+{ Given arbitrary generators u for (Z/NZ)* and a corresponding list of angles v defining a character of modulus N, compute a list of angles giving values of character on the integers in S.  Does not verify the validity of v! }
+    // We use an O(#(Z/NZ)*) algorithm to compute a discrete log lookup table; for small N this is faster than being clever (but for large N it won't be)
+    // Impelemnts Algorithm 2.2 in https://arxiv.org/abs/0903.2785, but we don't bother saving power relations
+    require N ge 1: "Modulus N must be a positive integer";
+    require #u eq #v: "You must specify an angle for each generator";
+    require #u gt 0 and &and[(n mod N) ne 1 and GCD(N,n) eq 1:n in u]: "Generators must be coprime to N and not 1 modulo N.";
+    v := [normalize_angle(x):x in v];
+    if U eq u then return v; end if;  // Don't waste time on the (easy) expected case
+    if N le 2 then return [Rationals()|1:n in U]; end if;
+    ZNZ := Integers(N);  r := [Integers()|];
+    n := #u;
+    T := [ZNZ!1];
+    g := ZNZ!u[1]; h := g; while h ne 1 do Append(~T,h); h *:= g; end while;
+    r := [#T];
+    for i:=2 to n do
+        X := Set(T); S := T; j := 1;
+        g := u[i];  h := g; while not h in X do S cat:= [h*t:t in T]; h *:= g; j +:= 1; end while;
+        Append(~r,j);  T := S;
+    end for;
+    ZZ := Integers();
+    A := [ZZ|0:i in [1..N]];
+    for i:=1 to #T do A[ZZ!T[i]] := i-1; end for;
+    rr := [ZZ|1] cat [&*r[1..i-1]:i in [2..n]];
+    function evec (x) return [(x div rr[i]) mod r[i] : i in [1..n]]; end function;
+    V := [normalize_angle(&+[e[i]*v[i]:i in [1..n]]) where e:=evec(A[x]): x in U];
+    return V;
+end intrinsic;
+
+function TestCharacterAngles(M)
+    for N:=3 to M do
+        U := UnitGenerators(N);
+        gm,pi := UnitGroup(Integers(N));
+        for chi in CharacterOrbitReps(N) do
+            L := ConreyLabels(chi);
+            for n in L do
+                V := ConreyCharacterAngles(N,n,U);
+                for i:=1 to 3 do
+                    S := [Random(gm):i in [1..#U]];
+                    while sub<gm|S> ne gm do S := [Random(gm):i in [1..#U]]; end while;
+                    u := [Integers()!pi(s):s in S];
+                    v := ConreyCharacterAngles(N,n,u);
+                    assert CharacterAngles(N,u,v,U) eq V;
+                end for;
+            end for;
+        end for;
+        printf "Passed three random tests for each Conrey character of modulus %o\n", N;
+    end for;
+    return true;
+end function;
+
 intrinsic DirichletCharacterFromValues (N::RngIntElt,n::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum[RngIntElt]) -> GrpDrchElt
 { Given a modulus N, a positive integer n, a list of integers u giving standard generates for (Z/NZ)*, and a suitable list of integers v, returns the Dirichlet character with values in Q(zeta_n) mapping u[i] to zeta_n^v[i]. }
-    if u ne UnitGenerators(DirichletGroup(N)) then error Sprintf("Specified generators %o do not match Magma's generators %o", u, UnitGenerators(DirichletGroup(N))); end if;
+    V := CharacterAngles(N,u,[x/n:x in v],UnitGenerators(N)); // compute angles on standard Magma generators for *Z/NZ)*
     F := CyclotomicField(n);
-    return DirichletCharacterFromValuesOnUnitGenerators(DirichletGroup(N,F),[F|F.1^n:n in v]);
+    return DirichletCharacterFromValuesOnUnitGenerators(DirichletGroup(N,F),[F|F.1^(Integers()!(n*e)) : e in V]);
+end intrinsic;
+
+intrinsic DirichletCharacterFromAngles (N::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum) -> GrpDrchElt
+{ Given a modulus N, a positive integer n, a list of integers u giving standard generates for (Z/NZ)*, and a suitable list of integers v, returns the Dirichlet character with values in Q(zeta_n) mapping u[i] to zeta_n^v[i]. }
+    V := CharacterAngles(N,u,v,UnitGenerators(N)); // compute angles on standard Magma generators for *Z/NZ)*
+    n := LCM([Denominator(e):e in V]);
+    F := CyclotomicField(n);
+    return MinimalBaseRingCharacter(DirichletCharacterFromValuesOnUnitGenerators(DirichletGroup(N,F),[F|F.1^(Integers()!(n*e)) : e in V]));
 end intrinsic;
 
 intrinsic CharacterFromValues (N::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum:Orbit:=false) -> Map
@@ -391,8 +456,3 @@ intrinsic IsReal (xi::Map, N::RngIntElt) -> Bool
 { Given a map ZZ -> K that is a Dirichlet character, returns a boolean indicating whether the character takes only real values (trivial or quadratic) or not. }
     return Order(xi,N) le 2;
 end intrinsic;
-
-
-
-
-

@@ -131,4 +131,13 @@ intrinsic TraceHash(M::ModSym) -> RngIntElt
 { Given an irreducible space of modular symbols, computes the TraceHash of the associated eigenform. }
     return TraceHash(Eigenform(M,8192));
 end intrinsic;
-    
+
+intrinsic TraceStats(aplist::SeqEnum[RngIntElt], w::RngIntElt:Moments:=6) -> SeqEnum,FldRatElt,RngIntElt
+{ Given a list of ap values indexed by primes up to at least 2^13 and motivic weight w, returns trace hash, zratio, moments. }
+    assert #aplist ge 1028;  // need at least the 1028 primes up to 2^13
+    h := TraceHash(aplist);
+    z := 1.0*#[a:a in aplist|a eq 0]/#aplist;
+    a := w eq 0 select aplist else [aplist[i]/P[i]^e:i in [1..#aplist]] where P := PrimesInInterval(1,NthPrime(#aplist)) where e:=w/2;
+    m := [1.0*&+[t^n:t in a]/#a:n in [1..Moments]];
+    return z,m,h;
+end intrinsic;

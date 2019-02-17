@@ -8,6 +8,7 @@ modular forms.
 """
 from lmfdb.classical_modular_forms.web_newform import *
 from lmfdb.db_backend import db
+from sage.databases.cremona import cremona_letter_code
 
 def dirichlet_character_from_lmfdb_mf(data):
     G = DirichletGroup_conrey(data[u'level'])
@@ -39,10 +40,8 @@ def windingelement_hecke_cutter_projected(data, extra_cutter_bound = None):
                 continue
             cutters.append([p,qexp_as_nf_elt(wn)[p].minpoly().list()])
 
-
     for c in cutters:
         p = c[0]
-        print p
         fM = M.hecke_polynomial(p)
         fS = S.hecke_polynomial(p)
         cutter = gcd(R(c[1]),fS)
@@ -80,30 +79,72 @@ def qexp_as_nf_elt(self,prec = None):
     betas = [K([ZZ(c)/den for c in num]) for num, den in basis_data]
     return [sum(c*beta for c, beta in zip(coeffs, betas)) for coeffs in qexp]
 
-
-if __name__ == "__main__":
+def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False):
     todo = list(db.mf_newforms.search({u'analytic_rank':{'$gt':int(1)},u'analytic_rank_proved':False}))
-    todo2 = []
-    for data in todo:
-        print data[u'label']
+    todo2 = []; todo3 = []; todo4 = []
+    cnt = 0; vcnt = 0
+    for i in range(len(todo)):
+        if i%jobs != jobid:
+            continue
+        start = cputime()
+        data = todo[i]
+        if skip_real_char and data[u"char_is_real"]:
+            continue
+        if use_weak_bsd and data[u'weight'] == 2 and data[u'dim'] == 1 and data[u'char_orbit_index'] == 1:
+            ec_label = "%d.%s1"%(data[u'level'],cremona_letter_code(data[u'hecke_orbit']-1))
+            r = db.ec_curves.lookup(ec_label)[u'rank']
+            if data[u'analytic_rank'] != r:
+                print "*** winding element is nonzero, positive analytic rank %d for newform %s appears to be wrong ***"%(data[u'rank'],data[u'label'])
+                print data[u'label']
+                todo2.append(data[u'label'])
+            else:
+                print "verified that analytic rank %d of newform %s matches Mordell-Weil rank of elliptic curve %s"%(data[u'analytic_rank'],data[u'label'],ec_label)
+            continue
+        print "Checking newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
         w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
         if w!=0:
-            print "warining: winding element is nonzero"
+            print "*** winding element is nonzero, positive analytic rank %d for newform %s appears to be wrong ***"%(data[u'rank'],data[u'label'])
             print data[u'label']
             todo2.append(data[u'label'])
+        else:
+            if data[u'analytic_rank'] == 2 and data["is_self_dual"]:
+                print "Verified analytic rank is 2."
+                vcnt += 1
+            else:
+                print "Verified analytic rank > 0"
+                todo3.append(data[u'label'])
+        print "Processed newform %s in %.3f CPU seconds"%(data[u'label'],cputime()-start)
+        cnt += 1
 
-    assert len(todo2)==0
-
-    todo = list(db.mf_newforms.search({u'analytic_rank':int(1),u'is_self_dual':{'$ne':int(1)},u'analytic_rank_proved':False}))
-    todo2 = []
-    for data in todo:
-        print data[u'label']
+    todo = list(db.mf_newforms.search({u'analytic_rank':int(1),u'is_self_dual':False,u'analytic_rank_proved':False}))
+    for i in range(len(todo)):
+        if i%jobs != jobid:
+            continue
+        start = cputime()
+        data = todo[i]
+        if skip_real_char and data[u"char_is_real"]:
+            continue
+        print "Checking non-self-dual newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
         w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
         if w!=0:
-            print "warining: winding element is nonzero"
+            print "*** winding element is nonzero, positive analytic rank appears to be wrong ***"
             print data[u'label']
-            todo2.append(data[u'label'])
+            todo4.append(data[u'label'])
+        else:
+            print "Verified analytic rank is 1."
+            vcnt += 1
+        print "Processed newform %s in %.3f CPU seconds"%(data[u'label'],cputime()-start)
+        cnt += 1
 
-    assert len(todo2)==0
-
+    print "Checked analytic ranks of %d newforms, of which %d were verified"%(cnt,vcnt)
+    if len(todo2) > 0 or len(todo4) > 0:
+        print "The following newforms appear to have the wrong analytic rank:"
+        for r in todo2:
+            print "    %s (claimed analytic rank %d)"%(r[u'lable'],r[u'analytic_rank'])
+        for r in todo4:
+            print "    %s (claimed analytic rank %d)"%(r[u'lable'],r[u'analytic_rank'])
+    if len(todo3) > 0:
+        print "The following newforms have positive but unverified analytic ranks:"
+        for r in todo2:
+            print "    %s (claimed analytic rank %d, proved nonzero)"%(r[u'lable'],r[u'analytic_rank'])
 

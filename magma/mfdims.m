@@ -1,6 +1,7 @@
 // dependencies
 // Attach("chars.m");
 
+function sum(a) return #a gt 0 select &+a else 0; end function;
 function prod(a) return #a gt 0 select &*a else 1; end function;
 
 // Function defined on page 72 of https://doi.org/10.1007/BFb0065297 (Cohen-Oesterle article Dimensions des espaces de formes modulaires in Modular Functions of One Variable VI)
@@ -30,17 +31,25 @@ intrinsic QDimension (S::ModSym) ->RngIntElt
 { Q-dimension of the space of modular forms. }
     return Dimension(S)*Degree(DirichletCharacter(S));
 end intrinsic;
-    
+
 intrinsic QDimensionCuspForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
 { The Q-dimension of the space S_k(N,chi) of cuspidal modular forms of weight k, level N, and character chi, where N is the modulus of chi. }
-    require k gt 1: "Weight k must be greater than 1";
+    if k eq 1 then return Dimension(ModularForms(chi,k)); end if;
     return DimensionCuspForms(chi,k)*Degree(chi);
+end intrinsic;
+
+intrinsic QDimensionOldCuspForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
+{ The Q-dimension of the space S_k(N,chi) of cuspidal modular forms of weight k, level N, and character chi, where N is the modulus of chi. }
+    N := Modulus(chi);
+    psi := AssociatedPrimitiveCharacter(chi);
+    c := Modulus(psi);  d := ExactQuotient(N,c);
+    return sum([QDimensionNewCuspForms(FullDirichletGroup(M)!psi,k)*#Divisors(ExactQuotient(N,M)) where M := c*n : n in Divisors(d) | n ne d]);
 end intrinsic;
 
 intrinsic QDimensionNewCuspForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
 { The Q-dimension of the new subspace of cuspdial forms of weight k, level N, and character chi, where N is the modulus of chi. }
-    require k gt 1: "Weight k must be greater than 1";
-    return DimensionNewCuspForms(chi,k)*Degree(chi);
+    // This is very slow in weight 1, but it works
+    return k eq 1 select  QDimensionCuspForms(chi,k) - QDimensionOldCuspForms(chi,k) else DimensionNewCuspForms(chi,k)*Degree(chi);
 end intrinsic;
     
 intrinsic QDimensionEisensteinForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntElt
@@ -70,11 +79,20 @@ intrinsic QDimensionNewEisensteinForms (chi::GrpDrchElt,k::RngIntElt) -> RngIntE
 end intrinsic;
 
 intrinsic NumberOfGamma1CuspSpaces (B::RngIntElt) -> RngIntElt
-{ The number of spaces S_k(N,chi) with N*k^2 <= B (includes spaces that are emptry because parity(k) != parity(chi). }
+{ The number of spaces S_k(N,chi) with N*k^2 <= B (includes spaces that are empty because parity(k) != parity(chi). }
     return &+[NumberOfCharacterOrbits(N)*Floor(Sqrt(B/N)):N in [1..B]];
 end intrinsic;
 
 intrinsic NumberOfGamma0CuspSpaces (B::RngIntElt) -> RngIntElt
-{ The number of spaces S_k(N,chi) with N*k^2 <= B (includes spaces that are emptry because parity(k) != parity(chi). }
+{ The number of spaces S_k(N,chi) with N*k^2 <= B (includes spaces that are empty because parity(k) != parity(chi). }
     return &+[Floor(Sqrt(B/N)):N in [1..B]];
+end intrinsic;
+
+intrinsic NumberOfNewspaces (B::RngIntElt:MaxN:=0,Maxk:=0,SkipWeightOne:=false,TrivialCharOnly:=false) -> RngIntElt
+{ Number of newspaces S_k^new(N,chi) with Nk^2 <= B (and satisfying optional restrictions on N, k, and char). }
+    if MaxN eq 0 then MaxN := SkipWeightOne select B div 4 else B; end if;
+    if Maxk eq 0 then Maxk := Floor(Sqrt(B)); end if;
+    k0 := SkipWeightOne select 1 else 0;
+    if TrivialCharOnly then return &+[Min(Floor(Sqrt(B/N)),Maxk)-k0:N in [1..MaxN]]; end if;
+    return &+[(Min(Floor(Sqrt(B/N)),Maxk)-k0) * NumberOfCharacterOrbits(N) : N in [1..MaxN]];
 end intrinsic;
