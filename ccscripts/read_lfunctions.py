@@ -201,7 +201,8 @@ schema_lf_types = {u'A10': u'numeric',
      u'z1': u'numeric',
      u'z2': u'numeric',
      u'z3': u'numeric',
-     'trace_hash': 'bigint'}
+     'trace_hash': 'bigint',
+     'euler_factors_factorization': 'jsonb'}
 
 schema_lf_types.pop('id')
 
