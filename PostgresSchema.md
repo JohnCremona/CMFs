@@ -576,15 +576,15 @@ Column | Type | Notes
 -------|------|------
 orbit_label | text | (N.i), where N is the modulus and i is the orbit index
 orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
-modulus | smallint
-conductor | smallint
+modulus | integer
+conductor | integer
 prim_orbit_index | smallint | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
-order | smallint
+order | integer
 parity | smallint
 galois_orbit | integer[] | sorted list of conrey_labels in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
-char_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
+char_degree | integer | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
 
 **Validation** for `char_dir_orbits`:
 
@@ -612,7 +612,9 @@ Column | Type | Notes
 label | text | N.n where N is the modulus and n is the conrey label
 orbit_label | text | N.i where N is the modulus and i is the orbit_index
 prim_label | text | the label of primitive character inducing this one
-order | smallint
+modulus | integer
+conrey_index | integer
+order | integer
 values | integers[] | list of pairs [x,m] giving first twelve values e(m/n) on x=-1,1, then the next ten integers relatively prime to the modulus, where n is the order of the character
 values_gens | integers[] | list of pairs [x, m] giving values on generators x of the unit group
 
