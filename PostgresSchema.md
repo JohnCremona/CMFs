@@ -192,7 +192,7 @@ Column | Type | Notes
 label | text | label (N.k.i) of the newspace
 level | integer | level N
 weight | smallint | weight k
-char_orbit_index | integer | index of the character orbit `[\chi]` n the sorted list of character orbits of modulus N
+char_orbit_index | smallint | index of the character orbit `[\chi]` n the sorted list of character orbits of modulus N
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
 
 **Validation** for `mf_newspace_portraits`:
