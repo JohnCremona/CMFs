@@ -232,12 +232,12 @@ Column | Type | Notes
 label | text | label N.k.i for the cuspidal space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
 level | integer | level N of the cuspidal space `S_k(N, [\chi])`
 weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
-char_orbit_index | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
+char_orbit_index | smallint | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
 char_orbit_label | text | base-26 encoding (1='a') of index i of the character orbit that appears in label
 conrey_indexes | integer[] | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
-sub_char_orbit_index | integer | index j of `[\psi]` in sorted list of character orbits of modulus M
+sub_char_orbit_index | smallint | index j of `[\psi]` in sorted list of character orbits of modulus M
 sub_char_orbit_label | text | base-26 encoding (1='a') of index j of the subspace character orbit that appears in sub_label
 sub_conrey_indexes | integer[] | list of Conrey indexes n of the characters M.n in the Galois orrbit indexed by j.
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
