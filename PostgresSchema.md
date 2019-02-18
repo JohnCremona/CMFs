@@ -402,7 +402,8 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
   * check_hecke_ring_index_factorization : if present, verify that hecke_ring_index_factorization matches hecke_ring_index
   * check_analytic_rank_set : if newform is in a box with lfunctions set, check that analytic_rank
   * check_analytic_rank : if analytic_rank is present, check that matches order_of_vanishing in lfunctions record, and is are constant across the orbit
-  * check_self_dual : if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual and/or check that the lfunction self_dual attribute is consistent
+  * check_self_dual_by_embeddings : if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual
+  * check_self_dual_lfunctions: check that the lfunction self_dual attribute is consistent with newforms
 * Per row
   * local
     * check_projective_field_degree : if present, check that projective_field has degree matching projective_image (4 for A4,S4, 5 for A5, 2n for Dn)
@@ -552,6 +553,7 @@ angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if 
 * Overall
   * check_embeddings_count : there should be a record present for every record in mf_newforms that lies in a box weight embeddings set (currently this is all of them) (attached to mf_newforms)
   * check_hecke_orbit_code_newforms : check that hecke_orbit_code is present in mf_newforms
+  * check_dim : check that we have dim embeddings per hecke_orbit_code
   * check_lfunction_label_hoc : check that lfunction_label is consistent with hecke_orbit_code
   * check_lfunction_label_conrey : conrey_label, and embedding_index
   * check_an_length : check that an_normalized is a list of pairs of doubles of length at least 1000
@@ -586,7 +588,7 @@ conductor | smallint
 prim_orbit_index | smallint | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
 order | smallint
 parity | smallint
-galois_orbit | integer[] | sorted list of conrey_labels in the same galois orbit
+galois_orbit | smallint[] | sorted list of conrey_labels in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
 char_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
@@ -615,6 +617,8 @@ Note that the values in this table are stored as integers m so that the actual v
 Column | Type | Notes
 -------|------|------
 label | text | N.n where N is the modulus and n is the conrey label
+modulos | smallint | the modulos, i.e., the N in the label
+conrey_index | smallint | the conrey label, i.e., the n in the label
 orbit_label | text | N.i where N is the modulus and i is the orbit_index
 prim_label | text | the label of primitive character inducing this one
 order | smallint
