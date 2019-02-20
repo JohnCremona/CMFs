@@ -89,7 +89,7 @@ hecke_orbit_code | bigint | Encoding of the tuple (N.k.i) into 64 bits, used as 
   * check_label : check that label matches level, weight, char_orbit_label
   * check_hecke_orbit_code : check that hecke_orbit_code matches level, weight, char_orbit_index
   * check_box_count : there should be exactly one row for every newspace in mf_boxes; for each box performing mf_newspaces.count(box query) should match newspace_count for box, and mf_newspaces.count() should be the sum of these
-  * check_box_hecke_cutter_primes : check that hecke_cutter_primes is set whenever space is in a box with eigenvalues set and `min(dims) <= 20`
+  * check_box_hecke_cutter_primes : check that hecke_cutter_primes is set whenever space is in a box with eigenvalues set, `min(dims) <= 20`, and weight > 1
   * check_box_straces : check that traces, trace_bound, num_forms, and hecke_orbit_dims are set if space is in a box with straces set
   * check_char_orbit : check that char_orbit matches char_orbit_label
   * check_traces_display : check that traces_display is set whenever traces is set
@@ -380,8 +380,8 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
   * check_field_poly : if field_poly is set, check that is monic and of degree dim
   * check_traces_length : check that traces is present and has length at least 10000
   * check_trace_display : check that trace_display is present and has length at least 4
-  * check_number_field : if nf_label is present, check that there is a record in nf_fields and that mf_newforms field_poly matches nf_fields coeffs, and check that is_self_dual agrees with signature, and field_poly_disc agrees with disc_sign * disc_abs in nf_fields
-  * check_field_poly_disc : if hecke_ring_index_proved is set, verify that field_poly_disc is set
+  * check_number_field : if nf_label is present, check that there is a record in nf_fields and that mf_newforms field_poly matches nf_fields coeffs, and check that is_self_dual agrees with signature, and field_disc agrees with disc_sign * disc_abs in nf_fields
+  * check_field_disc : if hecke_ring_index_proved is set, verify that field_disc is set
   * check_analytic_rank_proved : check that analytic_rank_proved is True  when analytic_rank is set (log warning if not)
   * check_self_twist_type : check that self_twist_type is in {0,1,2,3} and matches is_cm and is_rm
   * check_cmrm_discs : check that self_twist_discs is consistent with self_twist_type (e.g. if self_twist_type is 3, there should be 3 self_twist_discs, one pos, two neg)
@@ -395,7 +395,7 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
   * check_projective_field : if present, check that projective_field_label identifies a number field in nf_fields with coeffs = projective_field
   * check_artin_field : if present, check that artin_field_label identifies a number field in nf_fields with coeffs = artin_field
   * check_artin_degree : if present, check that artin_field has degree equal to artin_degree
-  * check_trivial_character_cols : check that atkin_lehner_eigenvalues, atkin_lehner_string, and fricke_eigenval are present if and only if char_orbit_index=1 (trivial character)
+  * check_trivial_character_cols : check that atkin_lehner_eigenvals, atkin_lehner_string, and fricke_eigenval are present if and only if char_orbit_index=1 (trivial character)
   * check_inner_twists : check that inner_twists is consistent with inner_twist_count and that both are present if field_poly is set
   * check_has_non_self_twist : check that has_non_self_twist is consistent with inner_twist_count and self_twist_type
   * check_field_disc_factorization : if present, check that field_disc_factorization matches field_disc
@@ -585,10 +585,10 @@ orbit_label | text | (N.i), where N is the modulus and i is the orbit index
 orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
 modulus | integer
 conductor | integer
-prim_orbit_index | smallint | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
+prim_orbit_index | integer | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
 order | integer
 parity | smallint
-galois_orbit | smallint[] | sorted list of conrey_labels in the same galois orbit
+galois_orbit | integer[] | sorted list of conrey_labels in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
 char_degree | integer | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
@@ -624,8 +624,8 @@ prim_label | text | the label of primitive character inducing this one
 modulus | integer
 conrey_index | integer
 order | integer
-values | integers[] | list of pairs [x,m] giving first twelve values e(m/n) on x=-1,1, then the next ten integers relatively prime to the modulus, where n is the order of the character
-values_gens | integers[] | list of pairs [x, m] giving values on generators x of the unit group
+values | integer[] | list of pairs [x,m] giving first twelve values e(m/n) on x=-1,1, then the next ten integers relatively prime to the modulus, where n is the order of the character
+values_gens | integer[] | list of pairs [x, m] giving values on generators x of the unit group
 
 **Validation** for `char_dir_values`
 
