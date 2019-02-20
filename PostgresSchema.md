@@ -47,12 +47,12 @@ weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
-char_orbit_index | integer | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
+char_orbit_index | smallint | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
 char_orbit_label | text | string encoding the char_orbit i via 1->a, 2->b, ... 26->z, 27->ba,... (note the shift, a is 1 not 0).
 conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit_index | integer | char_orbit for the primitive version of this character
+prim_orbit_index | smallint | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
@@ -300,10 +300,10 @@ weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
-char_orbit_index | integer | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
+char_orbit_index | smallint | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
 char_orbit_label | text | string encoding i (with a=1).
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit_index | integer | char_orbit for the primitive version of this character
+prim_orbit_index | smallint | char_orbit for the primitive version of this character
 char_order | integer | the order of the character
 conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_degree | integer | Degree of the (cyclotomic) character field
@@ -431,7 +431,7 @@ Column | Type | Notes
 label | text | label (N.k.i.x) of the newform
 level | integer | level N
 weight | smallint | weight k
-char_orbit_index | integer | character orbit index i
+char_orbit_index | smallint | character orbit index i
 hecke_orbit | integer | Hecke orbit index x
 portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
@@ -448,6 +448,9 @@ Hecke eigenvalues
 Column | Type | Notes
 -------|------|------
 label | text | label of modular form (N.k.i.x)
+level | integer | level N
+weight | smallint | weight k
+char_orbit_index | smallint | character orbit index i
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 field_poly | numeric[] | list of integers of defining polynomial for Hecke field
 hecke_ring_rank | integer | rank of Hecke ring as a free Z-module (same as dimension of form, degree of field_poly)
