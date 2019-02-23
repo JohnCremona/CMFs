@@ -3,6 +3,13 @@ This code verifies that all classical modular forms in the LMFDB that appear to 
 rank 1 are actually provably of analytic rank 1 by verifying that the rank is positive. For self
 dual forms of rank 2, this also verifies that the analytic rank is equal to 2 (by parity).
 """
+
+import sys, os
+try:
+    # Make lmfdb available
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../lmfdb/"))
+except NameError:
+    pass
 from lmfdb import db
 from lmfdb.classical_modular_forms.web_newform import *
 from sage.databases.cremona import cremona_letter_code
@@ -147,3 +154,6 @@ def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False)
         for r in todo2:
             print "    %s (claimed analytic rank %d, proved nonzero)"%(r[u'lable'],r[u'analytic_rank'])
 
+
+if __name__ == '__main__':
+    rank_is_positive(sys.argv[1])
