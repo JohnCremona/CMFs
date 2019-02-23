@@ -158,4 +158,5 @@ def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False)
 
 
 if __name__ == '__main__':
+    print "running rank_is_positive(%r)" % sys.argv[1]
     rank_is_positive(sys.argv[1])
