@@ -1,13 +1,10 @@
 """
 This code verifies that all classical modular forms in the LMFDB that appear to be of analytic 
-rank 1 are actually provably of analytic rank 1. And additionally that all that appear to be of
-analytic rank are >= 1 are actually of analytic rank >=1.
-
-This uses the slow sage modular symbols code, but at the moment it runs just fine for all the needed
-modular forms.
+rank 1 are actually provably of analytic rank 1 by verifying that the rank is positive. For self
+dual forms of rank 2, this also verifies that the analytic rank is equal to 2 (by parity).
 """
+from lmfdb import db
 from lmfdb.classical_modular_forms.web_newform import *
-from lmfdb.db_backend import db
 from sage.databases.cremona import cremona_letter_code
 
 def dirichlet_character_from_lmfdb_mf(data):
@@ -26,16 +23,17 @@ def windingelement_hecke_cutter_projected(data, extra_cutter_bound = None):
     K = M.base_ring()
     R = PolynomialRing(K,"x")
     cutters = data[u'hecke_cutters']
+    cutters_maxp = cutters[-1][0] if cutters else 1
     weight = data[u'weight']
     assert weight%2==0
     cuts_eisenstein = False
     winding_element = M.modular_symbol([weight//2-1,0,oo]).element()
 
     if extra_cutter_bound:
-        N = data['level']
+        N = data[u'level']
         wn = WebNewform(data)
         qexp = qexp_as_nf_elt(wn,prec=extra_cutter_bound)
-        for p in prime_range(data['hecke_cutters'][-1][0]+1,extra_cutter_bound):
+        for p in prime_range(cutters_maxp,extra_cutter_bound):
             if N%p ==0:
                 continue
             cutters.append([p,qexp_as_nf_elt(wn)[p].minpoly().list()])
@@ -75,9 +73,10 @@ def qexp_as_nf_elt(self,prec = None):
 
     R = PolynomialRing(QQ,'x')
     K = QQ.extension(R(self.field_poly),'a')
-    basis_data = zip(self.hecke_ring_numerators,self.hecke_ring_denominators)
-    betas = [K([ZZ(c)/den for c in num]) for num, den in basis_data]
-    return [sum(c*beta for c, beta in zip(coeffs, betas)) for coeffs in qexp]
+    return [K(c) for c in qexp]
+
+def rank_is_positive(label):
+    return windingelement_hecke_cutter_projected(db.mf_newforms.lookup(label), extra_cutter_bound = 50) == 0
 
 def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False):
     todo = list(db.mf_newforms.search({u'analytic_rank':{'$gt':int(1)},u'analytic_rank_proved':False}))
