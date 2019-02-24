@@ -118,7 +118,7 @@ def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False)
                 print "verified that analytic rank %d of newform %s matches Mordell-Weil rank of elliptic curve %s"%(data[u'analytic_rank'],data[u'label'],ec_label)
             continue
         print "Checking newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
-        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
+        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 100)
         if w!=0:
             print "*** winding element is nonzero, positive analytic rank %d for newform %s appears to be wrong ***"%(data[u'rank'],data[u'label'])
             print data[u'label']
@@ -142,7 +142,7 @@ def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False)
         if skip_real_char and data[u"char_is_real"]:
             continue
         print "Checking non-self-dual newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
-        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
+        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 100)
         if w!=0:
             print "*** winding element is nonzero, positive analytic rank appears to be wrong ***"
             print data[u'label']
