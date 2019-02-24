@@ -4,13 +4,18 @@ rank 1 are actually provably of analytic rank 1 by verifying that the rank is po
 dual forms of rank 2, this also verifies that the analytic rank is equal to 2 (by parity).
 """
 
-import sys
-sys.path.append("/home/lmfdb/lmfdb")
-
+import sys, os
+try:
+    # Make lmfdb available
+    sys.path.append("/home/lmfdb/lmfdb") # for GCP
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../lmfdb/"))
+except NameError:
+    pass
 from lmfdb import db
 from lmfdb.classical_modular_forms.web_newform import WebNewform
 from sage.databases.cremona import cremona_letter_code
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
+
 from sage.all import ModularSymbols, QQ, ZZ, PolynomialRing, cputime, oo, prime_range, gcd
 
 def dirichlet_character_from_lmfdb_mf(data):
@@ -24,7 +29,7 @@ def modular_symbols_ambient_from_lmfdb_mf(data):
 def windingelement_hecke_cutter_projected(data, extra_cutter_bound = None):
     "Creates winding element projected to the subspace where the hecke cutter condition of the data is satisfied"
     M = modular_symbols_ambient_from_lmfdb_mf(data)
-    dim = M.dimension()
+    #dim = M.dimension()
     S = M.cuspidal_subspace()
     K = M.base_ring()
     R = PolynomialRing(K,"x")
@@ -38,7 +43,7 @@ def windingelement_hecke_cutter_projected(data, extra_cutter_bound = None):
     if extra_cutter_bound:
         N = data[u'level']
         wn = WebNewform(data)
-        qexp = qexp_as_nf_elt(wn,prec=extra_cutter_bound)
+        #qexp = qexp_as_nf_elt(wn,prec=extra_cutter_bound)
         for p in prime_range(cutters_maxp,extra_cutter_bound):
             if N%p ==0:
                 continue
