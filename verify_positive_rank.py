@@ -7,6 +7,7 @@ dual forms of rank 2, this also verifies that the analytic rank is equal to 2 (b
 import sys, os
 try:
     # Make lmfdb available
+    sys.path.append("/home/lmfdb/lmfdb") # for GCP
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../lmfdb/"))
 except NameError:
     pass
@@ -14,7 +15,8 @@ from lmfdb import db
 from lmfdb.classical_modular_forms.web_newform import WebNewform
 from sage.databases.cremona import cremona_letter_code
 from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
-from sage.all import ModularSymbols, QQ, PolynomialRing, cputime, oo, prime_range, gcd
+
+from sage.all import ModularSymbols, QQ, ZZ, PolynomialRing, cputime, oo, prime_range, gcd
 
 def dirichlet_character_from_lmfdb_mf(data):
     G = DirichletGroup_conrey(data[u'level'])
@@ -73,6 +75,7 @@ def polynomial_matrix_apply(f,M,v,rows=True):
 
 
 def qexp_as_nf_elt(self,prec = None):
+    assert self.has_exact_qexp
     if prec is None:
         qexp = self.qexp
     else:
@@ -82,10 +85,21 @@ def qexp_as_nf_elt(self,prec = None):
 
     R = PolynomialRing(QQ,'x')
     K = QQ.extension(R(self.field_poly),'a')
-    return [K(c) for c in qexp]
+    if self.hecke_ring_power_basis:
+        return [K(c) for c in qexp]
+    else:
+        # need to add code to hande cyclotomic_generators
+        assert self.hecke_ring_numerators,self.hecke_ring_denominators
+        basis_data = zip(self.hecke_ring_numerators,self.hecke_ring_denominators)
+        betas = [K([ZZ(c)/den for c in num]) for num, den in basis_data]
+        return [sum(c*beta for c, beta in zip(coeffs, betas)) for coeffs in qexp]
 
-def rank_is_positive(label):
-    return windingelement_hecke_cutter_projected(db.mf_newforms.lookup(label), extra_cutter_bound = 50) == 0
+def rank_is_positive(label,extra_cutter_bound=100):
+    data = db.mf_newforms.lookup(label)
+    if not data:
+        print "cmf label %s not found in LMFDB!"%(label)
+        assert data
+    return windingelement_hecke_cutter_projected(data,extra_cutter_bound) == 0
 
 def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False):
     todo = list(db.mf_newforms.search({u'analytic_rank':{'$gt':int(1)},u'analytic_rank_proved':False}))
@@ -109,7 +123,7 @@ def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False)
                 print "verified that analytic rank %d of newform %s matches Mordell-Weil rank of elliptic curve %s"%(data[u'analytic_rank'],data[u'label'],ec_label)
             continue
         print "Checking newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
-        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
+        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 100)
         if w!=0:
             print "*** winding element is nonzero, positive analytic rank %d for newform %s appears to be wrong ***"%(data[u'rank'],data[u'label'])
             print data[u'label']
@@ -133,7 +147,7 @@ def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False)
         if skip_real_char and data[u"char_is_real"]:
             continue
         print "Checking non-self-dual newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
-        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
+        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 100)
         if w!=0:
             print "*** winding element is nonzero, positive analytic rank appears to be wrong ***"
             print data[u'label']
@@ -156,7 +170,7 @@ def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False)
         for r in todo2:
             print "    %s (claimed analytic rank %d, proved nonzero)"%(r[u'lable'],r[u'analytic_rank'])
 
-
 if __name__ == '__main__':
     print "running rank_is_positive(%r)" % sys.argv[1]
-    rank_is_positive(sys.argv[1])
+    result = rank_is_positive(sys.argv[1])
+    print "result is", result
