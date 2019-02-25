@@ -1,10 +1,11 @@
 {\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf830
-{\fonttbl\f0\fswiss\fcharset0 ArialMT;\f1\fnil\fcharset0 LucidaGrande;}
+{\fonttbl\f0\fswiss\fcharset0 ArialMT;\f1\fnil\fcharset0 LucidaGrande;\f2\fmodern\fcharset0 CourierNewPSMT;
+}
 {\colortbl;\red255\green255\blue255;\red26\green26\blue26;\red255\green255\blue255;\red16\green60\blue192;
 \red26\green26\blue26;\red255\green255\blue255;}
 {\*\expandedcolortbl;;\cssrgb\c13333\c13333\c13333;\cssrgb\c100000\c100000\c100000;\cssrgb\c6667\c33333\c80000;
 \cssrgb\c13333\c13333\c13333;\cssrgb\c100000\c100000\c100000;}
-\margl1440\margr1440\vieww13400\viewh18700\viewkind0
+\margl1440\margr1440\vieww23020\viewh18700\viewkind0
 \deftab720
 \pard\pardeftab720\sl220\partightenfactor0
 
@@ -266,6 +267,13 @@ Downloads are now more broadly available, and you can download various things fr
 \cf2 \cb3 We have used classical modular forms as a testing ground for some new features which are applicable to other areas of the LMFDB.\
 \pard\pardeftab720\sl220\partightenfactor0
 \cf2 \cb1 \
+* There is now a verification module to add consistency checks for data in Postgres; you can access it by 
+\f2 from lmfdb.verify import db
+\f0  and then running either 
+\f2 db.verify
+\f0  or 
+\f2 db.tablename.verify
+\f0 .  See the Postgres_FAQ for more details.\
 \pard\pardeftab720\sl220\partightenfactor0
 \cf2 \cb3 *\'a0{\field{\*\fldinst{HYPERLINK "http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/dynamic_stats?cm=yes&col1=level&buckets1=1%2C2-10%2C11-100%2C101-1000%2C1001-2000%2C2001-4000%2C4001-6000%2C6001-8000%2C8001-10000&totals1=yes&proportions=recurse&col2=weight&buckets2=1%2C2%2C3%2C4%2C5-8%2C9-16%2C17-32%2C33-64%2C65-316&totals2=yes&search_type=DynStats"}}{\fldrslt \cf4 \ul \ulc4 \strokec4 Dynamic statistics}}\'a0described above.\
 * A variant on knowls used when displaying very long mathematical content.\'a0 You can see the results in the 
@@ -283,5 +291,9 @@ Downloads are now more broadly available, and you can download various things fr
 \b\fs28 \cf2 \cb3 Mongo to Postgres
 \b0\fs20 \
 \pard\pardeftab720\sl220\partightenfactor0
-\cf2 While working on classical modular forms, we've fixed various issues with the transition from Mongo to Postgres, and eliminated the last dependencies on Mongo.\
+\cf2 While working on classical modular forms, we've fixed various issues with the transition from Mongo to Postgres, and eliminated the last dependencies on Mongo.  One interface change to be aware of is that you now run 
+\f2 from lmfdb import db
+\f0  to access the database object, rather than from 
+\f2 lmfdb.db_backend import db
+\f0 .\
 }

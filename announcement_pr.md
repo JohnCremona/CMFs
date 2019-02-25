@@ -90,6 +90,7 @@ We give linear operators on *S<sub>k</sub>*(*N*, *χ*), expressed as polynomial 
 
 We have used classical modular forms as a testing ground for some new features which are applicable to other areas of the LMFDB.
 
+* There is now a verification module to add consistency checks for data in Postgres; you can access it by `from lmfdb.verify import db` and then running either `db.verify` or `db.tablename.verify`.  See the Postgres_FAQ for more details.
 * See the description of [dynamic statistics](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/dynamic_stats?cm=yes&col1=level&buckets1=1%2C2-10%2C11-100%2C101-1000%2C1001-2000%2C2001-4000%2C4001-6000%2C6001-8000%2C8001-10000&totals1=yes&proportions=recurse&col2=weight&buckets2=1%2C2%2C3%2C4%2C5-8%2C9-16%2C17-32%2C33-64%2C65-316&totals2=yes&search_type=DynStats) above.
 * A variant on knowls used when displaying very long mathematical content.  You can see the results in the *q*-expansions, basis descriptions, coefficient fields and Hecke kernels for some [high weight newforms](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/2/218/a/b/) and in various other places on classical modular form pages.
 * Some nice features for [2-d tables](http://modularform/GL2/Q/holomorphic/?level=1-150&search_type=Dimensions): sticky headers and rotated labels.  They're currently implemented in a somewhat ad-hoc manner, but can be abstracted if more widely used.
@@ -99,7 +100,7 @@ We have used classical modular forms as a testing ground for some new features w
 * There is more modularity in the templates, allowing the same search interface to be used on multiple pages
 
 # Mongo to Postgres
-While working on classical modular forms, we've fixed various issues with the transition from Mongo to Postgres, and eliminated the last dependencies on Mongo.
+While working on classical modular forms, we've fixed various issues with the transition from Mongo to Postgres, and eliminated the last dependencies on Mongo.  One interface change to be aware of is that you now run `from lmfdb import db` to access the database object, rather than `from lmfdb.db_backend import db`.
 
 One change particularly useful for those of you not at MIT is that we tried to reduce the number of queries to the server when possible.  In particular, at startup and when fetching knowl titles we switch to a single database query and cache the results for 10 seconds.
 
