@@ -1,5 +1,6 @@
 // Dependencies
-Attach("chars.m");
+// Attach("chars.m");
+// Attach("polredabs.m")
 
 intrinsic NFDiscriminant (f::RngUPolElt) -> RngIntElt
 { Given an irreducible polynomial in Q[x] returns the discriminant of the number field it defines. }
@@ -11,15 +12,44 @@ intrinsic NFDiscriminant (f::SeqEnum) -> RngIntElt
     return Integers()!Discriminant(RingOfIntegers(NumberField(PolynomialRing(Rationals())!f)));
 end intrinsic;
 
-intrinsic MinimalSubSibling (f::RngUPolElt:SplitDegree:=0) -> RngUPolElt
+intrinsic NFFactoredDiscriminant (f::RngUPolElt) -> RngIntElt, SeqEnum
+{ Given an irreducible polynomial in Q[x] returns the discriminant of the number field it defines along with its factorization. }
+    D := NFDiscriminant(f);
+    return D, Factorization(D);
+end intrinsic;
+
+intrinsic NFFactoredDiscriminant (f::SeqEnum) -> RngIntElt, SeqEnum
+{ Given an irreducible polynomial in Q[x] returns the discriminant of the number field it defines along with its factorization. }
+    D := NFDiscriminant(f);
+    return D, Factorization(D);
+end intrinsic;
+
+intrinsic SubDiscriminant(f::RngUPolElt,P::SeqEnum) -> RngIntElt
+{ Given polynomial f and list of primes P, returns product of p-parts of disc(f) lever p in P. }
+    if #P eq 0 then return 1; end if;
+    D := Integers()!Discriminant(f);
+    return &*[p^Valuation(D,p):p in P];
+end intrinsic;
+
+intrinsic MinimalSubSibling (f::RngUPolElt:SplitDegree:=0,Ramification:=[Integers()|],Detail:=0) -> RngUPolElt
 { Given an irreducible polynomial f in Q[x] returns a polynomial g with the same splitting field as f with both the degree of g and |disc(Q[x]/(g))| minimal among those g for which Q[x]/(g(x)) lies in Q[x]/(f(x)); this will be the minimal sibling if Q[x]/(f(x)) is Galois. }
-    if SplitDegree eq 0 then SplitDegree := #GaloisGroup(f); end if;
+    if SplitDegree eq 0 then
+        if Detail gt 0 then printf "Computing degree of splitting field of %o...",f; t:=Cputime(); end if;
+        SplitDegree := #GaloisGroup(f);
+        if Detail gt 0 then printf "took %.3os to determine splitting field degree %o\n.",Cputime()-t, SplitDegree; end if;
+    end if;
+    if Type(Ramification) eq RngIntElt then Ramification := PrimeDivisors(Ramification); end if;
+    disc := func<f|#Ramification gt 0 select SubDiscriminant(f,Ramification) else Abs(Discriminant(f))>;
     K := NumberField(f);
+    if Detail gt 0 then printf "Computing subfields of number field defined by %o...",f; t:=Cputime(); end if;
     L := Sort([DefiningPolynomial(L[1]):L in Subfields(K)],func<a,b|Degree(a)-Degree(b)>);
+    if Detail gt 0 then printf "took %.3os to construct %o subfields.\n",Cputime()-t, #L; end if;
     h := f; dh := Degree(h); Dh := 0;
     for g in L do
-        if Degree(g) eq dh and #GaloisGroup(g) eq SplitDegree then Dg := Abs(NFDiscriminant(g)); if Dg lt Dh then h := g; Dh := Dg; end if; end if;
-        if Degree(g) lt dh and #GaloisGroup(g) eq SplitDegree then h := g; dh := Degree(h); Dh := NFDiscriminant(h); end if;
+        if Detail gt 0 then printf "Checking subfield defined by %o...", g; t := Cputime(); end if;
+        if Degree(g) eq dh and #GaloisGroup(g) eq SplitDegree then Dg := disc(g); if Dh eq 0 or Dg lt Dh then h := g; Dh := Dg; end if; end if;
+        if Degree(g) lt dh and #GaloisGroup(g) eq SplitDegree then h := g; dh := Degree(h); Dh := disc(h); end if;
+        if Detail gt 0 then printf "took %.3os.\n",Cputime()-t; if h eq g then printf "Updated h, degree %o discriminant %o\n", Degree(h), Dh; end if; end if;
     end for;
     return h;
 end intrinsic;
@@ -50,8 +80,15 @@ intrinsic NFPolyIsIsomorphic (f::RngUPolElt,g::RngUPolElt) -> BoolElt
     if Degree(f) ne Degree(g) then return false; end if;
     if not (IsMonic(f) and IsMonic(g)) then return false; end if;
     if not (IsIrreducible(f) and IsIrreducible(g)) then return false; end if;
-    Rf<t>:=PolynomialRing(NumberField(f));
-    return #Roots(Rf!Coefficients(g)) gt 0; // if g has a root in Q[x]/(f) then Q[x]/(g) is contained in Q[x]/(f) and we have equality because degrees match
+    if f eq g or Evaluate(f,-Parent(f).1) eq g then return true; end if;
+    if Degree(f) le 24 then
+        Rf<t>:=PolynomialRing(NumberField(f));
+        return #Roots(Rf!Coefficients(g)) gt 0; // if g has a root in Q[x]/(f) then Q[x]/(g) is contained in Q[x]/(f) and we have equality because degrees match
+    else
+        Kf := NumberField(f);  Kg := NumberField(g);
+        if Signature(Kf) ne Signature(Kg) then return false; end if;
+        return IsIsomorphic(NumberField(f),NumberField(g));
+    end if;
 end intrinsic;
 
 intrinsic NFPolyIsIsomorphic (f::SeqEnum,g::SeqEnum) -> BoolElt
@@ -60,7 +97,7 @@ intrinsic NFPolyIsIsomorphic (f::SeqEnum,g::SeqEnum) -> BoolElt
     return NFPolyIsIsomorphic (R!f,R!g);
 end intrinsic;
 
-intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[],KBestIsPolredabs:=false,KDisc:=0,Verbose:=true,GeneratorBoundOnly:=false) -> 
+intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[],KBestIsPolredabs:=false,KDisc:=0,Verbose:=false,GeneratorBoundOnly:=false) -> 
     SeqEnum[RngInt], SeqEnum[SeqEnum[RngIntElt]], SeqEnum[SeqEnum[RngIntElt]],  RngIntElt, RngIntElt, BoolElt, RngIntElt
 { Given the coefficients of an irreducible monic polynomial f in Q[x] and a sequence of algebraic integers in the number field Q[x]/(f(x)) specified in terms of the power basis, returns:
     (1) list of integer coefficients of an optimized monic poly for K;
@@ -83,7 +120,7 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[
     Z := Matrix(Rationals(),ZSeq);
     KDisc := Integers()!KDisc;
 
-    // Make best field if polredabs poly not given
+    // Make best field if KBestPoly is not specified
     if #KBestPoly eq 0 then
         if Verbose then printf "Calling PolredbestifyWithRoot..."; t:=Cputime(); end if;
         f, root, KBestIsPolredabs := PolredbestifyWithRoot(R!KPoly);  // iotaK is the isomorphism from Kabs_notbest to Kabs
@@ -91,7 +128,7 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[
         KBest := NumberField(f);
         KBestPoly := Eltseq(f);
     else
-        if Verbose then printf "Using specified KBestPoly %o KPoly with IsPolredbas set to %o...", KBestPoly eq KPoly select "eq" else "ne", KBestIsPolredabs; t:=Cputime(); end if;
+        if Verbose then printf "Using specified KBestPoly %o KPoly with IsPolredabs set to %o...", KBestPoly eq KPoly select "eq" else "ne", KBestIsPolredabs; t:=Cputime(); end if;
         KBest := NumberField(R!KBestPoly);
         root := KPoly eq KBestPoly select KBest.1 else Roots(ChangeRing(R!KPoly,KBest))[1][1];
         if Verbose then printf "%.3o secs\n", Cputime()-t; end if;
@@ -105,13 +142,12 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[
     // assert &and[K!Eltseq(Z[m]) eq (iota^-1)(KBest!Eltseq(ZBest[m])) : m in [1..Nrows(Z)]];
 
     if Verbose then printf "Creating Hecke ring..."; t:=Cputime(); end if;
-    // make order over ZZ generated by T_n's, but try to use the minimal number of T_n's needed to speed things up, start with 5 nonzero a_n
     n := 0; cnt := 0; mcnt := 1;
     while cnt lt mcnt do
         while cnt lt mcnt and n lt #ZSeq do n+:=1; if not KBest!Eltseq(ZBest[n]) in Rationals() then cnt +:= 1; end if; end while;
         assert cnt eq mcnt;
         try
-            O := Order([KBest | KBest!Eltseq(ZBest[i]) : i in [1..n] | not KBest!Eltseq(ZBest[n]) in Rationals()]);
+            O := Order([KBest | KBest!Eltseq(ZBest[i]) : i in [1..n] | IsPrimePower(n) and not KBest!Eltseq(ZBest[n]) in Rationals()]);
             OBasis := Basis(O);
             ZO := ChangeRing(ZBest*Matrix([Eltseq(KBest!b) : b in OBasis])^-1,Integers());
             break;
@@ -120,7 +156,8 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[
         end try;
     end while;
     if Verbose then printf "%.3o secs, generated by %o non-rational a_n with n up to %o\n", Cputime()-t, mcnt, n; end if;
-if GeneratorBoundOnly then return n; end if;
+    if GeneratorBoundOnly then return n; end if;
+
     if KDisc eq 0 then
         Obest := O;
         discO := Discriminant(O);
@@ -152,7 +189,7 @@ if GeneratorBoundOnly then return n; end if;
     end if;
 
     if Verbose then printf "LLL-ing..."; t:=Cputime(); end if;
-    prec :=Max(1000,10*Round(Log(10,AbsoluteValue(KDisc eq 0 select Discriminant(KBest) else KDisc))));
+    prec := Max(1000,10*Round(Log(10,AbsoluteValue(KDisc eq 0 select Discriminant(KBest) else KDisc))));
     retry := 0;
     try 
     // Now compute a small basis.  Note that we need to be sure to use enough precision to guarantee we find a root of unity in Olat
@@ -200,24 +237,57 @@ if GeneratorBoundOnly then return n; end if;
         end if;
     end if;
 
-    // ensure the first basis vector is 1
-    Erows := [Eltseq(v) : v in Rows(E)];
-    ind := Index(Erows,Eltseq(O!1));
-    assert ind ne 0;
-    E := Matrix([Erows[ind]] cat Erows[1..(ind-1)] cat Erows[(ind+1)..#Erows]);
+    // Order rows by L1 norm then permute cols so diagonal entries are all nonzero (this should ensure the first basis element is 1)
+    Erows := Sort([Eltseq(v) : v in Rows(E)],func<a,b|&+[Abs(x):x in a] - &+[Abs(x):x in b]>);
+    assert #Erows eq deg;
+    E := Matrix(Integers(),Erows);
+    for i:= 1 to #Erows do z := [j:j in [i..deg]|E[i][j] ne 0]; if #z gt 0 then SwapColumns(~E,i,Min(z)); end if; end for;
+    assert Abs(E[1][1]) eq 1 and &and [E[1][j] eq 0 : j in [2..deg]];
+    if E[1][1] eq -1 then E := -E; end if;
   
     Einv := E^-1;
     OLLLBasis := [&+[ E[i][j]*OBasis[j] : j in [1..deg]] : i in [1..deg]];
     ZOE := ZO*Einv;
 
-    // check that seqs match
-    // assert &and[KBest!Eltseq(ZBest[m]) eq KBest!&+[ZOE[m][i]*OLLLBasis[i] : i in [1..deg]] : m in [1..Nrows(Z)]];
+    // sanity check: make sure seqs match (this can be commented out to improve performance)
+    assert &and[KBest!Eltseq(ZBest[m]) eq KBest!&+[ZOE[m][i]*OLLLBasis[i] : i in [1..deg]] : m in [1..Nrows(Z)]];
 
     OBestBasis := [Eltseq(KBest!c) : c in OLLLBasis];
     assert OBestBasis[1] eq Eltseq(KBest!1);
 
     if Verbose then printf "OptimizedOrderBasis total time %.3os\n", Cputime()-start; end if;
     return Eltseq(MinimalPolynomial(KBest.1)), OBestBasis, [[r[i]:i in [1..#OBestBasis]]:r in Rows(ZOE)], Integers()!Oindex, KDisc, KBestIsPolredabs, n; 
+end intrinsic;
+
+
+intrinsic CheckOrderGeneratorBound (KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum],n::RngIntElt) -> BoolElt
+{ Given the coefficients of an irreducible monic polynomial f in Q[x] and a sequence of algebraic integers a[] in K := Q[x]/(f(x)) specified in terms of the power basis, and an integer n,
+  returns 0 if n is the least integer for which Z[a1,...,an] is equal to the suborder of OK generated by a (requires a to generate an order, not a subring), -1 if n is to small, 1 if too large. }   
+    require KPoly[#KPoly] eq 1: "First argument must specify the coefficients of a monic polynomial";
+    deg := #KPoly-1;
+    require &and[#z eq deg:z in ZSeq]: "Second argument must be a sequence of sequences of less then length of first argument";
+    require n ge 1 and n le #ZSeq: "Third argument most be a postiive integer not exceeding the length of the sequence";
+
+    if deg eq 1 or n eq 1 then return deg eq 1 and n eq 1; end if;
+
+    R<x>:=PolynomialRing(Rationals());
+    K := NumberField(R!KPoly);
+    Z := Matrix(Rationals(),ZSeq);
+    try
+        O := Order([K|K!Eltseq(Z[i]) : i in [1..n] | not K!Eltseq(Z[n]) in Rationals()]);
+        OBasis := Basis(O);
+        ZO := ChangeRing(Z*Matrix([Eltseq(K!b) : b in OBasis])^-1,Integers());
+    catch e
+        return -1;
+    end try;
+    try
+        O := Order([K|K!Eltseq(Z[i]) : i in [1..n-1] | not K!Eltseq(Z[n]) in Rationals()]);
+        OBasis := Basis(O);
+        ZO := ChangeRing(Z*Matrix([Eltseq(K!b) : b in OBasis])^-1,Integers());
+    catch e
+        return 0;
+    end try;
+    return 1;
 end intrinsic;
 
 intrinsic NFSeq (KPoly::SeqEnum,  OBasis::SeqEnum[SeqEnum], Seq::SeqEnum[SeqEnum]) -> SeqEnum[FldNumElt]
@@ -237,8 +307,11 @@ end intrinsic;
 
 intrinsic NFSeqIsIsomorphic (KPoly1::SeqEnum,Seq1::SeqEnum[SeqEnum], KPoly2::SeqEnum, Seq2::SeqEnum[SeqEnum]) -> BoolElt, SeqEnum[FldRatElt]
 { Given two sequences that both contain a basis for the same number specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If returns the image of first power basis generator in the second. }
+    require #KPoly1 eq #KPoly2: "Field polynomials must have the same degree";
     require #Seq1 eq #Seq2: "Sequences must have the same length";
-    if not NFPolyIsIsomorphic(KPoly1,KPoly2) then return false,_; end if;
+    R<x> := PolynomialRing(Rationals());
+    require IsIrreducible(R!KPoly1) and IsIrreducible(R!KPoly2): "Field polynomials must be irreducible";
+    if not NFPolyIsIsomorphic(KPoly1,KPoly2) then return false,_; end if;  // this can be very slow
     if #Seq1 eq 0 then return true; end if;
     require {#a:a in Seq1} eq {#KPoly1-1} and {#a:a in Seq2} eq {#KPoly2-1}: "Specified sequences do not define Q-vectors of the correct dimension";
     if #KPoly1 eq 2 then if Seq1 eq Seq2 then return true,[1]; else return false,_; end if; end if;
@@ -252,7 +325,6 @@ intrinsic NFSeqIsIsomorphic (KPoly1::SeqEnum,Seq1::SeqEnum[SeqEnum], KPoly2::Seq
             if s eq d then break; end if;
         end if;
     end for;
-    R<x> := PolynomialRing(Rationals());
     if s lt d then error "Specified sequence does not contain a Q-basis for the specified number field"; end if;
     B1 := Matrix(Rationals(),[Seq1[i]:i in I]);
     B2 := Matrix(Rationals(),[Seq2[i]:i in I]);
@@ -263,16 +335,17 @@ intrinsic NFSeqIsIsomorphic (KPoly1::SeqEnum,Seq1::SeqEnum[SeqEnum], KPoly2::Seq
     K1 := NumberField(R!KPoly1);  K2 := NumberField(R!KPoly2);
     pi := hom<K1->K2|K2!Eltseq(v)>;
     TT := Matrix(Rationals(),[Eltseq(pi(K1.1^n)): n in [0..d-1]]);
-    if T eq TT then return true, Eltseq(v); else return false,_; end if;
+    if T ne TT then return false,_; end if;
+    return true, Eltseq(v);
 end intrinsic;
 
 intrinsic NFSeqIsIsomorphic (KPoly1::RngUPolElt,Seq1::SeqEnum[SeqEnum], KPoly2::RngUPolElt,Seq2::SeqEnum[SeqEnum]) -> BoolElt, SeqEnum[FldRatElt]
-{ Given two sequences that both contain a basis for the same number field specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If returns the image of first power basis generator in the second. }
+{ Given two sequences that both contain a basis for the same number field specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If so, returns the image of first power basis generator in the second. }
     return NFSeqIsIsomorphic(Eltseq(KPoly1),Seq1,Eltseq(KPoly2),Seq2);
 end intrinsic;        
 
 intrinsic NFSeqIsIsomorphic (Seq1::SeqEnum,Seq2::SeqEnum) -> BoolElt
-{ Given two sequences that both contain a basis for the same number field specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If returns the image of first power basis generator in the second. }
+{ Given two sequences that both contain a basis for the same number field specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other. }
     require #Seq1 eq #Seq2: "Sequences must have the same length";
     if #Seq1 eq 0 then return true; end if;
     K1 := Universe(Seq1); if Degree(K1) gt 1 then F, pi := sub<K1|Seq1>; if F ne K1 then Seq1 := [Inverse(pi)(a):a in Seq1]; K1 := F; end if; end if;

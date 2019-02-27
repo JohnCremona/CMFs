@@ -1,13 +1,22 @@
 """
 This code verifies that all classical modular forms in the LMFDB that appear to be of analytic 
-rank 1 are actually provably of analytic rank 1. And additionally that all that appear to be of
-analytic rank are >= 1 are actually of analytic rank >=1.
-
-This uses the slow sage modular symbols code, but at the moment it runs just fine for all the needed
-modular forms.
+rank 1 are actually provably of analytic rank 1 by verifying that the rank is positive. For self
+dual forms of rank 2, this also verifies that the analytic rank is equal to 2 (by parity).
 """
-from lmfdb.classical_modular_forms.web_newform import *
-from lmfdb.db_backend import db
+
+import sys, os
+try:
+    # Make lmfdb available
+    sys.path.append("/home/lmfdb/lmfdb") # for GCP
+    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../lmfdb/"))
+except NameError:
+    pass
+from lmfdb import db
+from lmfdb.classical_modular_forms.web_newform import WebNewform
+from sage.databases.cremona import cremona_letter_code
+from dirichlet_conrey import DirichletGroup_conrey, DirichletCharacter_conrey
+
+from sage.all import ModularSymbols, QQ, ZZ, PolynomialRing, cputime, oo, prime_range, gcd
 
 def dirichlet_character_from_lmfdb_mf(data):
     G = DirichletGroup_conrey(data[u'level'])
@@ -20,29 +29,28 @@ def modular_symbols_ambient_from_lmfdb_mf(data):
 def windingelement_hecke_cutter_projected(data, extra_cutter_bound = None):
     "Creates winding element projected to the subspace where the hecke cutter condition of the data is satisfied"
     M = modular_symbols_ambient_from_lmfdb_mf(data)
-    dim = M.dimension()
+    #dim = M.dimension()
     S = M.cuspidal_subspace()
     K = M.base_ring()
     R = PolynomialRing(K,"x")
     cutters = data[u'hecke_cutters']
+    cutters_maxp = cutters[-1][0] if cutters else 1
     weight = data[u'weight']
     assert weight%2==0
     cuts_eisenstein = False
     winding_element = M.modular_symbol([weight//2-1,0,oo]).element()
 
     if extra_cutter_bound:
-        N = data['level']
+        N = data[u'level']
         wn = WebNewform(data)
-        qexp = qexp_as_nf_elt(wn,prec=extra_cutter_bound)
-        for p in prime_range(data['hecke_cutters'][-1][0]+1,extra_cutter_bound):
+        #qexp = qexp_as_nf_elt(wn,prec=extra_cutter_bound)
+        for p in prime_range(cutters_maxp,extra_cutter_bound):
             if N%p ==0:
                 continue
             cutters.append([p,qexp_as_nf_elt(wn)[p].minpoly().list()])
 
-
     for c in cutters:
         p = c[0]
-        print p
         fM = M.hecke_polynomial(p)
         fS = S.hecke_polynomial(p)
         cutter = gcd(R(c[1]),fS)
@@ -67,6 +75,7 @@ def polynomial_matrix_apply(f,M,v,rows=True):
 
 
 def qexp_as_nf_elt(self,prec = None):
+    assert self.has_exact_qexp
     if prec is None:
         qexp = self.qexp
     else:
@@ -76,34 +85,92 @@ def qexp_as_nf_elt(self,prec = None):
 
     R = PolynomialRing(QQ,'x')
     K = QQ.extension(R(self.field_poly),'a')
-    basis_data = zip(self.hecke_ring_numerators,self.hecke_ring_denominators)
-    betas = [K([ZZ(c)/den for c in num]) for num, den in basis_data]
-    return [sum(c*beta for c, beta in zip(coeffs, betas)) for coeffs in qexp]
+    if self.hecke_ring_power_basis:
+        return [K(c) for c in qexp]
+    else:
+        # need to add code to hande cyclotomic_generators
+        assert self.hecke_ring_numerators,self.hecke_ring_denominators
+        basis_data = zip(self.hecke_ring_numerators,self.hecke_ring_denominators)
+        betas = [K([ZZ(c)/den for c in num]) for num, den in basis_data]
+        return [sum(c*beta for c, beta in zip(coeffs, betas)) for coeffs in qexp]
 
+def rank_is_positive(label,extra_cutter_bound=100):
+    data = db.mf_newforms.lookup(label)
+    if not data:
+        print "cmf label %s not found in LMFDB!"%(label)
+        assert data
+    return windingelement_hecke_cutter_projected(data,extra_cutter_bound) == 0
 
-if __name__ == "__main__":
+def check_unproven_ranks(jobs=1,jobid=0,use_weak_bsd=False,skip_real_char=False):
     todo = list(db.mf_newforms.search({u'analytic_rank':{'$gt':int(1)},u'analytic_rank_proved':False}))
-    todo2 = []
-    for data in todo:
-        print data[u'label']
-        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
+    todo2 = []; todo3 = []; todo4 = []
+    cnt = 0; vcnt = 0
+    for i in range(len(todo)):
+        if i%jobs != jobid:
+            continue
+        start = cputime()
+        data = todo[i]
+        if skip_real_char and data[u"char_is_real"]:
+            continue
+        if use_weak_bsd and data[u'weight'] == 2 and data[u'dim'] == 1 and data[u'char_orbit_index'] == 1:
+            ec_label = "%d.%s1"%(data[u'level'],cremona_letter_code(data[u'hecke_orbit']-1))
+            r = db.ec_curves.lookup(ec_label)[u'rank']
+            if data[u'analytic_rank'] != r:
+                print "*** winding element is nonzero, positive analytic rank %d for newform %s appears to be wrong ***"%(data[u'rank'],data[u'label'])
+                print data[u'label']
+                todo2.append(data[u'label'])
+            else:
+                print "verified that analytic rank %d of newform %s matches Mordell-Weil rank of elliptic curve %s"%(data[u'analytic_rank'],data[u'label'],ec_label)
+            continue
+        print "Checking newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
+        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 100)
         if w!=0:
-            print "warining: winding element is nonzero"
+            print "*** winding element is nonzero, positive analytic rank %d for newform %s appears to be wrong ***"%(data[u'rank'],data[u'label'])
             print data[u'label']
             todo2.append(data[u'label'])
+        else:
+            if data[u'analytic_rank'] == 2 and data["is_self_dual"]:
+                print "Verified analytic rank is 2."
+                vcnt += 1
+            else:
+                print "Verified analytic rank > 0"
+                todo3.append(data[u'label'])
+        print "Processed newform %s in %.3f CPU seconds"%(data[u'label'],cputime()-start)
+        cnt += 1
 
-    assert len(todo2)==0
-
-    todo = list(db.mf_newforms.search({u'analytic_rank':int(1),u'is_self_dual':{'$ne':int(1)},u'analytic_rank_proved':False}))
-    todo2 = []
-    for data in todo:
-        print data[u'label']
-        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 50)
+    todo = list(db.mf_newforms.search({u'analytic_rank':int(1),u'is_self_dual':False,u'analytic_rank_proved':False}))
+    for i in range(len(todo)):
+        if i%jobs != jobid:
+            continue
+        start = cputime()
+        data = todo[i]
+        if skip_real_char and data[u"char_is_real"]:
+            continue
+        print "Checking non-self-dual newform %s of dimension %d with analytic rank <= %d..."%(data[u'label'],data[u'dim'],data[u'analytic_rank'])
+        w = windingelement_hecke_cutter_projected(data, extra_cutter_bound = 100)
         if w!=0:
-            print "warining: winding element is nonzero"
+            print "*** winding element is nonzero, positive analytic rank appears to be wrong ***"
             print data[u'label']
-            todo2.append(data[u'label'])
+            todo4.append(data[u'label'])
+        else:
+            print "Verified analytic rank is 1."
+            vcnt += 1
+        print "Processed newform %s in %.3f CPU seconds"%(data[u'label'],cputime()-start)
+        cnt += 1
 
-    assert len(todo2)==0
+    print "Checked analytic ranks of %d newforms, of which %d were verified"%(cnt,vcnt)
+    if len(todo2) > 0 or len(todo4) > 0:
+        print "The following newforms appear to have the wrong analytic rank:"
+        for r in todo2:
+            print "    %s (claimed analytic rank %d)"%(r[u'lable'],r[u'analytic_rank'])
+        for r in todo4:
+            print "    %s (claimed analytic rank %d)"%(r[u'lable'],r[u'analytic_rank'])
+    if len(todo3) > 0:
+        print "The following newforms have positive but unverified analytic ranks:"
+        for r in todo2:
+            print "    %s (claimed analytic rank %d, proved nonzero)"%(r[u'lable'],r[u'analytic_rank'])
 
-
+if __name__ == '__main__':
+    print "running rank_is_positive(%r)" % sys.argv[1]
+    result = rank_is_positive(sys.argv[1])
+    print "result is", result

@@ -47,12 +47,12 @@ weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
-char_orbit_index | integer | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
+char_orbit_index | smallint | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
 char_orbit_label | text | string encoding the char_orbit i via 1->a, 2->b, ... 26->z, 27->ba,... (note the shift, a is 1 not 0).
 conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit_index | integer | char_orbit for the primitive version of this character
+prim_orbit_index | smallint | char_orbit for the primitive version of this character
 char_degree | integer | the degree of the (cyclotomic) character field
 char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
@@ -192,7 +192,7 @@ Column | Type | Notes
 label | text | label (N.k.i) of the newspace
 level | integer | level N
 weight | smallint | weight k
-char_orbit_index | integer | index of the character orbit `[\chi]` n the sorted list of character orbits of modulus N
+char_orbit_index | smallint | index of the character orbit `[\chi]` n the sorted list of character orbits of modulus N
 portrait | text | base-64 encoded image of the newspace (plot created by portrait.sage) to display in the properties box
 
 **Validation** for `mf_newspace_portraits`:
@@ -232,12 +232,12 @@ Column | Type | Notes
 label | text | label N.k.i for the cuspidal space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
 level | integer | level N of the cuspidal space `S_k(N, [\chi])`
 weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
-char_orbit_index | integer | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
+char_orbit_index | smallint | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
 char_orbit_label | text | base-26 encoding (1='a') of index i of the character orbit that appears in label
 conrey_indexes | integer[] | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
-sub_char_orbit_index | integer | index j of `[\psi]` in sorted list of character orbits of modulus M
+sub_char_orbit_index | smallint | index j of `[\psi]` in sorted list of character orbits of modulus M
 sub_char_orbit_label | text | base-26 encoding (1='a') of index j of the subspace character orbit that appears in sub_label
 sub_conrey_indexes | integer[] | list of Conrey indexes n of the characters M.n in the Galois orrbit indexed by j.
 sub_dim | integer | the dimension of `S_k^{new}(M, [\psi])`
@@ -300,10 +300,10 @@ weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
-char_orbit_index | integer | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
+char_orbit_index | smallint | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
 char_orbit_label | text | string encoding i (with a=1).
 char_conductor | integer | Conductor of the Dirichlet character
-prim_orbit_index | integer | char_orbit for the primitive version of this character
+prim_orbit_index | smallint | char_orbit for the primitive version of this character
 char_order | integer | the order of the character
 conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_degree | integer | Degree of the (cyclotomic) character field
@@ -342,7 +342,7 @@ cm_discs | integer[] | list of CM discriminants (the negative discriminants list
 rm_discs | integer[] | list of RM discriminants (the positive discriminants listed in self_twist_discs)
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
 has_non_self_twist | smallint | 1 if form admits a non-trivial inner twist, 0 if it does not, -1 if unknown
-inner_twists | jsonb | List of septuples <b,m,M,o,parity,order,disc> where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
+inner_twists | integer[] | List of septuples of integers [b,m,M,o,parity,order,disc] where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
 inner_twist_count | integer | number of inner twists (includes proved and unproved), -1 if inner twists have not been computed (this applies to all forms of dimension > 20 and weight > 1)
 atkin_lehner_eigenvals | integer[] | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
 atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
@@ -430,7 +430,7 @@ Column | Type | Notes
 label | text | label (N.k.i.x) of the newform
 level | integer | level N
 weight | smallint | weight k
-char_orbit_index | integer | character orbit index i
+char_orbit_index | smallint | character orbit index i
 hecke_orbit | integer | Hecke orbit index x
 portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
@@ -447,6 +447,9 @@ Hecke eigenvalues
 Column | Type | Notes
 -------|------|------
 label | text | label of modular form (N.k.i.x)
+level | integer | level N
+weight | smallint | weight k
+char_orbit_index | smallint | character orbit index i
 hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
 field_poly | numeric[] | list of integers of defining polynomial for Hecke field
 hecke_ring_rank | integer | rank of Hecke ring as a free Z-module (same as dimension of form, degree of field_poly)
@@ -575,15 +578,15 @@ Column | Type | Notes
 -------|------|------
 orbit_label | text | (N.i), where N is the modulus and i is the orbit index
 orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
-modulus | smallint
-conductor | smallint
+modulus | integer
+conductor | integer
 prim_orbit_index | smallint | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
-order | smallint
+order | integer
 parity | smallint
 galois_orbit | integer[] | sorted list of conrey_labels in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
-char_degree | smallint | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
+char_degree | integer | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
 
 **Validation** for `char_dir_orbits`:
 
@@ -613,7 +616,9 @@ modulus | smallint | N
 conrey_index | smallint | n
 orbit_label | text | N.i where N is the modulus and i is the orbit_index
 prim_label | text | the label of primitive character inducing this one
-order | smallint
+modulus | integer
+conrey_index | integer
+order | integer
 values | integers[] | list of pairs [x,m] giving first twelve values e(m/n) on x=-1,1, then the next ten integers relatively prime to the modulus, where n is the order of the character
 values_gens | integers[] | list of pairs [x, m] giving values on generators x of the unit group
 
