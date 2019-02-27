@@ -14,20 +14,18 @@ Rather than choosing *N* and *k* in boxes, we organize by *Nk²*, which is asymp
 These boxes were chosen to include everything currently in the LMFDB and other existing tables of modular forms.
 
 ### Counts
-* 331,961 nonzero newspaces *S<sub>k</sub>(N, χ)* with trace data (52,531 nonzero)
-* 245,805 Galois orbits of newforms (48,382 with rational coefficients, 19,306 of weight 1)
+* 338,551 nonzero newspaces *S<sub>k</sub>(N, χ)* with trace data (52,531 nonzero)
+* 281,219 Galois orbits of newforms (48,688 with rational coefficients, 19,306 of weight 1)
 * 14,398,359 complex embedded newforms
 
 ### Database size
-* 219 GiB of embedded modular forms (*q*-expansions in ℂ)
-* 69 GiB of trace data (traces of *q*-expansions down to ℚ)
-* 42 GiB of portraits (complex graphs of *q*-expansions)
+* 325 GiB of embedded modular forms (*q*-expansions in ℂ)
+* 123 GiB of trace data (traces of *q*-expansions down to ℚ)
+* 45 GiB of portraits (complex graphs of *q*-expansions)
 * 2 GiB of exact *q*-expansion data (when dimension is at most 20)
-* 1.2 GiB of other newspace data
-* 0.7 GiB of other newform data
 
 ### Computation time
-We spent 20-30 CPU years this fall spent computing the above data.
+We spent 20-30 CPU years this fall and winter computing the above data.
 
 ### Representation
 Exact coefficients are stored using either a [sparse cyclotomic representation](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/1620/1/bp/a/) or in terms of an [LLL-reduced basis for the coefficient ring](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/6877/2/a/s/).  We have exact coefficients in weight 1 or if the dimension is at most 20.
@@ -35,7 +33,7 @@ Exact coefficients are stored using either a [sparse cyclotomic representation]
 We compute complex *q*-expansions for all embeddings into the complex numbers, even when the dimension is [large](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/983/2/c/a/).
 
 ### [Reliability and Rigor](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/Reliability)
-Many computations were duplicated in Magma and Pari, providing a check for their correctness.  We also compared with complex analytic data independently computed by Jon Bober, with William Stein's modular form tables and Alan Lauder and Kevin Buzzard's weight 1 tables.
+Many computations were duplicated in Magma and Pari, providing a check for their correctness.  We also compared with complex analytic data independently computed by Jon Bober, with William Stein's modular form tables and Alan Lauder and Kevin Buzzard's weight 1 tables.  Finally, we have written a verification module for the LMFDB and run various tests on the data.
 
 We have rigorously verified self twists and projective image types in all cases, and inner twists and analytic ranks in most cases.  Any values that are not rigorously computed are explicitly identified.
 
@@ -73,6 +71,11 @@ We give linear operators on *S<sub>k</sub>*(*N*, *χ*), expressed as polynomial 
 * We have portraits for both newforms and newspaces, giving plots of the trace form on the Poincare disc.
 * change in label scheme but we support [old labels](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/10/8/1/a)
 
+### Embedded form homepages
+* There are now [homepages](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/983/2/c/a/472/35/) for newforms equipped with an embedding of the coefficient field into the complex numbers.  They are linked to from the tables of embeddings on each newform page.
+* q-expansions are shown with complex coefficients, we include links to the dual form (complex conjugate).
+* Coefficients (in both arithmetic and analytic normalizations) and Satake angles are viewable up through n=1000, with more sometimes available for download in high level.
+
 ### Space homepages
 * We give decompositions of[ *S<sub>k</sub>*<sup>new</sup>(*N*, *χ*) into newforms](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/9075/2/a/), of [*S<sub>k</sub>*<sup>new</sup>(Γ₁(*N*)) into newspaces](http://cmfs.lmfdb.xyz/ModularForm/GL2/Q/holomorphic/9075/2/) and *S<sub>k</sub>*<sup>old</sup>(*N*, *χ*) and *S<sub>k</sub>*<sup>old</sup>(Γ₁(*N*)) into lower level pieces.
 * Give dimensions for new and old, Eisenstein and cuspidal subspaces
@@ -81,7 +84,7 @@ We give linear operators on *S<sub>k</sub>*(*N*, *χ*), expressed as polynomial 
 
 ### L-functions
 * both arithmetic and analytic normalizations are available
-* analytic ranks
+* We have computed analytic ranks for all of the new L-functions, and proved most of them.
 * We compute [Euler factors](http://cmfs.lmfdb.xyz/L/ModularForm/GL2/Q/holomorphic/5/27/c/a/) at all primes up to 100
 * zeros on critical line have more precision and are stored in the database rather than computed on the fly, making it easier to find connections to other objects in the LMFDB
 * change in label scheme but we support old labels
