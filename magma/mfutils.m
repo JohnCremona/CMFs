@@ -1,5 +1,4 @@
-// defined in utils.m
-forward prod, Base26Encode, Base26Decode;
+// Attach("utils.m");
 
 intrinsic NewformLabel(N::RngIntElt,k::RngIntElt,o::RngIntElt,n::RngIntElt) -> MonStgElt
 { Given positive integers N,k,o,n specifying the level, weight, char orbit, Hecke orbit of newform, return the label of the newform. }

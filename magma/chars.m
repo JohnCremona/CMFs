@@ -25,6 +25,30 @@ intrinsic UnitGenerators (N::RngIntElt) -> SeqEnum[RngIntElt]
     return UnitGenerators(DirichletGroup(N));
 end intrinsic;
 
+intrinsic UnitGeneratorsLogMap (N::RngIntElt, u::SeqEnum[RngIntElt]) -> UserProgram
+{ Given a list of generators for (Z/NZ)* returns a function that maps integers coprime to N to a list of exponents writing the input as a power product over the given generators. }
+    // We use an O(#(Z/NZ)*) algorithm to compute a discrete log lookup table; for small N this is faster than being clever (but for large N it won't be)
+    // Impelemnts Algorithm 2.2 in https://arxiv.org/abs/0903.2785, but we don't bother saving power relations
+    if N le 2 then return func<x|[]>; end if;
+    ZNZ := Integers(N);  r := [Integers()|];
+    n := #u;
+    T := [ZNZ!1];
+    g := ZNZ!u[1]; h := g; while h ne 1 do Append(~T,h); h *:= g; end while;
+    r := [#T];
+    for i:=2 to n do
+        X := Set(T); S := T; j := 1;
+        g := u[i];  h := g; while not h in X do S cat:= [h*t:t in T]; h *:= g; j +:= 1; end while;
+        Append(~r,j);  T := S;
+    end for;
+    ZZ := Integers();
+    // Stupid apporach to computing a mapg that given n in [1..N] returns the number of positive integers < n coprime to N
+    // (doesn't really matter since we are already spending linear time, but wastes memory and could be eliminated).
+    A := [ZZ|0:i in [1..N]];
+    for i:=1 to #T do A[ZZ!T[i]] := i-1; end for;
+    rr := [ZZ|1] cat [&*r[1..i-1]:i in [2..n]];
+    return func<x|[(A[ZZ!x] div rr[i]) mod r[i] : i in [1..n]]>;
+end intrinsic;
+
 intrinsic NumberOfCharacterOrbits (N::RngIntElt) -> RngIntElt
 { The number of Galois orbits of Dirichlet characters of modulus N. }
     require N gt 0: "Modulus N must be a positive integer";
@@ -32,6 +56,15 @@ intrinsic NumberOfCharacterOrbits (N::RngIntElt) -> RngIntElt
     G := MultiplicativeGroup(Integers(N));
     X := {*Order(g):g in G*};  S := Set(X);
     return Integers()! &+[Multiplicity(X,n)/EulerPhi(n):n in S];
+end intrinsic;
+
+intrinsic NumberOfTrivialCharacterOrbits (N::RngIntElt) -> RngIntElt
+{ The number of trivial Galois orbits of Dirichlet characters of modulus N (number of characters of degree 1). }
+    require N gt 0: "Modulus N must be a positive integer";
+    w := #PrimeDivisors(N);
+    if Valuation(N,2) eq 1 then w -:= 1; end if;
+    if Valuation(N,2) gt 2 then w +:= 1; end if;
+    return 2^w;
 end intrinsic;
 
 intrinsic IsConjugate (chi1::GrpDrchElt,chi2::GrpDrchElt) -> Boolean
@@ -336,7 +369,7 @@ intrinsic ConreyConjugates (chi::GrpDrchElt, xi::Map: ConreyLabelList:=ConreyLab
     return [T[[A[i][j] : i in [1..#S]]] : j in [1..#A[1]]];
 end intrinsic;
 
-intrinsic CharacterAngles (N::RngIntElt, u::SeqEnum[RngIntElt], v::SeqEnum, U::SeqEnum[RngIntElt]) -> SeqEnum[FldRatElt]
+intrinsic OldCharacterAngles (N::RngIntElt, u::SeqEnum[RngIntElt], v::SeqEnum, U::SeqEnum[RngIntElt]) -> SeqEnum[FldRatElt]
 { Given arbitrary generators u for (Z/NZ)* and a corresponding list of angles v defining a character of modulus N, compute a list of angles giving values of character on the integers in S.  Does not verify the validity of v! }
     // We use an O(#(Z/NZ)*) algorithm to compute a discrete log lookup table; for small N this is faster than being clever (but for large N it won't be)
     // Impelemnts Algorithm 2.2 in https://arxiv.org/abs/0903.2785, but we don't bother saving power relations
@@ -362,6 +395,19 @@ intrinsic CharacterAngles (N::RngIntElt, u::SeqEnum[RngIntElt], v::SeqEnum, U::S
     rr := [ZZ|1] cat [&*r[1..i-1]:i in [2..n]];
     function evec (x) return [(x div rr[i]) mod r[i] : i in [1..n]]; end function;
     V := [normalize_angle(&+[e[i]*v[i]:i in [1..n]]) where e:=evec(A[x]): x in U];
+    return V;
+end intrinsic;
+
+intrinsic CharacterAngles (N::RngIntElt, u::SeqEnum[RngIntElt], v::SeqEnum, U::SeqEnum[RngIntElt]) -> SeqEnum[FldRatElt]
+{ Given arbitrary generators u for (Z/NZ)* and a corresponding list of angles v defining a character of modulus N, compute a list of angles giving values of character on the integers in S.  Does not verify the validity of v! }
+    require N ge 1: "Modulus N must be a positive integer";
+    require #u eq #v: "You must specify an angle for each generator";
+    require #u gt 0 and &and[(n mod N) ne 1 and GCD(N,n) eq 1:n in u]: "Generators must be coprime to N and not 1 modulo N.";
+    v := [normalize_angle(x):x in v];
+    if U eq u then return v; end if;  // Don't waste time on the (easy) expected case
+    if N le 2 then return [Rationals()|1:n in U]; end if;
+    evec := UnitGeneratorsLogMap(N,u);
+    V := [normalize_angle(&+[e[i]*v[i]:i in [1..#u]]) where e:=evec(x): x in U];
     return V;
 end intrinsic;
 
@@ -410,7 +456,11 @@ intrinsic CharacterFromValues (N::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum:Orb
     if N le 2 then psi:=map< Integers()->K | x :-> GCD(N,x) eq 1 select 1 else 0 >; if Orbit then return psi,1; else return psi; end if; end if;
     A,pi := UnitGroup(Integers(N)); ipi:=Inverse(pi);
     u0 := [pi(A.i):i in [1..NumberOfGenerators(A)]];
-    if u ne u0 then error Sprintf("Specified generators %o do not match standard generators %o, conversion not implmented.", u, u0); end if;
+    if u ne u0 then
+        f := UnitGeneratorsLogMap(N,u);
+        v0 := [prod([v[i]^e[i]:i in [1..#u]]) where e:=f(g):g in u0];
+        u := u0; v := v0;
+    end if;
     psi := map< Integers()->K | x :-> GCD(N,x) eq 1 select &*[v[i]^(Eltseq(ipi(x))[i]):i in [1..#v]] else K!0>;
     if not Orbit then return psi; end if;
     // if Orbit flag is set, determine the character orbit by comparing traces (note that we need tot take traces from the subfield of K generated by the image of psi)
