@@ -68,7 +68,7 @@ eis_new_dim | integer | Q-dimension of the new eisenstein subspace of `M_k(N, \c
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(N, \chi)`
 mf_dim | integer | Q-dimension of `M_k(N, \chi)`
 mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
-AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d.n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
+AL_dims | jsonb | For spaces with trivial character, this is a lists of triples [AL_eigs,d,n], where AL_eigs is a list of pairs [p,ev] where p is a prime dividing N and ev=+/-1 is an Atkin-Lehner eigevnalue at p, while d and n record the total dimension and number of newforms that lie in the intersection of the corresponding eigenspaces.
 plus_dim | integer | For spaces with tirival character, dimension of the subspace with Fricke-eigevalue +1
 trace_display | numeric[] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7), only set when dim > 0 and not yet computed in every case.
 traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms in the space) for n from 1 to 1000, only set when dim > 0 and not yet computed in every case.
@@ -167,7 +167,7 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
   * check_box_count : there should be a row present for every pair (N,k) satisfying a box constraint on N,k,Nk2
   * check_box_traces : check that traces is set if space is in a box with traces set and no dimension constraint
   * check_dim_wt1 : for k = 1 check that dim = dihedral_dim + a4_dim + a5_dim + s4_dim
-  * check_traces_display : check that trace_display is present whenever traces is
+  * check_trace_display : check that trace_display is present whenever traces is
   * check_traces_len : if present, check that traces has length at least 1000
   * check_mf_dim : check that eis_dim + cusp_dim = mf_dim
   * check_dim : check that eis_new_dim + mf_new_dim = dim
@@ -382,7 +382,7 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
   * check_trace_display : check that trace_display is present and has length at least 4
   * check_number_field : if nf_label is present, check that there is a record in nf_fields and that mf_newforms field_poly matches nf_fields coeffs, and check that is_self_dual agrees with signature, and field_poly_disc agrees with disc_sign * disc_abs in nf_fields
   * check_field_poly_disc : if hecke_ring_index_proved is set, verify that field_poly_disc is set
-  * FIXME check_analytic_rank_proved : check that analytic_rank_proved is set (log warning if not)
+  * FIXME check_analytic_rank_proved : check that analytic_rank_proved is True  when analytic_rank is set (log warning if not)
   * check_self_twist_type : check that self_twist_type is in {0,1,2,3} and matches is_cm and is_rm
   * check_cmrm_discs : check that self_twist_discs is consistent with self_twist_type (e.g. if self_twist_type is 3, there should be 3 self_twist_discs, one pos, two neg)
   * check_self_twist_discs : check that cm_discs and rm_discs have correct signs and that their union is self_twist_discs
@@ -411,17 +411,16 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
     * TODO : for each discriminant D in self_twist_discs, check that for each prime p not dividing the level for which (D/p) = -1, check that traces[p] = 0 (we could also check values in mf_hecke_nf and/or mf_hecke_cc, but this would be far more costly)
     * check_related_objects : check that URLS in related_objects are valid and identify objects present in the LMFDB
     * check_related_objects : if related_objects contains an Artin rep, check that k=1 and that conductor of artin rep matches level N
-    * TODO : if k=2, char_orbit_index=1 and dim=1 check that elliptic curve isogeny class of conductor N is present in related_objects
+    * TODO : if k=2, char_orbit_index=1 and dim=1 check that elliptic curve isogeny class of conductor N is present in related_objects (add this one to the above)
   * extra slow
     * TODO : if nf_label is not present and field_poly is present, check whether is_self_dual is correct (if feasible)
     * TODO : if is_self_dual is present but field_poly is not present, check that embedding data in mf_hecke_cc is consistent with is_self_dual and/or check that the lfunction self_dual attribute is consistent
-    * TODO : if present, check that artin_image is consistent with artin_degree and projective_image (quotient of artin_image by its center should give projective_image)
+    * TODO : if present, check that artin_image is consistent with artin_degree and projective_image (quotient of artin_image by its center should give projective_image) (use GAP)
   * newspace
     * TODO : check that dim is present in hecke_orbit_dims array in newspace record and that summing dim over rows with the same space label gives newspace dim
   * char_dir_orbits
     * TODO : check that each level M in inner twists divides the level and that M.o identifies a character orbit in char_dir_orbits with the listed parity
-  * would nice if:
-    * if field_poly_is_real_cycolotomic is set, verify this
+    * TODO : if field_poly_is_real_cycolotomic is set, verify this (precompute table)
 
 
 **Table** `mf_newform_portraits`:
@@ -568,7 +567,7 @@ angles | double precision[] | list of `\theta_p`, where '\theta_p' is `Null` if 
 * Per row
   * check_angles : check that angles lie in (-0.5,0.5] and are null for p dividing the level
   * check_roots_are_roots : check that embedding_root_real, and embedding_root_image  approximate a root of field_poly (attached to mf_newforms)
-  * TODO : (optional) check that summing (unnormalized) an over embeddings with a given hecke_orbit_code gives an approximation to tr(a_n) -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
+  * TODO : (optional) check that summing (normalized) an over embeddings with a given hecke_orbit_code gives an approximation to tr(a_n)*n^{k-1}/2 -- we probably only want to do this for specified newforms/newspaces, otherwise this will take a very long time.
 
 Dirichlet characters
 ====================
@@ -612,7 +611,9 @@ Note that the values in this table are stored as integers m so that the actual v
 
 Column | Type | Notes
 -------|------|------
-label | text | N.n where N is the modulus and n is the conrey label
+label | text | N.n where N is the modulus and n is the conrey index
+modulus | smallint | N
+conrey_index | smallint | n
 orbit_label | text | N.i where N is the modulus and i is the orbit_index
 prim_label | text | the label of primitive character inducing this one
 modulus | integer
@@ -629,8 +630,8 @@ values_gens | integers[] | list of pairs [x, m] giving values on generators x of
   * check_total_count : The number of entries in char_dir_values matching a given orbit_label should be char_degree (checked in char_dir_values)
   * check_order_match : order should match order in char_dir_orbits for this orbit_label
 * Fast
-  * FIXME : Conrey index n in label should appear in galois_orbit for record in char_dir_orbits with this orbit_label
+  * check_galois_orbit : Conrey index n in label should appear in galois_orbit for record in char_dir_orbits with this orbit_label (attached to char_dir_orbits)
   * FIXME : The x's listed in values and values_gens should be coprime to the modulus N in the label
-  * the value on -1 should agree with the parity for this char_orbit_index in char_dir_orbits
+  * check_parity : the value on -1 should agree with the parity for this char_orbit_index in char_dir_orbits (attached to char_dir_orbits)
   * FIXME : for x's that appear in both values and values_gens, the value should be the same.
 
