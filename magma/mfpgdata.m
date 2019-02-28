@@ -20,6 +20,14 @@ function curly(s)
     return t;
 end function;
 
+function uncurly(s) 
+    // Split omits the last field if it is empty even when IncludeEmpty is set (which makes no sense!), so we work around this by padding if needed
+    t := Join(Split(Join(Split(s,"{":IncludeEmpty),"["),"}":IncludeEmpty),"]");
+    if #t lt #s and s[#s] eq "}" then t cat:="]";  end if; // don't check for trailing [, this shouldn't happen, and if it does assert below will fail
+    assert #s eq #t;
+    return t;
+end function;
+
 function AnalyticConductor (N, k)
     return N*(Exp(Psi(k/2))/(2*Pi(RealField())))^2;
 end function;
@@ -166,7 +174,7 @@ newspaces_columns := [
 <"char_conductor","integer">,
 <"char_degree","integer">,
 <"char_is_real","boolean">,
-<"char_orbit_index","integer">,
+<"char_orbit_index","smallint">,
 <"char_orbit_label","text">,
 <"char_order","integer">,
 <"char_parity","smallint">,
@@ -192,7 +200,7 @@ newspaces_columns := [
 <"mf_new_dim","integer">,
 <"num_forms","smallint">,
 <"plus_dim","integer">,
-<"prim_orbit_index","integer">,
+<"prim_orbit_index","smallint">,
 <"relative_dim","integer">,
 <"s4_dim","integer">,
 <"sturm_bound","integer">,
@@ -419,7 +427,7 @@ procedure FormatNewspaceData (infile, newspace_outfile, gamma1_outfile, trace_ou
             if #r ge 9 then
                 cutters := eval(r[9]);
                 if #cutters gt 0 then
-                    assert #cutters eq num;
+                    assert #cutters le num; // don't require cutters to be present for every newform
                     assert #{[cc[1]:cc in c] :c in cutters } eq 1;
                     rec["hecke_cutter_primes"] := [cc[1] : cc in cutters[1]];
                 end if;
@@ -439,7 +447,7 @@ procedure FormatNewspaceData (infile, newspace_outfile, gamma1_outfile, trace_ou
             g1rec["traces"] := num_traces gt 0 select [rec["traces"]] else (num_traces eq 0 select [] else "\\N");
             g1rec["newspace_dims"] := [rec["dim"]];
             g1rec["num_spaces"] := rec["dim"] gt 0 select 1 else 0;
-            g1rec["sturm_bound"] := Floor(k*N^2*prod([(1-1/p^2):p in PrimeDivisors(N)]));
+            g1rec["sturm_bound"] := Floor(k*N^2*prod([(1-1/p^2):p in PrimeDivisors(N)])/12);
         end if;
         assert N eq g1N and k eq g1k; // input must be sorted by N,k,o
         if o gt 1 then
@@ -578,7 +586,7 @@ newforms_columns := [
 <"char_conductor","integer", true>,
 <"char_degree","integer", true>,
 <"char_is_real","boolean", true>,
-<"char_orbit_index","integer", true>,
+<"char_orbit_index","smallint", true>,
 <"char_orbit_label","text", true>,
 <"char_order","integer", true>,
 <"char_parity","smallint", true>,
@@ -618,7 +626,7 @@ newforms_columns := [
 <"level_primes","integer[]", true>,
 <"level_radical","integer", true>,
 <"nf_label","text", false>,
-<"prim_orbit_index","integer", true>,
+<"prim_orbit_index","smallint", true>,
 <"projective_field","numeric[]", false>,
 <"projective_field_label","text", false>,
 <"projective_image","text", false>,
@@ -642,23 +650,23 @@ newforms_columns := [
 ];
 
 hecke_nf_columns := [
-<"an","jsonb">,
-<"ap","jsonb">,
-<"char_orbit_index","integer">,
-<"field_poly","numeric[]">,
-<"hecke_orbit_code","bigint">,
-<"hecke_ring_character_values","jsonb">,
-<"hecke_ring_cyclotomic_generator","integer">,
-<"hecke_ring_denominators","numeric[]">,
-<"hecke_ring_inverse_denominators","numeric[]">,
-<"hecke_ring_inverse_numerators","numeric[]">,
-<"hecke_ring_numerators","numeric[]">,
-<"hecke_ring_power_basis","boolean">,
-<"hecke_ring_rank","integer">,
-<"label","text">,
-<"level","integer">,
-<"maxp","integer">,
-<"weight","smallint">
+<"an","jsonb", false>,
+<"ap","jsonb", false>,
+<"char_orbit_index","smallint", true>,
+<"field_poly","numeric[]", false>,
+<"hecke_orbit_code","bigint", true>,
+<"hecke_ring_character_values","jsonb", false>,
+<"hecke_ring_cyclotomic_generator","integer", false>,
+<"hecke_ring_denominators","numeric[]", false>,
+<"hecke_ring_inverse_denominators","numeric[]", false>,
+<"hecke_ring_inverse_numerators","numeric[]", false>,
+<"hecke_ring_numerators","numeric[]", false>,
+<"hecke_ring_power_basis","boolean", false>,
+<"hecke_ring_rank","integer", false>,
+<"label","text", false>,
+<"level","integer", true>,
+<"maxp","integer", false>,
+<"weight","smallint", true>
 ];
 
 hecke_lpolys_columns := [
@@ -735,6 +743,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
         N := StringToInteger(Substring(s,1,Index(s,":")-1));
         if not SplitInput and ((N-JobId) mod Jobs) ne 0 then continue; end if;
         for c in newforms_columns do rec[c[1]] := "\\N"; end for;
+        for c in hecke_nf_columns do rechnf[c[1]] := "\\N"; end for;
         r := <eval(a):a in Split(s,":")>;
         assert #r ge 18;
         assert #r[5] eq #r[6];
@@ -745,6 +754,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
         rec["Nk2"]:= N*k*k;
         rec["level"] := N;
+        rechnf["level"] := N;
         P := PrimeDivisors(N);
         rec["level_is_prime"] := IsPrime(N) select 1 else 0;
         rec["level_is_prime_power"] := (N gt 1 and IsPrimePower(N)) select 1 else 0;
@@ -753,8 +763,10 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
         rec["level_primes"] := P;
         rec["level_radical"] := prod(P);
         rec["weight"] := k;
+        rechnf["weight"] := k;
         rec["weight_parity"] := (-1)^k;
         rec["char_orbit_index"] := o;
+        rechnf["char_orbit_index"] := o;
         rec["analytic_conductor"] := AnalyticConductor(N,k);
         if o gt 1 and not IsDefined(OT,N) then G,T := CharacterOrbitReps(N:RepTable); OT[N] := <G,T>; end if;
         chi := o eq 1 select DirichletGroup(N)!1 else OT[N][1][o];
@@ -786,7 +798,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
         for n := 1 to #dims do
             // clear columns that are not space invariant
             for c in newforms_columns do if not c[3] then rec[c[1]] := "\\N"; end if; end for;
-            for c in hecke_nf_columns do rechnf[c[1]] := "\\N"; end for;
+            for c in hecke_nf_columns do if not c[3] then rechnf[c[1]] := "\\N"; end if; end for;
             rec["hecke_orbit"] := n;
             rec["dim"] := dims[n];
             rec["relative_dim"] := ExactQuotient(dims[n],Degree(chi));
@@ -935,7 +947,11 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                 if #r[15] ge n then rec["trace_moments"] := [Sprintf("%.3o",m):m in r[15][n]]; end if;
                 if #r[16] ge n then rec["trace_hash"] := r[16][n]; end if;
             end if;
-            if #dims eq 1 then assert n eq 1 and (#r[9] eq 0 or #r[9][1] eq 0); rec["hecke_cutters"] := []; else if n le #r[9] then rec["hecke_cutters"] := r[9][n]; end if; end if;            
+            if #dims eq 1 then
+                assert n eq 1 and (#r[9] eq 0 or #r[9][1] eq 0); rec["hecke_cutters"] := [];
+            else
+                if n le #r[9] then rec["hecke_cutters"] := r[9][n]; end if;
+            end if;
             rec["is_self_dual"] := r[18][n];
             if n le m then
                 if o gt 1 then rechnf["hecke_ring_character_values"] := [<r[17][n][1][i],r[17][n][2][i]>:i in [1..#r[17][n][1]]]; end if;
@@ -999,14 +1015,16 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                 else
                     rechnf["hecke_ring_power_basis"] := (dens eq [1:i in [1..dims[n]]] and nums eq [[i eq j select 1 else 0:i in [1..dims[n]]]:j in [1..dims[n]]]) select 1 else 0;
                     rechnf["hecke_ring_cyclotomic_generator"] := 0;
-                    rechnf["hecke_ring_denominators"] := dens;
-                    rechnf["hecke_ring_numerators"] := nums;
-                    dd := dims[n];
-                    A := (GL(dd,Rationals())!Matrix(r[10][nn][2]))^-1;
-                    A := [[A[i][j]:j in [1..dd]]:i in [1..dd]];
-                    idens := [LCM([Denominator(x):x in A[i]]):i in [1..#A]];
-                    rechnf["hecke_ring_inverse_denominators"] := idens;
-                    rechnf["hecke_ring_inverse_numerators"] := [[idens[i]*x:x in A[i]]:i in [1..#A]];
+                    if rechnf["hecke_ring_power_basis"] eq 0 then
+                        rechnf["hecke_ring_denominators"] := dens;
+                        rechnf["hecke_ring_numerators"] := nums;
+                        dd := dims[n];
+                        A := (GL(dd,Rationals())!Matrix(r[10][nn][2]))^-1;
+                        A := [[A[i][j]:j in [1..dd]]:i in [1..dd]];
+                        idens := [LCM([Denominator(x):x in A[i]]):i in [1..#A]];
+                        rechnf["hecke_ring_inverse_denominators"] := idens;
+                        rechnf["hecke_ring_inverse_numerators"] := [[idens[i]*x:x in A[i]]:i in [1..#A]];
+                    end if;
                     if o gt 1 then rechnf["hecke_ring_character_values"] := [<r[10][nn][6][1][i],r[10][nn][6][2][i]> : i in [1..#r[10][nn][6][1]]]; end if;
                     an := r[10][nn][5];
                     assert #an ge 100;
@@ -1057,28 +1075,32 @@ function RoundCC(z,absprec)
     return Round(absprec*Real(z))/absprec + Round(absprec*Imaginary(z))/absprec * Parent(z).1;
 end function;
 
-// if SatakeAngle is set, convert -0.5 to 0.5
-function sprintreal(x,prec:SatakeAngle:=false)
+function sprintreal(x,prec)
     if Abs(x) lt 10^10 and prec ge 20 and Abs(x-BestApproximation(x,1000)) lt 10^-(prec-1) then x := RealField(prec)!BestApproximation(x,1000); end if;
     s := Sprintf("%o",x);
     if "." in s and not "e" in s and not "E" in s then i:=#s; while s[i] eq "0" do i-:=1; end while; s := Substring(s,1,i); if s[#s] eq "." then Prune(~s); end if; if s eq "-0" then s:="0"; end if; end if;
-    if SatakeAngle and s eq "-0.5" then s := "0.5"; end if;
     return s;
 end function;
     
 // Given ap, chi(p), p, and k, Satake parameters alpha_p are reciprocal roots of Lp(t/p^((k-1)/2))= 1 - ap/p^((k-1)/2)*t + chi(p)*t^2 (so Lp(t) = 1 - ap*t + chi(p)*p^(k-1)t^2)
 // The Satake angles are theta_p = Arg(alpha_p)/(2*pi) in (-0.5,0.5], we take the smaller value.
-function SatakeAngle(ap,chip,p,k,pi)
+function SatakeAngle(ap,chip,p,k,pi:nmax:=0)
     q := p^(k-1);
     // apply quadratic formula (inverted to take reciprocal root
     alpha1 := (2*chip) / (ap/Sqrt(q) + Sqrt(ap^2/q - 4*chip));
     alpha2 := (2*chip) / (ap/Sqrt(q) - Sqrt(ap^2/q - 4*chip));
     thetas := [Real(Arg(alpha1))/(2*pi),Real(Arg(alpha2))/(2*pi)];
     assert &and[theta ge -0.5 and theta le 0.5: theta in thetas];
-    thetas := Sort(thetas);
-    if thetas[1] eq -0.5 then thetas[1] := 0.5; end if;
-    thetas := Sort(thetas);
-    return thetas[1];
+    if k eq 1 then 
+        if nmax eq 0 then nmax := 1000000; end if;
+        rthetas := [BestApproximation(theta,nmax) : theta in thetas];
+        assert &and[Abs(thetas[i]-rthetas[i]) lt 10^-10 : i in [1,2]];
+        rthetas := [r eq -1/2 select 1/2 else r : r in rthetas];
+        thetas := [Universe(thetas)!r : r in rthetas];
+    else
+        thetas := [t eq -0.5 select 0.5 else t : t in thetas];
+    end if;
+    return thetas[1] le thetas[2] select thetas[1] else thetas[2];
 end function;
 
 procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBound:=0, Detail:=0, Jobs:=1, JobId:=0, conrey_labels:= "", ap_only:=false, SplitInput:=false)
@@ -1099,7 +1121,7 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
     outfp := Open(outfile,"w");
     if JobId eq 0 and not ap_only then
         headfp := Jobs gt 1 select Open("mf_hecke_cc_header.txt","w") else outfp;
-        Puts(headfp,"hecke_orbit_code:lfunction_label:conrey_label:embedding_index:embedding_m:embedding_root_real:embedding_root_imag:an_normalized:angles");
+        Puts(headfp,"hecke_orbit_code:lfunction_label:conrey_index:embedding_index:embedding_m:embedding_root_real:embedding_root_imag:an_normalized:angles");
         Puts(headfp,"bigint:text:integer:integer:integer:double precision:double precision:double precision[]:double precision[]");
         Puts(headfp,"");
         Flush(headfp);
@@ -1171,7 +1193,7 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
                 assert Index(rs[19],",") ge prec+4;
                 assert #r[19][i-off2][1] ge #P;
                 cchi := [ComplexConreyCharacter(N,j,CC):j in L];
-                cchi := &cat[cchi:j in [1..rd]];
+                cchi := &cat[[cchi[j]:i in [1..rd]]:j in [1..cd]];
                 A := [[CC|a : a in anlist_from_aplist(N,k,cchi[m],[CC!r[19][i-off2][m][j]:j in [1..#P]],coeffs:FactorTable:=Q)] : m in [1..d]];
                 if o eq 1 then 
                     // For backward compatibility, when chi is trivial we do not assume the embeddings are sorted and sort them if necessary
@@ -1184,6 +1206,7 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
                     C := [[cchi[m](p):m in [1..d]]: p in P];
                 end if;
             end if;
+            if k eq 1 then nmax := Max(EulerPhiInverse(2*d)); else nmax := 0; end if;
             for m := 1 to d do
                 e := E[m];
                 lfunc_label := Sprintf("%o.%o.%o",label,e[1],e[2]);
@@ -1195,7 +1218,7 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
                 else
                     // normalize an here
                     an := curly(sprint([[sprintreal(Real(A[n][m]/n^((k-1)/2)),Precision),sprintreal(Imaginary(A[n][m]/n^((k-1)/2)),Precision)] : n in [1..coeffs]]));
-                    angles := curly(sprint([(GCD(N,p) eq 1 select sprintreal(SatakeAngle(A[p][m],C[j][m],p,k,pi),Precision) else "null") where p:=P[j] : j in [1..#P]]));
+                    angles := curly(sprint([(GCD(N,p) eq 1 select sprintreal(SatakeAngle(A[p][m],C[j][m],p,k,pi:nmax:=nmax),Precision) else "null") where p:=P[j] : j in [1..#P]]));
                 end if;
                 reroot := #root gt 0 select sprintreal(Real(root[m]),Precision) else "\\N";
                 imroot := #root gt 0 select sprintreal(Imaginary(root[m]),Precision) else "\\N";
@@ -1241,7 +1264,7 @@ procedure CreateSubspaceData (outfile, dimfile, conrey_labels: MaxN:=0, Detail:=
     if JobId eq 0 then
         headfp := Jobs gt 1 select Open("mf_subspaces_header.txt","w") else outfp;
         Puts(headfp,"label:level:weight:char_orbit_index:char_orbit_label:conrey_indexes:sub_label:sub_level:sub_char_orbit_index:sub_char_orbit_label:sub_conrey_indexes:sub_dim:sub_mult");
-        Puts(headfp,"text:integer:smallint:integer:text:integer[]:text:integer:integer:text:integer[]:integer:integer");
+        Puts(headfp,"text:integer:smallint:smallint:text:integer[]:text:integer:smallint:text:integer[]:integer:integer");
         Puts(headfp,"");
         Flush(headfp);
     end if;

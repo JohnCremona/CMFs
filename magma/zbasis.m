@@ -24,15 +24,32 @@ intrinsic NFFactoredDiscriminant (f::SeqEnum) -> RngIntElt, SeqEnum
     return D, Factorization(D);
 end intrinsic;
 
-intrinsic MinimalSubSibling (f::RngUPolElt:SplitDegree:=0) -> RngUPolElt
+intrinsic SubDiscriminant(f::RngUPolElt,P::SeqEnum) -> RngIntElt
+{ Given polynomial f and list of primes P, returns product of p-parts of disc(f) lever p in P. }
+    if #P eq 0 then return 1; end if;
+    D := Integers()!Discriminant(f);
+    return &*[p^Valuation(D,p):p in P];
+end intrinsic;
+
+intrinsic MinimalSubSibling (f::RngUPolElt:SplitDegree:=0,Ramification:=[Integers()|],Detail:=0) -> RngUPolElt
 { Given an irreducible polynomial f in Q[x] returns a polynomial g with the same splitting field as f with both the degree of g and |disc(Q[x]/(g))| minimal among those g for which Q[x]/(g(x)) lies in Q[x]/(f(x)); this will be the minimal sibling if Q[x]/(f(x)) is Galois. }
-    if SplitDegree eq 0 then SplitDegree := #GaloisGroup(f); end if;
+    if SplitDegree eq 0 then
+        if Detail gt 0 then printf "Computing degree of splitting field of %o...",f; t:=Cputime(); end if;
+        SplitDegree := #GaloisGroup(f);
+        if Detail gt 0 then printf "took %.3os to determine splitting field degree %o\n.",Cputime()-t, SplitDegree; end if;
+    end if;
+    if Type(Ramification) eq RngIntElt then Ramification := PrimeDivisors(Ramification); end if;
+    disc := func<f|#Ramification gt 0 select SubDiscriminant(f,Ramification) else Abs(Discriminant(f))>;
     K := NumberField(f);
+    if Detail gt 0 then printf "Computing subfields of number field defined by %o...",f; t:=Cputime(); end if;
     L := Sort([DefiningPolynomial(L[1]):L in Subfields(K)],func<a,b|Degree(a)-Degree(b)>);
+    if Detail gt 0 then printf "took %.3os to construct %o subfields.\n",Cputime()-t, #L; end if;
     h := f; dh := Degree(h); Dh := 0;
     for g in L do
-        if Degree(g) eq dh and #GaloisGroup(g) eq SplitDegree then Dg := Abs(NFDiscriminant(g)); if Dg lt Dh then h := g; Dh := Dg; end if; end if;
-        if Degree(g) lt dh and #GaloisGroup(g) eq SplitDegree then h := g; dh := Degree(h); Dh := NFDiscriminant(h); end if;
+        if Detail gt 0 then printf "Checking subfield defined by %o...", g; t := Cputime(); end if;
+        if Degree(g) eq dh and #GaloisGroup(g) eq SplitDegree then Dg := disc(g); if Dh eq 0 or Dg lt Dh then h := g; Dh := Dg; end if; end if;
+        if Degree(g) lt dh and #GaloisGroup(g) eq SplitDegree then h := g; dh := Degree(h); Dh := disc(h); end if;
+        if Detail gt 0 then printf "took %.3os.\n",Cputime()-t; if h eq g then printf "Updated h, degree %o discriminant %o\n", Degree(h), Dh; end if; end if;
     end for;
     return h;
 end intrinsic;

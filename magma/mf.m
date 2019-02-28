@@ -385,6 +385,9 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
             else
                 Append(~eap,[[[Real(c),Imaginary(c)]:c in A[j]]:j in L]);
             end if;
+            // Sanity check that embedding data sums to traces for small p (we might not have enough precision for large p)
+            CC := ComplexField(EmbeddingPrecision);
+            assert [T[i][p]:p in P|p le 200] eq [Round(&+[CC!eap[#eap][j][jj]:j in [1..#eap[#eap]]]):jj in [1..#P]|P[jj] le 200];
             if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
         end for;
     end if;
