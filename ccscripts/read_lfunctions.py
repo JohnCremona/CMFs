@@ -89,7 +89,8 @@ def constant_lf(level, weight, degree):
         'gamma_factors': [[], [0]*(degree//2)],
         'coefficient_field': '\N', # the label of the Hecke field, we set as \N as start
         'dirichlet_coefficients' : '\N', # we already store a2 .. a10
-        'trace_hash': '\N'
+        'trace_hash': '\N', #filled in later
+        'euler_factors_factorization': '\N', #filled in later
         }
     for i in range(2,11):
         output['A' + str(i)] = '\N'
@@ -134,7 +135,8 @@ schema_lf = [
         'values', # special values, format???
         'dirichlet_coefficients', # the ap as algebraic numbers or complex
         'coefficient_field', # the label of the Hecke field
-        'trace_hash'
+        'trace_hash',
+        'euler_factors_factorization',
         ]
 for i in range(2,11):
     schema_lf.append('A'+ str(i))
@@ -199,7 +201,8 @@ schema_lf_types = {u'A10': u'numeric',
      u'z1': u'numeric',
      u'z2': u'numeric',
      u'z3': u'numeric',
-     'trace_hash': 'bigint'}
+     'trace_hash': 'bigint',
+     'euler_factors_factorization': 'jsonb'}
 
 schema_lf_types.pop('id')
 
@@ -210,9 +213,9 @@ for key in schema_lf:
 
 
 
-schema_instances = ['url', 'Lhash', 'type']
+schema_instances = ['url', 'Lhash', 'type', 'Lhash_array']
 
-schema_instances_types = {u'Lhash': u'text', u'id': u'bigint', u'type': u'text', u'url': u'text'}
+schema_instances_types = {u'Lhash': u'text', u'id': u'bigint', u'type': u'text', u'url': u'text', u'Lhash_array': u'text[]'}
 schema_instances_types.pop('id')
 
 
@@ -725,7 +728,7 @@ def populate_rational_rows(orbits, euler_factors_cc, rows, instances):
 
             #rewrite row as a list
             rational_rows[mf_orbit_label] = [row[key] for key in schema_lf]
-            instances[mf_orbit_label] = (row['origin'], row['Lhash'], 'CMF')
+            instances[mf_orbit_label] = (row['origin'], row['Lhash'], 'CMF', json.dumps(row['Lhash'].split(',')).replace('[','{').replace(']','}'))
 
             # if dim == 1, drop row
             if len(labels) == 1:
@@ -945,7 +948,7 @@ def read_all(filename):
                 assert key in row, "%s not in row = %s" % (key, row)
             assert len(row) == len(schema_lf), "%s != %s" % (len(row) , len(schema_lf))
             rows[label] = [row[key] for key in schema_lf]
-            instances[label] = (row['origin'], row['Lhash'], 'CMF')
+            instances[label] = (row['origin'], row['Lhash'], 'CMF', json.dumps(row['Lhash'].split(',')).replace('[','{').replace(']','}'))
             k += 1
             if linecount > 10:
                 if (k % (linecount//10)) == 0:
