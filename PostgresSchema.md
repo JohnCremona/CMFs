@@ -223,6 +223,7 @@ trace_hash | bigint | linear combination of the a_p between 2^12 and 2^13 reduce
 trace_zratio | double precision | proportion of zero a_p values for `p <= 2^13` (rounded to three decimal places)
 trace_moments | numeric[] | list of moments of a_p/p^((k-1)/2) computed over `p <= 2^13` (rounded to three decimal places)
 related_objects | text[] | list of text URLs of related objects (e.g. elliptic curve isogeny class, Artin rep, ...), e.g. ["EllipticCurve/Q/11/a"]
+embedded_related_objects | text[] | list of lists of text URLs of related objects (e.g. Artin reps), indexed by embedding_m (so first entry is a list of friends for the first embeddeded newform)
 analytic_rank | smallint | order of vanishing of L-function at s=1 (an upper bound, tight if analytic_rank_proved is set)
 analytic_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
 self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
