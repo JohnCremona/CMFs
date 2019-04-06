@@ -1,0 +1,52 @@
+\contentsline {section}{\tocsection {}{1}{Introduction}}{1}{section.1}
+\contentsline {subsection}{\tocsubsection {}{1.1}{Motivation}}{1}{subsection.1.1}
+\contentsline {subsection}{\tocsubsection {}{1.2}{Organization}}{1}{subsection.1.2}
+\contentsline {subsection}{\tocsubsection {}{1.3}{Acknowledgements}}{2}{subsection.1.3}
+\contentsline {section}{\tocsection {}{2}{History}}{2}{section.2}
+\contentsline {section}{\tocsection {}{3}{Computing modular forms}}{4}{section.3}
+\contentsline {subsection}{\tocsubsection {}{3.1}{Setup}}{4}{subsection.3.1}
+\contentsline {subsection}{\tocsubsection {}{3.2}{Dimensions}}{4}{subsection.3.2}
+\contentsline {subsection}{\tocsubsection {}{3.3}{Eisenstein series}}{5}{subsection.3.3}
+\contentsline {subsection}{\tocsubsection {}{3.4}{Decomposition into Hecke orbits}}{5}{subsection.3.4}
+\contentsline {subsection}{\tocsubsection {}{3.5}{Hecke eigenvalues}}{5}{subsection.3.5}
+\contentsline {subsection}{\tocsubsection {}{3.6}{$L$-functions}}{5}{subsection.3.6}
+\contentsline {section}{\tocsection {}{4}{Algorithms}}{5}{section.4}
+\contentsline {subsection}{\tocsubsection {}{4.1}{Modular symbols}}{5}{subsection.4.1}
+\contentsline {subsection}{\tocsubsection {}{4.2}{Trace formula: exact method}}{5}{subsection.4.2}
+\contentsline {subsection}{\tocsubsection {}{4.3}{Trace formula: complex analytic method}}{7}{subsection.4.3}
+\contentsline {subsection}{\tocsubsection {}{4.4}{Brandt matrices}}{7}{subsection.4.4}
+\contentsline {subsection}{\tocsubsection {}{4.5}{Method of graphs}}{7}{subsection.4.5}
+\contentsline {subsection}{\tocsubsection {}{4.6}{Ternary quadratic forms}}{7}{subsection.4.6}
+\contentsline {section}{\tocsection {}{5}{Characters}}{7}{section.5}
+\contentsline {subsection}{\tocsubsection {}{5.1}{Galois orbits and labels}}{7}{subsection.5.1}
+\contentsline {subsection}{\tocsubsection {}{5.2}{A crash course on Conrey labels}}{7}{subsection.5.2}
+\contentsline {subsection}{\tocsubsection {}{5.3}{Compatibility}}{7}{subsection.5.3}
+\contentsline {section}{\tocsection {}{6}{A sample of the implementations}}{7}{section.6}
+\contentsline {section}{\tocsection {}{7}{Issues: computational, theoretical, and practical}}{8}{section.7}
+\contentsline {subsection}{\tocsubsection {}{7.1}{Analytic conductor}}{8}{subsection.7.1}
+\contentsline {subsection}{\tocsubsection {}{7.2}{Atkin--Lehner eigenvalues}}{8}{subsection.7.2}
+\contentsline {subsection}{\tocsubsection {}{7.3}{Self-dual}}{8}{subsection.7.3}
+\contentsline {subsection}{\tocsubsection {}{7.4}{Computing Hecke polynomials}}{9}{subsection.7.4}
+\contentsline {subsection}{\tocsubsection {}{7.5}{Efficiently recognizing irreducibility}}{10}{subsection.7.5}
+\contentsline {subsection}{\tocsubsection {}{7.6}{Trace form}}{11}{subsection.7.6}
+\contentsline {subsection}{\tocsubsection {}{7.7}{Polredabs}}{11}{subsection.7.7}
+\contentsline {subsection}{\tocsubsection {}{7.8}{Nicely presenting Hecke eigenvalues}}{11}{subsection.7.8}
+\contentsline {subsection}{\tocsubsection {}{7.9}{Sturm bound}}{12}{subsection.7.9}
+\contentsline {section}{\tocsection {}{8}{Computing $L$-functions rigorously}}{13}{section.8}
+\contentsline {subsection}{\tocsubsection {}{8.1}{Verifying the analytic rank}}{13}{subsection.8.1}
+\contentsline {section}{\tocsection {}{9}{An overview of the computation}}{13}{section.9}
+\contentsline {subsection}{\tocsubsection {}{9.1}{Data extent}}{13}{subsection.9.1}
+\contentsline {subsection}{\tocsubsection {}{9.2}{Comparing implementations}}{13}{subsection.9.2}
+\contentsline {subsection}{\tocsubsection {}{9.3}{Interesting and extreme behavior}}{14}{subsection.9.3}
+\contentsline {subsection}{\tocsubsection {}{9.4}{Pictures}}{14}{subsection.9.4}
+\contentsline {subsection}{\tocsubsection {}{9.5}{Data reliability}}{14}{subsection.9.5}
+\contentsline {section}{\tocsection {}{10}{Twisting}}{14}{section.10}
+\contentsline {subsection}{\tocsubsection {}{10.1}{Definitions}}{14}{subsection.10.1}
+\contentsline {subsection}{\tocsubsection {}{10.2}{Computing inner twists}}{16}{subsection.10.2}
+\contentsline {subsection}{\tocsubsection {}{10.3}{Sato--Tate group}}{16}{subsection.10.3}
+\contentsline {section}{\tocsection {}{11}{Weight 1}}{17}{section.11}
+\contentsline {subsection}{\tocsubsection {}{11.1}{Computational observations}}{17}{subsection.11.1}
+\contentsline {subsection}{\tocsubsection {}{11.2}{Classifying the projective Galois images}}{17}{subsection.11.2}
+\contentsline {subsection}{\tocsubsection {}{11.3}{Computing the associated Artin representation}}{17}{subsection.11.3}
+\contentsline {section}{\tocsection {}{12}{Final remarks}}{17}{section.12}
+\contentsline {section}{\tocsection {}{}{References}}{17}{section*.2}
