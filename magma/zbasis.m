@@ -237,16 +237,19 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[
         end if;
     end if;
 
-    // Order rows by L1 norm then permute cols so diagonal entries are all nonzero (this should ensure the first basis element is 1)
+    // Order rows by L1 norm (this should ensure the first basis element is 1)
     Erows := Sort([Eltseq(v) : v in Rows(E)],func<a,b|&+[Abs(x):x in a] - &+[Abs(x):x in b]>);
     assert #Erows eq deg;
     E := Matrix(Integers(),Erows);
-    for i:= 1 to #Erows do z := [j:j in [i..deg]|E[i][j] ne 0]; if #z gt 0 then SwapColumns(~E,i,Min(z)); end if; end for;
-    assert Abs(E[1][1]) eq 1 and &and [E[1][j] eq 0 : j in [2..deg]];
+    // if matrix is a permutation matrix, make it diagonal
+    z := [[j:j in [1..deg]|E[i][j] ne 0]:i in [1..deg]];
+    if {#r:r in z} eq {1} then for i:= 1 to deg do SwapColumns(~E,i,z[i][1]); end for; end if;
+    assert Abs(E[1][1]) eq 1;
     if E[1][1] eq -1 then E := -E; end if;
-  
+
     Einv := E^-1;
     OLLLBasis := [&+[ E[i][j]*OBasis[j] : j in [1..deg]] : i in [1..deg]];
+
     ZOE := ZO*Einv;
 
     // sanity check: make sure seqs match (this can be commented out to improve performance)
