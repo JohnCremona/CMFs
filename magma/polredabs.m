@@ -1,8 +1,12 @@
+function get_gp_coeffs(s)
+    return [StringToInteger(x) : x in Split(s[Index(s,"[")+1..Index(s,"]")-1],",")];
+end function;
+
 intrinsic Polredabs(f::SeqEnum:DiscFactors:=[]) -> SeqEnum
 { Computes a smallest canonical defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
     cmd := #DiscFactors eq 0 select Sprintf("{print(Vecrev(Vec(polredabs(Pol(Vecrev(%o))))))}", f) else  Sprintf("{print(Vecrev(Vec(polredabs([Pol(Vecrev(%o)),%o]))))}", f,DiscFactors);
     s := Pipe("gp -q", cmd);
-    return [ StringToInteger(x) : x in Split(s, ", []\n") | x ne "" ];
+    return get_gp_coeffs(s);
 end intrinsic;
 
 intrinsic Polredabs(f::RngUPolElt:DiscFactors:=[]) -> RngUPolElt
@@ -14,7 +18,7 @@ intrinsic Polredbest(f::SeqEnum) -> SeqEnum
 { Computes a small (non-canonical) defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
     cmd := Sprintf("{print(Vecrev(Vec(polredbest(Pol(Vecrev(%o))))))}", f);
     s := Pipe("gp -q", cmd);
-    return [ StringToInteger(x) : x in Split(s, ", []\n") | x ne "" ];
+    return get_gp_coeffs(s);
 end intrinsic;
 
 intrinsic Polredbest(f::RngUPolElt) -> RngUPolElt

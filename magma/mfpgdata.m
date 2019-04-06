@@ -594,6 +594,7 @@ newforms_columns := [
 <"cm_discs","integer[]", false>,
 <"conrey_indexes","integer[]", true>,
 <"dim","integer", false>,
+<"embedded_related_objects","text[]", false>,
 <"field_disc","numeric",false>,
 <"field_disc_factorization","numeric[]",false>,
 <"field_poly","numeric[]", false>,
@@ -869,12 +870,21 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
             ro := IsDefined(RelatedObjects,label) select RelatedObjects[label] else [Parent("")|];
             if k gt 1 then
                 rec["sato_tate_group"] := rec["is_cm"] eq 1 select Sprintf("%o.2.1.d%o",k-1,Order(chi)) else Sprintf("%o.2.3.c%o",k-1,Order(chi));
-                Append(~ro, "\"SatoTateGroup/" cat rec["sato_tate_group"] cat "\"");
             end if;
             if k eq 2 and o eq 1 and dims[n] eq 1 then Append(~ro, Sprintf("\"EllipticCurve/Q/%o/%o\"",N,Base26Encode(n-1))); end if;
+            ero := [];
             if IsDefined(ArtinTable,label) then
                 ar := ArtinTable[label];
-                if ar[6] ne "?" then Append(~ro,"\"ArtinRepresentation/" cat ar[6] cat "c1\""); end if;
+                if ar[6] ne "?" then
+                    arlabels := Split(ar[6],"c");
+                    cn := StringToIntegerArray(arlabels[2]);
+                    assert #cn eq dims[n];
+                    for c in cn do
+                        artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "c" cat IntegerToString(c) cat "\"";
+                        Append(~ro,artin_url);
+                        Append(~ero,[artin_url]);
+                    end for;
+                end if;
                 D := eval(ar[7]);
                 assert Set(D) eq Set(std);
                 rec["projective_image_type"] := ar[8];
@@ -906,6 +916,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                 end if;
             end if;
             rec["related_objects"] := ro;
+            rec["embedded_related_objects"] := ero;
             f := 0;
             if n le #r[8] then
                 f := r[8][n];
