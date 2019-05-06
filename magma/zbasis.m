@@ -237,16 +237,22 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[
         end if;
     end if;
 
-    // Order rows by L1 norm (this should ensure the first basis element is 1)
-    Erows := Sort([Eltseq(v) : v in Rows(E)],func<a,b|&+[Abs(x):x in a] - &+[Abs(x):x in b]>);
-    assert #Erows eq deg;
-    E := Matrix(Integers(),Erows);
-    // if matrix is a permutation matrix, make it diagonal
-    z := [[j:j in [1..deg]|E[i][j] ne 0]:i in [1..deg]];
-    if {#r:r in z} eq {1} then for i:= 1 to deg do SwapColumns(~E,i,z[i][1]); end for; end if;
-    assert Abs(E[1][1]) eq 1;
+    // Order rows by L1 norm, breaking ties favoring first nonzero entry (ensures first basis element is \pm 1)
+    // But note that it means that our basis won't necessarily be ordered by (number field) norm
+    function cmp(a,b)
+        x := &+[Abs(x):x in a] - &+[Abs(x):x in b];
+        if x ne 0 then return x; end if;
+        za := [i:i in [1..#a]|a[i] ne 0];  zb := [i:i in [1..#b]|b[i] ne 0];
+        x := #za - #zb;
+        if x ne 0 then return x; end if;
+        x := Min(za)-Min(zb);
+        if x ne 0 then return x; end if;
+        return a lt b select -1 else 1;
+    end function;
+    E := Matrix(Integers(),Sort([Eltseq(v) : v in Rows(E)],cmp));
     if E[1][1] eq -1 then E := -E; end if;
-
+    assert E[1][1] eq 1 and &and[E[1][j] eq 0:j in [2..deg]];
+    if IsPermutation(E) then assert IsDiagonal(E); end if;
     Einv := E^-1;
     OLLLBasis := [&+[ E[i][j]*OBasis[j] : j in [1..deg]] : i in [1..deg]];
 
