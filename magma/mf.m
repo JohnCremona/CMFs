@@ -571,11 +571,8 @@ function CompareSpaceData (s1,s2:DoNotCheck:=[])
             if #E1 ne #E2 then return n; end if;
             for i:=1 to #E1 do
                 e1 := E1[i];  e2 := E2[i];
-                if e1[1] eq e2[1] and e1[2] eq e2[2] and e1[3] eq e2[3] and e1[4] eq e2[4] and e1[5] eq e2[5] and e1[6] eq e2[6] then
-                    if e1[7] ne e2[7] then printf "Generator nbound changed from %o to %o\n", e1[7],e2[7]; end if;
-                    continue;
-                end if;
-                if e1[4] ne 0 and e2[4] ne 0 then
+                if e1 eq e2 then continue; end if;
+                if e1[4][1] ne 0 or e2[4][1] ne 0 then
                     if e1[3] ne e2[3] or e1[4] ne e2[4] then return n; end if;
                 end if;
                 if not NFPolyIsIsomorphic(E1[i][1],E2[i][1]) then return n; end if;
@@ -591,13 +588,11 @@ function CompareSpaceData (s1,s2:DoNotCheck:=[])
                         C2 cat:= [Eltseq(r) : r in Rows(Matrix(Rationals(),e2[6][2])*Matrix(Rationals(),e2[2]))];
                     end if;
                 end if;
-                if e1[1] eq e2[1] then
-                    if C1 ne C2 then printf "%o:%o:%o: error, eigenvalue mismatch for entry %o of eigenvalue data\n", r1[1],r1[2],r1[3],i; return n; end if;
-                else
+                if e1[1] ne e2[1] or C1 ne C2 then
                     if not NFSeqIsIsomorphic(E1[i][1],C1,E2[i][1],C2) then printf "%o:%o:%o: error, eigenvalue mismatch for entry %o of eigenvalue data\n", r1[1],r1[2],r1[3],i; return n; end if;
                 end if;
                 if #e1 ge 7 and #e2 ge 7 then
-                    if #e1[7] ne #e2[7] then printf "%o:%o:%o: error, coefficient ring generator nbound mismatch for entry %o of eigenvalue data\n", r1[1], r1[2], r1[3], i; return n; end if;
+                    if e1[7] ne e2[7] then printf "%o:%o:%o: error, coefficient ring generator nbound mismatch for entry %o of eigenvalue data\n", r1[1], r1[2], r1[3], i; return n; end if;
                 end if;
             end for;
         end if;
@@ -760,8 +755,9 @@ procedure DecomposeSpace (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOn
     printf "Wrote %o records to %o using %os of CPU time.\n", cnt, outfile, Cputime()-st;
 end procedure;
 
-procedure OptimizeCoefficients (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0)
+procedure OptimizeCoefficients (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0,SplitInput:=false)
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
+    if SplitInput then infile cat:= Sprintf("_%o",JobId); end if;
     S:=Split(Read(infile),"\n");
     if not Quiet then printf "Loaded %o records from %o\n", #S, infile; end if;
     fp := Open(outfile,"w");
@@ -769,43 +765,42 @@ procedure OptimizeCoefficients (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0)
     T := AssociativeArray(Integers());
     for s in S do
         n +:= 1;
-        if ((n-JobId) mod Jobs) eq 0 then
-            t := Cputime();
-            r := Split(s,":");
-            N := StringToInteger(r[1]);
-            k := StringToInteger(r[2]);
-            o := StringToInteger(r[3]);
-            D := eval(r[5]);
-            HF := eval(r[8]);
-            inE := eval(r[10]);
-            pra := eval(r[13]);
-            d1 := #[d:d in D|d eq 1];
-            if #D gt 0 then
-                if not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
-                chi := T[N][o];
-                u := UnitGenerators(chi);
-            end if;
-            E := [];
-            for i:=1 to #inE do
-                e := inE[i];
-                assert e[1] eq HF[d1+i];
-                aa := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
-                f,b,a,c,d,pr,m := OptimizedOrderBasis([Rationals()!a:a in e[1]],aa:KBestPoly:=e[1],KBestIsPolredabs:=pra[d1+i] eq 1 select true else false,Verbose);
-                v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,a))] else [];
-                w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
-                E[i] := <f,b,c,d,a,<u,w>,m>;
-                ee := E[i];
-                assert e[1] eq ee[1];
-                bb := [Eltseq(b):b in Rows(Matrix(Rationals(),ee[5])*Matrix(Rationals(),ee[2]))];
-                assert aa eq bb;
-                assert #sprint(ee) le 1.05*(#sprint(e)+100);
-            end for;
-            r[10] := sprint(E);
-            Puts(fp,Join(r,":"));
-            Flush(fp);
-            cnt +:= 1;
-            if not Quiet and #D gt 0 then printf "%o:%o:%o:%o (%.3os)\n",r[1],r[2],r[3],r[5],Cputime()-t; end if;
+        if not SplitInput and ((n-JobId) mod Jobs) ne 0 then continue; end if;
+        t := Cputime();
+        r := Split(s,":");
+        N := StringToInteger(r[1]);
+        k := StringToInteger(r[2]);
+        o := StringToInteger(r[3]);
+        D := eval(r[5]);
+        HF := eval(r[8]);
+        inE := eval(r[10]);
+        pra := eval(r[13]);
+        d1 := #[d:d in D|d eq 1];
+        if #inE gt 0 then
+            if not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
+            chi := T[N][o];
+            u := UnitGenerators(chi);
         end if;
+        E := [];
+        for i:=1 to #inE do
+            e := inE[i];
+            assert e[1] eq HF[d1+i];
+            aa := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
+            f,b,a,c,d,pr,m := OptimizedOrderBasis([Rationals()!a:a in e[1]],aa:KBestPoly:=e[1],KBestIsPolredabs:=pra[d1+i] eq 1 select true else false,Verbose);
+            v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,a))] else [];
+            w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
+            E[i] := <f,b,c,<d,d eq 0 select Factorization(1) else Factorization(d)>,a,<u,w>,m>;
+            ee := E[i];
+            assert e[1] eq ee[1];
+            bb := [Eltseq(b):b in Rows(Matrix(Rationals(),ee[5])*Matrix(Rationals(),ee[2]))];
+            assert aa eq bb;
+            assert #sprint(ee) le 1.05*(#sprint(e)+100);
+        end for;
+        if #E gt 0 then r[10] := sprint(E); end if;
+        Puts(fp,Join(r,":"));
+        Flush(fp);
+        cnt +:= 1;
+        if not Quiet and #E gt 0 then printf "%o:%o:%o:%o (%.3os)\n",r[1],r[2],r[3],r[5],Cputime()-t; end if;
     end for;
     if not Quiet then printf "Wrote %o of %o records to %o\n", cnt, #S, outfile; end if;
 end procedure;
@@ -1116,6 +1111,52 @@ procedure FixFactorization (infile,outfile,factorfile:Quiet:=false,Jobs:=1,JobId
     if not Quiet then printf "Wrote %o records to %o in %o secs\n", cnt, outfile, Cputime()-start; end if;
 end procedure;
 
+procedure FixFactorizationFromData (oldfile,newfile,outfile:Quiet:=false,JobId:="")
+    start := Cputime();
+    if #JobId gt 0 then
+        oldfile cat:= Sprintf("_%o",JobId);
+        newfile cat:= Sprintf("_%o",JobId);
+        outfile cat:= Sprintf("_%o",JobId);
+    end if;
+    S1:=Split(Read(oldfile),"\n");
+    if not Quiet then printf "Loaded %o records from %o\n", #S1, oldfile; end if;
+    S2:=Split(Read(newfile),"\n");
+    if not Quiet then printf "Loaded %o records from %o\n", #S2, newfile; end if;
+    assert #S1 eq #S2;
+    fp := Open(outfile,"w");
+    n := 0; cnt := 0;
+    for i:=1 to #S1 do
+        if S1[i] eq S2[i] then Puts(fp,S2[i]); cnt +:= 1; continue; end if;
+        r1 := Split(S1[i],":");  r2 := Split(S2[i],":");
+        assert #r1 eq #r2;
+        if not Quiet then printf "Checking space %o:%o:%o:%o\n",r1[1],r1[2],r1[3],r1[5]; end if;
+        E1 := eval(r1[10]);
+        E2 := eval(r2[10]);
+        assert #E1 ne 0;
+        assert #E2 eq #E1;
+        EE := [];
+        for i:=1 to #E1 do
+            e1 := E1[i];  e2 := E2[i];
+            assert #e1 eq 7;
+            assert #e2 eq 7;
+            if Type(e2[4]) eq RngIntElt then
+                assert e2[4] eq e1[4][1];
+                e := <e2[1],e2[2],e2[3],e1[4],e2[5],e2[6],e2[7]>;
+            else
+                e := e2;
+            end if;
+            EE[i] := e;
+        end for;
+        r2[10] := sprint(EE);
+        s2 := Join(r2,":");
+        assert CompareSpaceData(S1[i],s2) eq 0;
+        Puts(fp,s2);
+        cnt +:= 1;
+    end for;
+    Flush(fp);
+    if not Quiet then printf "Wrote %o records to %o in %o secs\n", cnt, outfile, Cputime()-start; end if;
+end procedure;
+
 procedure DumpNFPolys (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0,SplitInput:=false)
     start := Cputime();
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
@@ -1220,26 +1261,4 @@ procedure MergeSpaceData (infile1, infile2, outfile:StraceUpdate:=false)
     for r in S do Puts(fp,Join(r,":")); end for;
     Flush(fp);
     printf "Wrote %o records (%o updated) to file %o, total time %.3os\n", #S, cnt, outfile, Cputime()-start;
-end procedure;
-
-// Use sed to replace $.1 with i if necessary, magam is too slow
-procedure FixEmbeddingData (infile, outfile : EmbeddingPrecision:=80)
-    t := Cputime();
-    S := [Split(r,":"):r in Split(Read(infile),"\n")];
-    print "Loaded %o records from %o in %.3os\n", #S, infile, Cputime(), t;
-    fp := Open(outfile,"w");
-    SetDefaultRealFieldPrecision(EmbeddingPrecision);
-    CC<i> := ComplexField(EmbeddingPrecision);
-    for i:=1 to #S do
-        r := S[i];
-        assert #r ge 19;
-        assert Order(CharacterOrbitReps(StringToInteger(r[1]))[StringToInteger(r[3])]) le 2;
-        a := r[19];
-        a := eval(a);
-        a := [Sort([[[Real(CC!d),Imaginary(CC!d)]: d in c]:c in b]):b in a];
-        r[19] := sprint(a);
-        Puts(fp,Join(r,":"));
-    end for;
-    Flush(fp);
-    printf "Wrote %o records to %o in %.3os\n", #S, outfile, Cputime()-t;
 end procedure;

@@ -916,7 +916,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                 end if;
             end if;
             rec["related_objects"] := ro;
-            rec["embedded_related_objects"] := ero;
+            if #ero gt 0 then rec["embedded_related_objects"] := ero; end if;
             f := 0;
             if n le #r[8] then
                 f := r[8][n];
