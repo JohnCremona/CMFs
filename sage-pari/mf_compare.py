@@ -171,7 +171,7 @@ def file_stats(fname):
     print("{} orbits have dimension <=20".format(n20))
     print("largest three dimensions: {}".format(alldims[-3:]))
     print("Total time = {:0.3f}".format(tot_time))
-    print("Max time = {:0.3f} for space {}".format(max_time, max_space))
+    print("Max time = {:0.3f}s ({:0.3f}m, {:0.3f}h) for space {}".format(max_time, max_time/60.0, max_time/3600.0,max_space))
     print("Average time (all spaces)      = {:0.3f}".format(tot_time/nspaces))
     print("Average time (nonzero spaces)  = {:0.3f}".format(tot_time0/nspaces0))
 

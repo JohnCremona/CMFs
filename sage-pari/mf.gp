@@ -1,3 +1,7 @@
+nf_disc_bound = 10^8;
+verbose=0;
+number_of_an=100; \\ 100; \\2000;
+
 \\  Function to sort Dirichlet characters according to Drew's system, as
 \\ implemented in the Magma function DirichletCharacterGaloisReps(N)
 
@@ -35,6 +39,14 @@ DirichletCharacterGaloisReps(N) =
         return(sChars);
 }
 
+OrderedConreyLabels(N) =
+{
+  ZNstar = znstar(N,1);
+  Chars =  DirichletCharacterGaloisReps(N);
+  [znconreyexp(ZNstar,chi) | chi <- Chars];
+}
+
+
 VecFind(v,a) =
 {
   for(i=1,#v,if(a==v[i],return(i)));
@@ -47,6 +59,20 @@ DirCharPerm(N) =
   new = DirichletCharacterGaloisReps(N);
   return(vector(#new,i,VecFind(old,new[i])));
 }
+
+supp(N,D=nf_disc_bound)=Set(factor(N,D)[,1]);
+
+denom_support(ancoefflist, maxp=nf_disc_bound) =
+{
+  my(sup=Set(), anc);
+  for(j=1,#ancoefflist,
+    anc=ancoefflist[j];
+    for(k=1,#anc,sup=setunion(sup,supp(denominator(anc[k]),maxp)));
+  );
+  sup;
+}
+
+
 
 \\ The next function is adapted from Karim's dims():
 
@@ -151,47 +177,47 @@ bipower_coeffs(a) =
  concat(L);
 }
 
+power_coeffs(K,a) =
+{
+  Vecrev(lift(a),#K.zk);
+}
+
 change_basis(an,M,newpol) =
 \\ Here the double Vecrev is because our matrices M are indexed from 0 to deg-1,
 \\ while gp's Vec() and Pol() functions start with the leading coefficient.
 {
   my(d = poldegree(newpol));
-  Mod( Pol(Vecrev(Vecrev(lift(an),d)*M)), newpol);
+  Mod( Pol(Vecrev(Vecrev(lift(an),d)*M), variable(newpol)), newpol);
 }
 
 change_basis_vec(anvec,oldpol,newpol) =
 {
-  my(d,alpha,M);
+  my(alpha, x = variable(oldpol));
+  printf("applying change_basis_vec() with oldpol=%s and newpol=%s\n",oldpol,newpol);
   if(oldpol==newpol, return(anvec));
-  d = poldegree(oldpol);
-  alpha = Mod(nfisisom(oldpol,newpol)[1],newpol);
-  M = vector(d,i,Vecrev(lift(alpha^i),d));
-  M = matrix(#M,#M[1],i,j,M[i][j]);
-  for(j=1,#anvec,anvec[j] = change_basis(anvec[j],M,newpol));
-  anvec;
+  alpha = nfisisom(oldpol,newpol)[1];
+  [Mod(subst(lift(an),x,alpha),newpol)   | an <- anvec];
 }
 
-absolutize_vec(anvec,botpol,toppol,abspol) =
+absolutize_vec_old(anvec,botpol,toppol,abspol,z) =
 {
-  my(zet,t,y,pol,pol1,gam);
-  \\ (1) embed small field into large field K: zeta is the image of the generator
-  zet = Mod(nfisincl(botpol,abspol)[1], abspol);
-  \\ (2) find a root of toppol in K
+  my(t,y,Y);
   t = variable(botpol);
   y = variable(toppol);
-  \\print(toppol, " of type ", type(toppol));
-  \\print(lift(toppol), " of type ", type(lift(toppol)));
-  pol =  Pol(subst(Vec(lift(toppol)),t,zet));
-  \\print(pol, " of type ", type(pol));
-  pol1 = [p | p<- factor(pol)[,1], poldegree(p)==1][1];
-  gam = -polcoef(pol1,0);
-  \\ now to convert a double-decker an we list twice and substitute xet for t and gam for y:
-  [subst(subst(lift(lift(an)),t,zet),y,gam) | an <- anvec];
+  Y = variable(abspol);
+  [Mod(subst(subst(lift(lift(an)),t,lift(z)),y,Y),abspol) | an <- anvec];
 }
 
-nf_disc_bound = 100;
-verbose=1;
-number_of_an=100;
+absolutize_vec(anvec,Krel) =
+{
+  [rnfeltreltoabs(Krel,an) | an <- anvec];
+}
+
+LLL_reduce_coeffs(anc) =
+\\ anc is a list of d-tuples
+{
+  ;
+}
 
 NewspaceDecompositionDimsPolysTracesCoeffs (N,G,chi, k, dmax) =
 {
@@ -244,8 +270,15 @@ NewspaceDecompositionDimsPolysTracesCoeffs (N,G,chi, k, dmax) =
   ans = [vecextract(L,[2..#L]) | L<-ans];
 
   \\ compute the absolute polys (as polys):
-  polys = vector(nnf,i,relcode=rels[i]; if(relcode==3, rnfequation(Qchi,pols[i]), if(relcode==2,chipol,pols[i])));
-  if(verbose&&nnf_small, printf("absolute polys (deg<=%d): %s\n",dmax,vecextract(polys,[1..nnf_small])));
+  polys = pols; relKs=vector(nnf,j,0);
+  for(i=1,nnf,relcode=rels[i];
+    if(relcode==2, polys[i]=chipol);
+    if(relcode==3, relKs[i]=rnfinit(Qchi,[pols[i],100]);polys[i]=subst(relKs[i].polabs,y,x))
+    );
+  for(i=1,nnf, polys[i]=subst(polys[i],variable(polys[i]),x));
+  if(verbose&&nnf_small,
+    printf("absolute polys (deg<=%d): %s\n",dmax,vecextract(polys,[1..nnf_small]));
+  );
 
   \\ compute the trace vectors:
   traces = vector(nnf,i, vector(number_of_an,j,abstrace(ans[i][j],dims[i])));
@@ -254,24 +287,58 @@ NewspaceDecompositionDimsPolysTracesCoeffs (N,G,chi, k, dmax) =
   if(verbose&&nnf_small, print("Traces:"); for(i=1,nnf_small,print(traces[i])));
 
   \\ apply polredbest_stable to polys of degree<=dmax
-  for(i=1,nnf_small,
-     polys[i]=polredbest_stable(polys[i]);
-     );
+  bestpolys = [polredbest_stable(p) | p <- vecextract(polys,[1..nnf_small])];
+  if(verbose&&nnf_small, printf("best polys (deg<=%d): %s\n",dmax,vecextract(bestpolys,[1..nnf_small])));
 
   \\ convert an's to the power basis of the polredbested poly:
+  if(verbose&&nnf_small, print("an (before):"); for(i=1,nnf_small,print(vecextract(ans[i],[1..5]))));
   for(i=1,nnf_small,
-    if(rels[i]==1, ans[i] = change_basis_vec(ans[i], pols[i], polys[i]));
-    if(rels[i]==2, ans[i] = change_basis_vec(ans[i], chipol, polys[i]));
-    if(rels[i]==3, ans[i] = absolutize_vec(ans[i],chipol,pols[i],polys[i]));
+    if(rels[i]==1, ans[i] = change_basis_vec(ans[i], pols[i], bestpolys[i]));
+    if(rels[i]==2, ans[i] = change_basis_vec(ans[i], chipol, bestpolys[i]));
+    if(rels[i]==3, ans[i] = absolutize_vec(ans[i],relKs[i]);
+                   ans[i] = [Mod(subst(lift(an),y,x),polys[i]) | an <- ans[i]];
+                   print("intermediate ans:");print(vecextract(ans[i],[1..5]));print();
+                   ans[i] = change_basis_vec(ans[i], polys[i], bestpolys[i]);
+                   print("converted ans:");print(vecextract(ans[i],[1..5]));print());
      );
-  if(verbose&&nnf_small, print("an:"); for(i=1,nnf_small,print(vecextract(ans[i],[1..5]))));
+  if(verbose&&nnf_small, print("an: (after)"); for(i=1,nnf_small,print(vecextract(ans[i],[1..5]))));
 
-  \\ Extract power basis coefficients of all an:
-  ancoeffs = [[Vec(lift(an), if(type(an)=="t_POLMOD",poldegree(an.mod),1)) | an<-ansi] | ansi <- ans];
+  \\ Extract power basis coefficients of all an.  Make sure each list has exactly length d-dims[i]:
 
-  \\ Conmpute coefficient vectors of the absolute polys:
-  polycoeffs = [Vecrev(f) | f<-vecextract(polys,[1..nnf_small])];
-  if(verbose,printf("poly coeffs (deg<=%d): %s\n",dmax,vecextract(polycoeffs,[1..nnf_small])));
+  ancoeffs = vector(nnf_small, i, 0);
+  for(i=1,nnf_small,ancoeffs[i] = [Vec(lift(an), dims[i]) | an<-ans[i]]);
+  if(verbose&&nnf_small, print("ancoeffs:"); for(i=1,nnf_small,print(vecextract(ancoeffs[i],[1..5]))));
+
+  \\ look at denominators:
+  denom_sups = [denom_support(anc) | anc <- ancoeffs];
+  if(verbose&&denom_sups&&#concat(denom_sups),printf("denominator supports (1): %s\n",denom_sups));
+
+  \\ try to find an order for each orbit:
+  if(verbose,print("Computing Hecke fields"));
+  \\Hecke_fields = vector(nnf_small,i,nfinit([bestpolys[i], setunion(primes(25),denom_sups[i])]));
+  Hecke_fields = vector(nnf_small,i,nfinit(bestpolys[i]));
+  Hecke_bases = [[power_coeffs(K,b) | b <- K.zk] | K <- Hecke_fields];
+  if(verbose&&nnf_small, for(i=1,nnf_small, printf("Field %d: order basis %s\n",i,Hecke_bases[i])));
+
+  \\ Extract new semi-integral basis coefficients of all an.
+
+  ancoeffs2 = ancoeffs;
+  for(i=1,nnf_small,
+    K=Hecke_fields[i];
+    ancoeffs2[i] = [nfalgtobasis(K,an) | an<-ans[i]];
+  );
+  if(verbose&&nnf_small, print("ancoeffs w.r.t Z-basis:"); for(i=1,nnf_small,print(ancoeffs2[i])));
+  \\ look at denominators again:
+  denom_sups = [denom_support(anc) | anc <- ancoeffs2];
+  if(denom_sups&&#concat(denom_sups),printf("denominator supports (2): %s\n",[d | d<- denom_sups, d]));
+  for(i=1,nnf_small,K=Hecke_fields[i];ansi=ans[i];
+  for(j=1,#ansi,d=denominator(nfalgtobasis(K,ansi[j]));
+    if(d>1,printf("Field %d, a_%d is not integral! denominator = %d\n",i,j,d));
+  ));
+
+  \\ Compute coefficient vectors of the absolute polys:
+  polycoeffs = [Vecrev(f) | f<- bestpolys];
+  if(verbose,printf("poly coeffs (deg<=%d): %s\n",dmax,polycoeffs));
 
   \\ Atkin-Lehner eigenvalues:
   Nfact = factor(N);
@@ -290,12 +357,13 @@ NewspaceDecompositionDimsPolysTracesCoeffs (N,G,chi, k, dmax) =
    shortperm = vecextract(perm,[1..nnf_small]);
    traces = vecextract(traces,perm);
    ancoeffs = vecextract(ancoeffs,shortperm);
+   ancoeffs2 = vecextract(ancoeffs2,shortperm);
    dims = vecextract(dims,perm);
    polycoeffs = vecextract(polycoeffs,shortperm);
    if(ord==1,ALeigs = vecextract(ALeigs,perm));
    );
 
-   return([traces,dims,polycoeffs,ancoeffs,ALeigs]);
+   return([traces,dims,polycoeffs,ancoeffs2,ALeigs,Hecke_bases]);
 }
 
 \\ Thanks to Karim for this funtion to remove whitespace from a list:
