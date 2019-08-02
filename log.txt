@@ -182,3 +182,30 @@ wt1.3801-3900 and wt1.3901-4000 are not.
           3900 1 124 0 1000 on hecke   (185h..., 47%)
           gp character = [0, 1, 4, 4]~
 
+Weight 1 nondihedral reruns with 2000 an.
+
+1273 spaces to be run
+
+1259 in nondihedral_forms.out
+  13 in nondihedral_forms.out.extras
+   1 missing
+
+extras done:
+
+3120:1:230 done in extras
+OneSpace_v1(3813,1,52,0,2000) done in extras
+OneSpace_v1(3952,1,48,0,2000) done in extras
+OneSpace_v1(3780,1,101,0,2000) done in extras
+OneSpace_v1(3813,1,32,0,2000)  done in extras
+OneSpace_v1(3813,1,141,0,2000) done in extras
+OneSpace_v1(3792,1,45,0,2000) done in extras
+OneSpace_v1(3816,1,46,0,2000)  done in extras
+OneSpace_v1(3780,1,109,0,2000) done in extras
+OneSpace_v1(3801,1,108,0,2000) done in extras
+OneSpace_v1(3843,1,253,0,2000) done in extras
+OneSpace_v1(3731,1,187,0,2000) done in extras
+OneSpace_v1(3212,1,60,0,2000)  done in extras
+OneSpace_v1(3636,1,44,0,2000)  done in extras
+
+extras running / waiting:
+
