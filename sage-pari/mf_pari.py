@@ -560,7 +560,7 @@ def Newforms_v2(N, k, chi_number, dmax=20, nan=100, Detail=0):
         print("Total time for space {}: {:0.3f}".format(Nko,t4-t0))
     return nfs
 
-Newforms = Newforms_v2
+Newforms = Newforms_v1
 
 def process_pari_nf(pari_nf, dmax=20, Detail=0):
     r"""
@@ -596,7 +596,7 @@ def process_pari_nf(pari_nf, dmax=20, Detail=0):
     Qchi = NumberField(chipoly,'t')
     chi_degree = chipoly.degree()
     # NB the only reason for negating the chi_degree parameter here is to get around a bug in the Sage/pari interface
-    pari_Qchi_to_sage = lambda elt: Qchi(gen_to_sage(elt.lift().Vecrev(-chi_degree)))
+    pari_Qchi_to_sage = lambda elt: Qchi(gen_to_sage(elt.lift().Vecrev(chi_degree)))
     Qchi_x = PolynomialRing(Qchi,'x')
     pari_Qchix_poly_to_sage = lambda f: Qchi_x([pari_Qchi_to_sage(co) for co in f.Vecrev()])
 
@@ -665,7 +665,7 @@ def process_pari_nf(pari_nf, dmax=20, Detail=0):
         # power basis for the field defined by chipoly.
 
         t0=time.time()
-        ancs = [gen_to_sage(an[0].lift().Vecrev(-dim)) for an in ans] # list of lists of integers/rationals
+        ancs = [gen_to_sage(an[0].lift().Vecrev(dim)) for an in ans] # list of lists of integers/rationals
         t1 = time.time()
         if Detail:
             print("time for converting an coeffs to QQ = {}".format(t1-t0))
@@ -729,7 +729,7 @@ def process_pari_nf(pari_nf, dmax=20, Detail=0):
     #  we only need the change of basis matrix whose rows give the
     #  power basis coefficients of each z^i*y_j (in the right order).
 
-    ancs = [[gen_to_sage(c.lift().Vecrev(-chi_degree)) for c in an] for an in ans]
+    ancs = [[gen_to_sage(c.lift().Vecrev(chi_degree)) for c in an] for an in ans]
     t4 = time.time()
     if Detail>1:
         print("Time to construct ancs) = {}".format(t4-t2))
@@ -775,7 +775,7 @@ def process_pari_nf_v1(pari_nf, dmax=20, Detail=0):
     Qchi = NumberField(chipoly,'t')
     chi_degree = chipoly.degree()
     # NB the only reason for negating the chi_degree parameter here is to get around a bug in the Sage/pari interface
-    pari_Qchi_to_sage = lambda elt: Qchi(gen_to_sage(elt.lift().Vecrev(-chi_degree)))
+    pari_Qchi_to_sage = lambda elt: Qchi(gen_to_sage(elt.lift().Vecrev(chi_degree)))
     Qchi_x = PolynomialRing(Qchi,'x')
     pari_Qchix_poly_to_sage = lambda f: Qchi_x([pari_Qchi_to_sage(co) for co in f.Vecrev()])
 
@@ -838,7 +838,12 @@ def process_pari_nf_v1(pari_nf, dmax=20, Detail=0):
         # defined by either rel_poly or chipoly.
 
         t0=time.time()
-        ancs = [gen_to_sage(an.lift().Vecrev(-dim)) for an in ans][1:]
+        # for an in ans[:20]:
+        #     print("an = {}".format(an))
+        #     print("an.lift() = {}".format(an.lift()))
+        #     print("an.lift().Vecrev(dim) = {}".format(an.lift().Vecrev(dim)))
+        #     print("gen_to_sage(an.lift().Vecrev(dim)) = {}".format(gen_to_sage(an.lift().Vecrev(dim))))
+        ancs = [gen_to_sage(an.lift().Vecrev(dim)) for an in ans][1:]
         t1 = time.time()
         if Detail:
             print("time for converting an coeffs to QQ = {}".format(t1-t0))
@@ -891,7 +896,7 @@ def process_pari_nf_v1(pari_nf, dmax=20, Detail=0):
     #  the power basis coefficients of each z^i*y^j (in the right
     #  order).
 
-    ancs = [[gen_to_sage(c.lift().Vecrev(-chi_degree)) for c in a.lift().Vecrev(-rel_degree)] for a in ans][1:]
+    ancs = [[gen_to_sage(c.lift().Vecrev(chi_degree)) for c in a.lift().Vecrev(rel_degree)] for a in ans][1:]
     t4 = time.time()
     if Detail>1:
         print("Time to construct ancs) = {}".format(t4-t2))
@@ -1024,6 +1029,8 @@ def coeff_reduce(C, B, SB, Detail=0, debug=False):
     if Detail:
         print("Computed Smith form in {:0.3f}".format(t2-t1))
     if debug:
+        print("V1V2S[2] = {}".format(V1V2S[2]))
+        print("S = {}".format(S))
         print("About to invert matrix of size {}".format(V2.matsize()))
     C1 *= V2
     B1 = V2**(-1)*B1
