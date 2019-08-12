@@ -130,9 +130,10 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
             print("character order = {}".format(chi_order))
 
     # Get the relative polynomials:  these are polynomials in y with coefficients either integers or polmods with modulus chipoly
-
-    pols = Snew.mfsplit(0,1)[1]
-    if Detail>2: print("pols[GP] = {}".format(pols))
+    if Detail: t1=time.time(); print("...calling mfsplit(0,1) (no eigenforms, just polys)...")
+    forms, pols = Snew.mfsplit(0,1)
+    if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
+    if Detail>2: print("forms[GP] = {}\npols[GP] = {}".format(forms,pols))
     nnf = len(pols)
     dims = [chi_degree*f.poldegree() for f in pols]
     if nnf==0:
@@ -142,53 +143,65 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
     if Detail:
         print("The space {}:{}:{} has {} newforms, dimensions {}".format(N,k,chi_number,nnf,dims))
 
-    # Get the traces.  NB (1) mftraceform will only give the trace
-    # form on the whole space so we only use this when nnf==1,
-    # i.e. the space is irreducible.  Otherwise we'll need to compute
-    # traces from the ans.  (2) these are only traces down to Q(chi)
-    # so when that has degree>1 (and only then) we need to take an
-    # additional trace.
+    # Compute trace forms using a combination of mftraceform and mfsplit (this avoids the need to compute a complete eigenbasis)
+    # When the newspace contains a large irreducible subspace (and zero or more small ones) this saves a huge amount of time (e.g. 1000x faster)
     traces = [None for _ in range(nnf)]
-    if nnf==1:
-        d = ZZ(chi_degree * (pols[0]).poldegree())
-        if Detail:
-            print("Only one newform so use traceform to get traces")
-        traces = pNK.mftraceform().mfcoefs(nan)
-        if Detail>1:
-            print("raw traces: {}".format(traces))
-        if chi_degree>1:
-            # This is faster than the more simple
-            # traces = [c.trace() for c in traces]
-            gptrace = pari_trace(chi_degree)
-            traces = pari.apply(gptrace,traces)
-            if Detail>1:
-                print("traces to QQ: {}".format(traces))
-        traces = gen_to_sage(traces)[1:]
-        traces[0] = d
-        if Detail>1:
-            print("final traces: {}".format(traces))
-        traces = [traces]
+    if Detail: t1=time.time(); print("...calling mftraceform...")
+    straces = pNK.mftraceform().mfcoefs(nan)
+    if Detail: print("Call to mftraceform took {:.3f} secs".format(time.time()-t1))
+    straces = gen_to_sage(pari.apply(pari_trace(chi_degree),straces))
+    if Detail>1: print("Newspace traceform: {}".format(straces))
 
-    # Get the coefficients an.  We'll need these for a newform f if
-    # either (1) its dimension is >1 and <= dmax, when we want to
-    # store them, or (2) there is more than one newform, so we can
-    # later compute the traces from them.  So we don't need them if
-    # nnf==1 and the dimension>dmax.
-
-    if dmax==0 or nnf>1 or ((chi_degree*(pols[0]).poldegree())<=dmax):
-        if Detail>1:
-            print("...computing mfeigenbasis...")
-        newforms = Snew.mfeigenbasis()
-        if Detail>1:
-            print("...computing {} mfcoefs...".format(nan))
+    # Compute coefficients here (but note that we don't need them if there is only one newform and its dimension is > dmax)
+    if nnf>1 or dmax==0 or dims[0] <= dmax:
+        if Detail: t1=time.time(); print("...computing {} mfcoefs...".format(nan))
         coeffs = Snew.mfcoefs(nan)
-        ans = [coeffs*Snew.mftobasis(nf) for nf in newforms]
+        if Detail: print("Call to mfcoefs took {:.3f} secs".format(time.time()-t1))
+
+    if nnf==1:
+        traces[0] = straces[1:]
+    else:
+        if Detail: s0=time.time()
+        dimlim = dims[-2:-1][0] / chi_degree
+        if Detail: t1=time.time(); print("...calling mfsplit({},{}) to get all but largest eigenform...".format(dimlim,dimlim))
+        forms, spols = Snew.mfsplit(dimlim,dimlim)
+        if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
+        forms = [pari.apply("trace",forms[i]) if spols[i].poldegree() > 1 else forms[i] for i in range(len(forms))]
+        ttraces = [pari.apply(pari_trace(chi_degree),coeffs*nf) for nf in forms]
+        ltraces = [straces[i] - sum([ttraces[j][i] for j in range(len(ttraces))]) for i in range(nan+1)]
+        traces = [list(t)[1:] for t in ttraces] + [ltraces[1:]]
+        if Detail>1: print("Traceforms: {}".format(traces))
+        if Detail: print("Spent {:.3f} secs computing traceforms".format(time.time()-s0))
+
+    # Get coefficients an for all newforms f of dim <= dmax (if dmax is set)
+    # Note that even if there are only dimension 1 forms we want to compute an so that pari puts the AL-eigenvalues in the right order
+    m = max([d for d in dims if (dmax==0 or d<=dmax)] + [0])
+    d1 = len([d for d in dims if d == 1])
+    if m:
+        # Don't compute a full eigenbasis if we don't need to!
+        if max(dims) > m:
+            dimlim = m / chi_degree
+            if Detail: t1=time.time(); print("...calling mfsplit({},{}) to get eigenforms whose coeffs we need to compute...".format(dimlim,dimlim))
+            forms, spols = Snew.mfsplit(dimlim,dimlim)
+            newforms = [f for f in forms]
+            if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
+        else:
+            if Detail: t1=time.time(); print("...computing mfeigenbasis...")
+            newforms = [Snew.mftobasis(nf) for nf in Snew.mfeigenbasis()]
+            if Detail: print("Call to mfeigenbasis took {:.3f} secs".format(time.time()-t1))
+        ans = [coeffs*f for f in newforms]
+        # if there is more than one form with the same dimension, update trace forms to make sure they match, otherwise the ordering may be off
+        if len(Set(dims)) < len(dims):
+            for i in range(len(ans)):
+                traces[i] = [abstrace(an,dims[i]) for an in ans[i]][1:]
+        ans += [None for _ in range(len(ans),nnf)]
+        newforms = [None for _ in range(d1)] + newforms
+        newforms += [None for _ in range(len(newforms),nnf)]
         if Detail>2:
             print("ans[GP] = {}".format(ans))
     else:
-        # there is only one newform (so we have the traces) and its
-        # dimension is >dmax (so we will not need the a_n):
-        ans = [None for _ in range(nnf)]
+        # set an for dim 1 forms, if any, just to be consistent
+        ans = [traces[i] for i in range(d1)] + [None for _ in range(d1,nnf)]
         newforms = [None for _ in range(nnf)]
 
     # Compute AL-eigenvalues if character is trivial:
@@ -208,7 +221,8 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
     # print("len(pols) = {}".format(len(pols)))
     # print("len(ans) = {}".format(len(ans)))
     # print("len(ALeigs) = {}".format(len(ALeigs)))
-
+    if Detail: print("traces set = {}".format([1 if t else 0 for t in traces]))
+    if Detail: print("ans set = {}".format([1 if a else 0 for a in ans]))
     pari_nfs = [
         { 'Nko': Nko,
           'SB': SturmBound,
@@ -809,9 +823,7 @@ def process_pari_nf_v1(pari_nf, dmax=20, Detail=0):
 
     x = Qx.gen()
     if dim==1:  # e.g. (11,2,1)[0]
-        traces = gen_to_sage(ans)[1:]
-        if newform['traces']==None:
-            newform['traces'] = traces
+        #traces = gen_to_sage(ans)[1:]
         newform['poly'] = x
         if Detail>1: print("traces = {}".format(newform['traces']))
         return newform
