@@ -442,7 +442,7 @@ end intrinsic;
 
 intrinsic DirichletCharacterFromAngles (N::RngIntElt,u::SeqEnum[RngIntElt],v::SeqEnum) -> GrpDrchElt
 { Given a modulus N, a positive integer n, a list of integers u giving standard generates for (Z/NZ)*, and a suitable list of integers v, returns the Dirichlet character with values in Q(zeta_n) mapping u[i] to zeta_n^v[i]. }
-    V := CharacterAngles(N,u,v,UnitGenerators(N)); // compute angles on standard Magma generators for *Z/NZ)*
+    V := CharacterAngles(N,u,v,UnitGenerators(N)); // compute angles on standard Magma generators for (Z/NZ)*
     n := LCM([Denominator(e):e in V]);
     F := CyclotomicField(n);
     return MinimalBaseRingCharacter(DirichletCharacterFromValuesOnUnitGenerators(DirichletGroup(N,F),[F|F.1^(Integers()!(n*e)) : e in V]));

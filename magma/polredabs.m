@@ -14,16 +14,16 @@ intrinsic Polredabs(f::RngUPolElt:DiscFactors:=[]) -> RngUPolElt
     return Parent(f)!Polredabs(Coefficients(f):DiscFactors:=DiscFactors);
 end intrinsic;
 
-intrinsic Polredbest(f::SeqEnum) -> SeqEnum
+intrinsic Polredbest(f::SeqEnum:DiscFactors:=[]) -> SeqEnum
 { Computes a small (non-canonical) defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
-    cmd := Sprintf("{print(Vecrev(Vec(polredbest(Pol(Vecrev(%o))))))}", f);
+    cmd := #DiscFactors eq 0 select Sprintf("{print(Vecrev(Vec(polredbest(Pol(Vecrev(%o))))))}", f) else  Sprintf("{print(Vecrev(Vec(polredbest([Pol(Vecrev(%o)),%o]))))}", f,DiscFactors);
     s := Pipe("gp -q", cmd);
     return get_gp_coeffs(s);
 end intrinsic;
 
-intrinsic Polredbest(f::RngUPolElt) -> RngUPolElt
+intrinsic Polredbest(f::RngUPolElt:DiscFactors:=[]) -> RngUPolElt
 { Computes a small (non-canonical) defining polynomial of the etale algebra Q[x]/(f(x)) using pari. }
-    return Parent(f)!Polredbest(Coefficients(f));
+    return Parent(f)!Polredbest(Coefficients(f):DiscFactors:=DiscFactors);
 end intrinsic;
 
 intrinsic PerfectPowerBase(n::RngIntElt) -> RngIntElt
@@ -60,14 +60,21 @@ intrinsic IsPolredabsCandidate (f::SeqEnum) -> SeqEnum
     return IsPolredabsCandidate(PolynomialRing(Integers())!f);
 end intrinsic;
 
-intrinsic Polredbestify (f::RngUPolElt) -> RngUPolElt, BoolElt
+intrinsic Polredbestify (f::RngUPolElt:DiscFactors:=[]) -> RngUPolElt, BoolElt
 { Call Polredbest repeatedly to get s smaller defining polynomial for the etale algebra Q[x]/(f(x)) using pari. } 
     for n:=1 to 5 do
         g := f;
-        f := Polredbest(g);
+        f := Polredbest(g:DiscFactors:=DiscFactors);
         if f eq g then break; end if;
     end for;
+    if #DiscFactors gt 0 then return Polredabs(f),true; end if;
     if IsPolredabsCandidate(f) then return Polredabs(f),true; else return f,false; end if;
+end intrinsic;
+
+intrinsic Polredbestify (f::SeqEnum:DiscFactors:=[]) -> RngUPolElt, BoolElt
+{ Call Polredbest repeatedly to get s smaller defining polynomial for the etale algebra Q[x]/(f(x)) using pari. } 
+    f,b := Polredbestify(PolynomialRing(Integers())!f:DiscFactors:=DiscFactors);
+    return Eltseq(f),b;
 end intrinsic;
 
 intrinsic PolredbestWithRoot(f::RngUPolElt) -> RngUPolElt, SeqEnum
