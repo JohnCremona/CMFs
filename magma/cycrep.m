@@ -12,7 +12,7 @@ intrinsic DiscreteLogMap (z::RngElt,n::RngIntElt) -> Map
 end intrinsic;
 
 intrinsic SparseZetaReduce(v::SeqEnum,n::RngIntElt) -> SeqEnum
-{ For v in sparse zeta reprsentation and n odd, eliminates all terms in v of the form c*z^e with e > n/2. }
+{ For v in sparse zeta reprsentation and n even, eliminates all terms in v of the form c*z^e with e > n/2. }
     if IsOdd(n) then return v; end if;
     m := n div 2;
     for i:=1 to #v do if v[i][2] ge m then v[i][1] := -v[i][1]; v[i][2] -:= m; end if; end for;

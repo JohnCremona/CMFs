@@ -54,7 +54,7 @@ charproj(R,chi)=
 	[R3,chi3,m]
 }
 
-/* Returns the nebntypus (character) of the correspondind modular form along with its Conrey label */
+/* Returns the Conrey label of the nebntypus (character) of the correspondind modular form */
 nebentypus(L)=
 {
 	my(N,sden,snum,R,g,v);
@@ -67,13 +67,24 @@ nebentypus(L)=
 	g=[]; forprime(p=2,N,if(#bnrchar(R,g)==1,break);if(N%p,g=concat(g,[p])););
 
 	/* compute determinant e(a)e(b)=e(a+b) in terms of Satake params [a,b] at primes p in g */
-	v=apply(x->vecsum(snum[primepi(x)])/sden,g);
+	v=apply(t->t-floor(t),apply(x->vecsum(snum[primepi(x)])/sden,g));
 
-	/* return Conrey label of the corresponding Dirichlet character */
-	Strprintf("%d.%d",N,znconreyexp(znstar(N,1),bnrchar(R,g,v)[1]))
+	/*
+	   Stupidly determine the Conrey label of the corresponding Dirichlet character
+	   Unforunately bnrchar(R,g,v) does not seem to create a character with values v on g?
+       e.g. chareval(znstar(8,1),bnrchar(bnrinit(bnfinit(x),[8,[1]]),[7,5],[1/2,1/2])[1],7) returns 0 not 1/2
+    */
+    G=znstar(N,1);
+    for(m=1,N-1,
+    	if(gcd(N,m)==1,
+    		chi=znconreychar(G,m);
+    		if(apply(n->chareval(G,chi,n),g)==v,return(m));
+    	)
+    );
+    error("Unable to determin Conery label for character of modulus "N" with values "v" on generators "g);
 }
 
-append(L,v)=
+append(L,v,keepconjugates=0)=
 {
 	my(i,s,m,n);
 	if(!v[1][3],return(L)); 				/* skip non-cuspidal forms */
@@ -86,17 +97,19 @@ append(L,v)=
 					/* if all the ap's match we assume the L-function is conjugate (true if m exceeds the Sturm bound, but this is not verified) */
 					if(j==m,
 						if(Set(L[i][1][4])!=Set(concat(L[i][1][4],v[1][4])),L[i][1][4]=concat(L[i][1][4],v[1][4]));
-						L[i][1][15]+=v[1][15];	/* add times for conjugate reps */
 						if(e==1,L[i][1][16]++);	/* increment count of times we have seen this exact L-function */
+						L[i][1][15]+=v[1][15];	/* add times for conjugate reps */
 						L[i][1][17]++;			/* increment count of times we have seen a conjugate of this L-function */
-						return(L);
+						if(e==1||!keepconjugates,return(L));
 					);
 				);
 			));
 		);
 	);
 	s=v[1];
+	/*
 	print(strjoin(strsplit(Str(s[1]":"s[2]":"s[3]":"s[4]":"s[5]":"s[6]":"s[7]":"s[8]":"s[9]":"s[10]":"s[11]":"s[12]":"s[13]":"s[14]":"s[15]":"s[16]":"s[17]":"v[2])," "),""));
+	*/
 	concat(L,[v])
 }
 
@@ -120,7 +133,7 @@ Lfunction(R,chi,nprimes,proj=0)=
 		);
 		/* the associated modular form is cuspidal (artin rep is irreducible) if and only if chi differs from its Galois conjugate */
 		if(length(P)==2 && (length(L[i])==1 || (length(L[i])==2 && L[i][1]!=L[i][2])), irred=1);
-		\\ if(length(P)==2 && ((length(L[i])==2 && L[i][1]!=L[i][2] && abs(L[i][2]-L[i][1])!=1/2)), irred2=1);
+		/* if(length(P)==2 && ((length(L[i])==2 && L[i][1]!=L[i][2] && abs(L[i][2]-L[i][1])!=1/2)), irred2=1); */
 		L[i]=vecsort(L[i]);
 	);
 	n=denominator(L);
@@ -140,8 +153,8 @@ Lfunction(R,chi,nprimes,proj=0)=
     	irred, 									 /* cuspidal/irreducible */
     	[R.bnf.disc], 							 /* discriminant of quadratic field */
     	R.clgp[2], 								 /* elementary divisors of ray class group */
+    	c[1],									 /* conductor of ray class character */
     	chi, 									 /* ray class character (values on generators) */
-    	charorder(R.clgp[2],chi),				 /* order of ray class character */
     	ker=charker(R.clgp[2],chi),				 /* kernel of ray class character (relative to generators corresponding to elementary divisors) */
     	bnrclassno(R,ker),						 /* relative degree of field cut out by ray class character */
     	m2,										 /* modulus of projective rep */
@@ -157,14 +170,15 @@ Lfunction(R,chi,nprimes,proj=0)=
 }
 
 /* B is a bound on the conductor of the artin-rep, nprimes is the number of primes at which to compute Satake parameters */
-rayclasses(B,nprimes,justone=0,jobs=1,jobid=0)=
+/* if justone is set to a value other than 0 or 1, it specifies the discriminant to use */
+rayclasses(B,nprimes,justone=0,jobs=1,jobid=0,keepconjugates=0)=
 {
 	my(d,F,ids,m,R,c,k,L,N);
 	if(justone,jobs=1;jobid=0);
 	L=vector(B,q,[]);
 	for(absd=1,B,forstep(sgnd=-1,1,2, 			/* iterate over quadratic discriminants d=sgnd*absd for |d|=absd <= B */
 		d=sgnd*absd; 							/* discriminant of quadratic field */
-		if(isfundamental(d) && d != 1,  		/* we only want fundamental non-trivial discs */
+		if(isfundamental(d) && d!=1 && (justone==0||justone==1||justone==d),
 			F=bnfinit(X^2-d,1); 				/* quadratic field F of discriminant d */
 			ids=ideallist(F,floor(B/absd),0); 	/* iterate over OK-ideals of norm <= B/|d| */
 			for(q=1,length(ids), 				/* q is the norm of ideal (conductor of primitive ray class character) */
@@ -177,7 +191,7 @@ rayclasses(B,nprimes,justone=0,jobs=1,jobid=0)=
 						c=bnrchar(R,[]); 		/* create group of ray class characters (characters of the ray class group) */
 						for(k=1,length(c), 		/* for each ray class character */
 							if(idealnorm(F,bnrconductorofchar(R,c[k]))==q, 			/* restrict to primitive characters */
-								L[N]=append(L[absd*q],Lfunction(R,c[k],nprimes,0)); /* L-function of Artin rep for this ray class character */
+								L[N]=append(L[N],Lfunction(R,c[k],nprimes,0),keepconjugates); /* L-function of Artin rep for this ray class character */
 							);
 						);
 					);
@@ -188,10 +202,33 @@ rayclasses(B,nprimes,justone=0,jobs=1,jobid=0)=
 	concat(L)
 }
 
+/*
+   morestakeparams returns Satake parameters for specified ray class character on primes in the interval [start,end]
+   We currently recompute all L-funmctions at level N with discriminant D, which is ridiculously inefficient (but seldom used).
+   A faster approach would be to compute fewer (or even just one) L-functions by using (for example) the modulus of the ray class group and something
+   that uniquely determines the character (but simply doing bnrchar(bnrnarrowinit(bnfinit(X^2-d,1),m)),c) won't always give the exact same character),
+   and/or only early-aborting on L-functions that don't match.
+*/
+moresatakeparams(N,D,sden,snum,nprimes)=
+{
+	my(L,n,j);
+	if(!isfundamental(D)||D==1,error("discriminant must be fundamental"));
+	if(N%abs(D)!=0,error("discriminant must divde the level"));
+	L=rayclasses(N,nprimes,D,1,0,1);
+	n=length(snum);
+	j=0;
+	for(i=1,length(L),
+		if(L[i][2]==sden && L[i][3][1..n]==snum,if(j>0,error("Unable to extend Satake params, prefix not unique!"),j=i));
+		print j;
+	);
+	if(j==0,error("Unable to extend Satake params, no prefix matched!"));
+	[L[j][2],L[j][3]]
+}
+
 /* Given conductor bound B, number of Satake-parameters (-1) and file name, output a list of all odd irred 2-dim dihedral Artin reps of conductor up to B. */
 go(B,n,filename,justone=0,jobs=1,jobid=0)=
 {
-	my(v,nprimes,gshift,N,D,G,rchi,ordrchi,key,deg,pmod,PG,pchar,pker,pkerp,pdeg,chi,t,cnt,dim,sden,snum,rec);
+	my(v,nprimes,gshift,N,D,G,rmod,rchi,key,deg,pmod,PG,pchar,pker,pkerp,pdeg,chi,t,cnt,dim,sden,snum,rec);
 	if(jobs>1,filename=Str(filename"_"jobid));
 	nprimes=primepi(n);
 	system("rm -f "filename);
@@ -201,8 +238,8 @@ go(B,n,filename,justone=0,jobs=1,jobid=0)=
 		N=v[i][1][1]; 								/* (2) conductor of Artin rep (disc(K)*conductor of ray class character)*/
 		D=v[i][1][4]; 								/* (3) discs of quadratic fields K over which dihedral Artin field is abelian (1 or 3 discs) */
 		G=v[i][1][5]; 								/* (4) elementary divisors of ray class group */
-		rchi=v[i][1][6]; 							/* (5) ray class character */
-		ordrchi=v[i][1][7];							/* (6) order of ray class character */
+		rmod=v[i][1][6];							/* (5) modulus/conductor of ray class character */
+		rchi=v[i][1][7]; 							/* (6) ray class character */
 		ker=v[i][1][8];								/* (7) kernel of ray class character */
 		deg=v[i][1][9];								/* (8) relative degree of kernel field (abelian over K but need not be Galois over Q!) */
 		pmod=v[i][1][10]; 							/* (9) modulus of projective character */
@@ -212,11 +249,11 @@ go(B,n,filename,justone=0,jobs=1,jobid=0)=
 		pdeg=v[i][1][14];							/* (13) relative degree of projective kernel field (as a cyclic ext of quad field K) */
 		chi=nebentypus(v[i]);					    /* (14) Determinant character of artin rep */
 		t=v[i][1][15];								/* (15) cputime to compute this artin rep (and all its duplicates/conjugates), in milliseconds */
-		cnt=v[i][1][16];							/* (16) total number of L-functions computed that are conjugate to this one */
+		cnt=v[i][1][16];							/* (16) total number of L-functions computed that are identical to this one */
 		dim=v[i][1][17]/cnt;						/* (17) number of distinct conjugates of this L-function */
 		sden=v[i][2];								/* (18) common denominator n of Satake parameters (traces are sums of nth roots of unity) */
-		snum=v[i][3][2..#v[i][3]];	 				/* (19) numerators of Satake params at finite primes (a_p = zeta_n^a + zeta_n^b for param [a,b]) */
-		rec=Str(gshift":"N":"D":"G":"rchi":"ordrchi":"ker":"deg":"pmod":"PG":"pchar":"pker":"pdeg":"chi":"t":"cnt":"dim":"sden":"snum);
+		snum=v[i][3][1..#v[i][3]];	 				/* (19) numerators of Satake params at finite primes (a_p = zeta_n^a + zeta_n^b for param [a,b]) */
+		rec=Str(gshift":"N":"D":"G":"rmod":"rchi":"ker":"deg":"pmod":"PG":"pchar":"pker":"pdeg":"chi":"t":"cnt":"dim":"sden":"snum);
 		write(filename,strjoin(strsplit(rec," "),""));
 	);
 	if(!justone,print("Done!"));
@@ -229,18 +266,16 @@ go(B,n,filename,justone=0,jobs=1,jobid=0)=
 projclassno(D,m,H)=
 {
 	my(F,R,f);
-	if(#D==3,print(2);return(2));
+	if(#D==3,return(2));
 	F=bnfinit(X^2-D[1],1);
 	R=bnrnarrowinit(F,m);
-	f=bnrclassno(R,H);
-	print(f);
-	f;
+	bnrclassno(R,H);
 }
 
 /* Given f in (Q[X])[x] an g in Q[x] returns a poly in Q[x] which is either f (if f is constant as a poly in X) or res(f,g,X) */
 descend(f,g)=if(polcoeff(f,1,X)==0,f,polresultant(g,f,X));	
 
-polredbestabs(f)={f=polredbest(f);if(poldegree(f)<=64,polredabs(f),polredbestf(f))}
+polredbestabs(f,p)={f=polredbest([f,p]);if(poldegree(f)<=32,polredabs([f,p]),polredbest([f,p]))}
 
 /*
    Given a list of quadratic discriminants D associated to a dihedral ray class field (so 1 or 3 in the D2 case), a  modulus m,
@@ -248,20 +283,25 @@ polredbestabs(f)={f=polredbest(f);if(poldegree(f)<=64,polredabs(f),polredbestf(f
 */
 projclassfield(D,m,H)=
 {
-	my(F,R,fs,g,t);
-	t=getabstime();
+	my(F,R,fs,g,t0,t1);
 	if(#D==3,
-		f=[x^2-D[1],x^2-D[2]];
-		t=getabstime()-t;
-		print(f":"t);
-		return(f);
+		n=2;
+		fs=[x^2-D[1],x^2-D[2]];
+		t0=1;
+		t1=1;
+	,
+		if(#D!=1,error("projclassfield expects a vector with one or three integer discriminants, got: "D));
+		t0=getabstime();
+		g=X^2-D[1];
+		F=bnfinit(g,1);
+		R=bnrnarrowinit(F,m);
+		n=bnrclassno(R,H);
+		fs=apply(f->descend(f,g),bnrclassfield(R,H));
+		t1=getabstime();  t0=t1-t0;
+		fs=concat([x^2-D[1]],apply(f->polredbestabs(f,factor(D[1]*m)[,1]),fs));
+		t1=getabstime()-t1;
 	);
-	if(#D!=1,error("projclassfield expects a vector with one or three integer discriminants, got: "D));
-	g=X^2-D[1];
-	F=bnfinit(g,1);
-	R=bnrnarrowinit(F,m);
-	fs=concat([x^2-D[1]],apply(f->polredbestabs(descend(f,g)),bnrclassfield(R,H)));
-	t=getabstime()-t;
-	print(fs":"t);
+	rec=Str(D":"m":"H":"n":"fs":"t0":"t1);
+	print(strjoin(strsplit(rec," "),""));
 	fs;
 }

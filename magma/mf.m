@@ -42,7 +42,7 @@ function ReconstructNewspaceComponent(chi,k,cutters:sign:=-1)
     return Kernel(cutters,NewSubspace(CuspidalSubspace(ModularSymbols(chi,k,sign))));
 end function;
 
-// Given a list of Hecke orbits in a newspace compute a list of cutters that can be used to reconstruct them    
+// Given a list of Hecke orbits in a newspace, compute a list of cutters that can be used to reconstruct them    
 function ComputeHeckeCutters (S)
     num := #S;
     HC := [[]:i in [1..num]];
@@ -64,7 +64,29 @@ function ComputeHeckeCutters (S)
     end while;
 end function;
 
-// No longer needed, used to trime extraneous terms that were erroneously included in an earlier implementation
+// Given a list of q-expansions of Hecke orbit reps in a newpace, compute a list of cutters that distinguish them
+function ComputeHeckeCuttersFromEigenvalues (N,E)
+    num := #E;
+    HC := [[]:i in [1..num]];
+    if num le 1 then return HC; end if;
+    numcoeffs := Min([#e:e in E]);
+    n := 1;  p := 1;
+    while true do
+        p := NextPrime(p);
+        assert p le numcoeffs;
+        if N mod p ne 0 then
+            for i:=1 to num do
+                g := MinimalPolynomial(E[i][p]);
+                Append(~HC[i],<p,Coefficients(g)>);
+            end for;
+            m := #Set(HC);
+            if m eq num then return HC; end if;
+            if m eq n then for i:=1 to num do Prune(~HC[i]); end for; else n := m; end if;
+        end if;
+    end while;
+end function;
+
+/* No longer needed, used to trim extraneous terms that were erroneously included in an earlier implementation
 function MinimizeHeckeCutters (HC)
     num := #HC;
     if num eq 0 then return []; end if;
@@ -80,7 +102,7 @@ function MinimizeHeckeCutters (HC)
     end for;
     print "Error, invalid Hecke cutter!";
     assert #Set(HC) eq num;
-end function;
+end function; */
 
 // Determines whether newform of character chi, dimension d, with rational traces t and Hecke field defined by f for modular symbol space S is self dual or not
 function IsSelfDual (chi,d,t,f,S)
@@ -107,11 +129,12 @@ end function;
 
 // Given a list of a_n for a newform of character chi and weight k returns a list of quadruples <b,n,M,i> where b=0,1 indicates proven results, n is a multiplicity,
 // and M,i identifies a Galois orbit [M.i] of primitive characters of modulus M for which the newform admits n distinct inner twists by characters in [M.i]
+// IMPORTANT: we assume caller has ensured that #a exceeds the Sturm bound and the largest Hecke cutter prime so that result is rigorous (by Lemma 12.2.8)
 function InnerTwistData (a,chi,k:CharTable:=AssociativeArray())
-    xi,B := InnerTwists(a,chi,k);
+    xi := InnerTwists(a,chi,k);
     for x in xi do M := Modulus(x); if not IsDefined(CharTable,M) then G,T := CharacterOrbitReps(M:RepTable); CharTable[M] := <G,T>; end if; end for;
-    xi := Sort([<M,CharTable[M][2][x],B[j] le #a select 1 else 0, B[j]> where M:=Modulus(x) where x := xi[j] : j in [1..#xi]]);
-    return [<x[3],Multiplicity(Multiset(xi),x),x[1],x[2]> : x in Set(xi)];
+    xi := [<M,CharTable[M][2][x]> where M:=Modulus(x) : x in xi];
+    return Sort([<1,Multiplicity(Multiset(xi),x),x[1],x[2]> : x in Set(xi)],func<a,b|a[3] eq b[3] select a[4]-b[4] else a[3]-b[3]>);
 end function;
 
 function NewspaceTraces (chi, k, o, n: Detail:= 0)
@@ -186,7 +209,7 @@ eap = list of lists of lists of real or complex valued a_p's for p up to the coe
 */
 
 function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], DimensionsOnly:=false, ComputeEigenvalues:=false, ComputeTwists:=false, ComputeTraceStats:=false,
-                       NumberOfCoefficients:=0, DegreeBound:=0, EmbeddingPrecision:= 0, Detail:=0, ReturnDecomposition:=false, ComputeCutters:=false, SelfTwistBound:=0)
+                       NumberOfCoefficients:=0, DegreeBound:=0, EmbeddingPrecision:= 0, Detail:=0, ReturnDecomposition:=false, ComputeCutters:=false)
     start := Cputime();
     N := Modulus(chi);
     dNS := QDimensionNewCuspForms(chi,k);
@@ -223,7 +246,7 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
             AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(NS,p)),dNS)>:p in PrimeDivisors(N)]] else [];
             if Detail gt 0 and Order(chi) eq 1 then printf "took %o secs.\n", Cputime()-t; printf "Atkin-Lehner signs %o\n", sprint(AL); end if;
             if Detail gt 0 then printf "Checking whether single form in space %o:%o:%o has CM...", N,k,o; t:=Cputime(); end if;
-            cm := [<proved select 1 else 0,st>] where st,proved:=SelfTwists([],NS:TraceHint:=TraceHint[1],pBound:=SelfTwistBound);
+            cm := [<1,SelfTwists([],NS:TraceHint:=TraceHint[1],pBound:=SturmBound(N,k))>];
             if Detail gt 0 then printf "took %o secs.\n", Cputime()-t; printf "CM: %o\n", cm; end if;
             s := Sprintf("%o:%o:%o:%o:%o:%o:%o:[]:[[]]:[]:%o:[]:[]", N, k, o, Cputime()-start, [dNS], TraceHint, AL, cm);
             s cat:= Sprintf(":[]:[]:[]:[]:[%o]:[]",IsSelfDual(chi,dNS,TraceHint,[],NS) select 1 else 0);
@@ -259,6 +282,7 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
                 ii := Index(DT,D[i]);
                 T[i] := <[Integers()|TraceHint[ii][j] : j in [1..n]],i>;
             else
+                // This is as fast (or faster) than using qExpnasion, SystemOfEigenvalues, or taking traces of HeckeOperator
                 T[i] := <[Integers()|Parent(a) eq Rationals() select a else AbsoluteTrace(a) where a:=Coefficient(F[i],j) : j in [1..n]],i>;
             end if;
         end for;
@@ -277,7 +301,8 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
     if Detail gt 0 and Order(chi) eq 1 then printf "Computing Atkin-Lehner signs for space %o:%o:%o...", N,k,o; t:=Cputime(); end if;
     AL := Order(chi) eq 1 select [[<p,ExactQuotient(Trace(AtkinLehnerOperator(S[i],p)),D[i])>:p in PrimeDivisors(N)]:i in [1..#S]] else [];
     if Detail gt 0 and Order(chi) eq 1 then printf "took %o secs.\n", Cputime()-t; end if;
-    if ComputeCutters and #[d:d in D|d le DegreeBound] gt 0 then
+    // In order to get rigorous results for twists we need to compute Hecke cutters (regardless of dimensions!)
+    if ComputeTwists or (ComputeCutters and #[d:d in D|d le DegreeBound] gt 0) then
         HC:=[[]:d in D];   
         if #D gt 1 then
             if Detail gt 0 then printf "Computing Hecke cutters for space %o:%o:%o...",N,k,o; t:=Cputime(); end if;
@@ -293,10 +318,15 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
     u := UnitGenerators(chi);
     X := [<u,[Eltseq(v):v in ValuesOnUnitGenerators(chi)]>:i in [1..#HF]];
     cm := []; it := [];
+    tb := SturmBound(N,k);
+    if #HC[1] gt 0 and HC[1][#HC[1]][1] gt tb then
+        if ComputeTwists then printf "Increasing twist bound to %o past Sturm bound %o to hit all Hecke cutters\n", HC[#HC][1][1], tb; end if;
+        tb := HC[#HC][1][1];
+    end if;
     if ComputeTwists then
         for i:=1 to #HF do
             if Detail gt 0 then printf "Computing self twists for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
-            cm[i] := <proved select 1 else 0,st> where st,proved := SelfTwists(T[i],S[i]:pBound:=SelfTwistBound);
+            cm[i] := <1,SelfTwists(T[i],S[i]:pBound:=tb)>;
             if Detail gt 0 then printf "found self twists %o in %o secs\n", cm[i], Cputime()-t; end if;
             if Detail gt 0 then printf "Computing inner twists for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
             it[i] := InnerTwistData(T[i],chi,k:CharTable:=CharTable);
@@ -319,9 +349,10 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
             if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
             if ComputeTwists then 
                 if Detail gt 0 then printf "Computing self twists for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
-                cm[i] := <proved select 1 else 0,st> where st,proved := SelfTwists(aa,S[i]:pBound:=SelfTwistBound);
+                cm[i] := <1,SelfTwists(aa,S[i]:pBound:=tb)>;
                 if Detail gt 0 then printf "found self twists %o in %o secs\n", cm[i], Cputime()-t; end if;
                 if Detail gt 0 then printf "Computing inner twists for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+                assert #aa ge tb; // guarantee rigorous result
                 it[i] := InnerTwistData(aa,chi,k:CharTable:=CharTable);
                 if Detail gt 0 then printf "found inner twists %o in %o secs\n", it[i], Cputime()-t; end if;
             end if;
@@ -331,9 +362,10 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
             for i:=d1+1 to #F do
                 a := [Coefficient(F[i],j):j in [1..n]];
                 if Detail gt 0 then printf "Computing self twists for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
-                cm[i] := <proved select 1 else 0,st> where st,proved := SelfTwists(a,S[i]:pBound:=SelfTwistBound);
+                cm[i] := <1,SelfTwists(a,S[i]:pBound:=tb)>;
                 if Detail gt 0 then printf "found self twists %o in %o secs\n", cm[i], Cputime()-t; end if;
                 if Detail gt 0 then printf "Computing inner twists for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+                assert #a ge tb; // guarantee rigorous result
                 it[i] := InnerTwistData(a,chi,k:CharTable:=CharTable);
                 if Detail gt 0 then printf "found inner twists %o in %o secs\n", it[i], Cputime()-t; end if;
             end for;
@@ -345,9 +377,9 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
             if Detail gt 0 then printf "Computing self twists for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
             if F[i] ne 0 then
                 a := [Coefficient(F[i],j):j in [1..n]];
-                cm[i] := <proved select 1 else 0,st> where st,proved := SelfTwists(a,S[i]:pBound:=SelfTwistBound);
+                cm[i] := <1,SelfTwists(a,S[i]:pBound:=tb)>;
             else
-                cm[i] := <proved select 1 else 0,st> where st,proved := SelfTwists([],S[i]:TraceHint:=TraceHint[i],pBound:=SelfTwistBound);
+                cm[i] := <1,SelfTwists([],S[i]:TraceHint:=TraceHint[i],pBound:=tb)>;
             end if;
             if Detail gt 0 then printf "found self twists %o in %o secs\n", cm[i], Cputime()-t; end if;
         end for;
@@ -571,6 +603,7 @@ function CompareSpaceData (s1,s2:DoNotCheck:=[])
             if #E1 ne #E2 then return n; end if;
             for i:=1 to #E1 do
                 e1 := E1[i];  e2 := E2[i];
+                if #e1 ne #e2 then return n; end if;
                 if e1 eq e2 then continue; end if;
                 if e1[4][1] ne 0 or e2[4][1] ne 0 then
                     if e1[3] ne e2[3] or e1[4] ne e2[4] then return n; end if;
@@ -620,7 +653,7 @@ function CompareSpaceData (s1,s2:DoNotCheck:=[])
             if r1[19] ne r2[19] then return n; end if;
         end if;
     end while;
-    return #r1 eq #r2 select 0 else mm+1;
+    return Max([i:i in [1..#r1]|not i in DoNotCheck]) eq Max([i:i in [1..#r2]|not i in DoNotCheck]) select 0 else mm+1;
 end function;
 
 
@@ -647,7 +680,8 @@ function CompareDataFiles (infile1,infile2:DoNotCheck:=[],Quiet:=false,Jobs:=1,J
 end function;
 
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for B0 < k^2*N <= B and k > 1.
-procedure DecomposeSpaces (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,TrivialCharOnly:=false,TraceStats:=false,Precision:=0,Jobs:=1,JobId:=0)
+procedure DecomposeSpaces (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOnly:=false,Coeffs:=1000,Eigenvalues:=true,Cutters:=true,Twists:=true,
+                           NBound:=0,kBound:=0,DegBound:=20,TrivialCharOnly:=false,TraceStats:=false,Precision:=0,Jobs:=1,JobId:=0)
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
     if TodoFile ne "" then
         TodoList := AssociativeArray();
@@ -665,6 +699,7 @@ procedure DecomposeSpaces (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsO
     fp := Open(outfile,"w");
     A := AssociativeArray();
     for N:=1 to Floor(B/4) do
+        if NBound gt 0 and N gt NBound then break; end if;
         if #L gt 0 and not N in L then continue; end if;
         if not TrivialCharOnly then
             if not Quiet then printf "Constructing character orbit table for modulus %o...", N; t:=Cputime(); end if;
@@ -672,6 +707,7 @@ procedure DecomposeSpaces (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsO
             if not Quiet then printf "took %o secs\n",Cputime()-t; end if;
         end if;
         for k := Max(2,Floor(Sqrt(B0/N))+1) to Floor(Sqrt(B/N)) do
+            if kBound gt 0 and k gt kBound then break; end if;
             m := TrivialCharOnly select 1 else #A[N][1];
             for o in [1..m] do
                 if #L gt 0 and not IsDefined(TodoList,[N,k,o]) then continue; end if;
@@ -687,7 +723,7 @@ procedure DecomposeSpaces (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsO
                         for M in Divisors(N) do if not IsDefined(A,M) then G, T := CharacterOrbitReps(M:RepTable); A[M] := <G,T>; end if; end for;
                         if not Quiet then printf "took %o secs\n",Cputime()-t; end if;
                         if not Quiet then printf "\nProcessing space %o:%o:%o with Coeffs=%o, DegBound=%o\n", N,k,o, Coeffs, DegBound; t:=Cputime(); end if;
-                        str := NewspaceData(chi,k,o:CharTable:=A,TraceHint:=hint,NumberOfCoefficients:=Coeffs,ComputeEigenvalues,ComputeCutters,EmbeddingPrecision:=Precision,ComputeTwists,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
+                        str := NewspaceData(chi,k,o:CharTable:=A,TraceHint:=hint,NumberOfCoefficients:=Coeffs,ComputeEigenvalues:=Eigenvalues,ComputeCutters:=Cutters,EmbeddingPrecision:=Precision,ComputeTwists:=Twists,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
                         if not Quiet then printf "Total time for space %o:%o:%o was %os\n\n", N,k,o,Cputime()-t; end if;
                     end if;
                     Puts(fp,str);
@@ -702,7 +738,8 @@ end procedure;
 
 
 // Decompose spaces S_k(N,chi)^new into Galois stable subspaces for B0 < k^2*N <= B and k > 1.
-procedure DecomposeSpace (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,TrivialCharOnly:=false,TraceStats:=false,Precision:=0,Jobs:=1,JobId:=0)
+procedure DecomposeSpace (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOnly:=false,Coeffs:=1000,DegBound:=20,Eigenvalues:=true,Cutters:=true,Twists:=true,
+                          TrivialCharOnly:=false,TraceStats:=false,Precision:=0,Jobs:=1,JobId:=0)
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
     if TodoFile ne "" then
         TodoList := AssociativeArray();
@@ -742,7 +779,7 @@ procedure DecomposeSpace (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOn
                         for M in Divisors(N) do if not IsDefined(A,M) then G, T := CharacterOrbitReps(M:RepTable); A[M] := <G,T>; end if; end for;
                         if not Quiet then printf "took %o secs\n",Cputime()-t; end if;
                         if not Quiet then printf "\nProcessing space %o:%o:%o with Coeffs=%o, DegBound=%o\n", N,k,o, Coeffs, DegBound; t:=Cputime(); end if;
-                        str := NewspaceData(chi,k,o:CharTable:=A,TraceHint:=hint,NumberOfCoefficients:=Coeffs,ComputeEigenvalues,ComputeCutters,EmbeddingPrecision:=Precision,ComputeTwists,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
+                        str := NewspaceData(chi,k,o:CharTable:=A,TraceHint:=hint,NumberOfCoefficients:=Coeffs,ComputeEigenvalues:=Eigenvalues,ComputeCutters:=Cutters,EmbeddingPrecision:=Precision,ComputeTwists:=Twists,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
                         if not Quiet then printf "Total time for space %o:%o:%o was %os\n\n", N,k,o,Cputime()-t; end if;
                     end if;
                     Puts(fp,str);
@@ -755,6 +792,62 @@ procedure DecomposeSpace (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsOn
     printf "Wrote %o records to %o using %os of CPU time.\n", cnt, outfile, Cputime()-st;
 end procedure;
 
+// Makes sure forms of weight k >1 with Hecke ring Z[zeta_m] use power basis
+procedure OptimizeCoefficientsCyc (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0,SplitInput:=false)
+    if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
+    if SplitInput then infile cat:= Sprintf("_%o",JobId); end if;
+    S:=Split(Read(infile),"\n");
+    if not Quiet then printf "Loaded %o records from %o\n", #S, infile; end if;
+    fp := Open(outfile,"w");
+    n := 0; cnt := 0;
+    T := AssociativeArray(Integers());
+    R := PolynomialRing(Rationals());
+    for s in S do
+        n +:= 1;
+        if not SplitInput and ((n-JobId) mod Jobs) ne 0 then continue; end if;
+        t := Cputime();
+        r := Split(s,":");
+        k := StringToInteger(r[2]);
+        if k eq 1 then Puts(fp,s); continue; end if;
+        N := StringToInteger(r[1]);
+        o := StringToInteger(r[3]);
+        D := eval(r[5]);
+        HF := eval(r[8]);
+        if #[f:f in HF|#f gt 2 and IsCyclotomicPolynomial(R!f)] eq 0 then Puts(fp,s); continue; end if;
+        inE := eval(r[10]);
+        if #inE eq 0 then Puts(fp,s); continue; end if;
+        pra := eval(r[13]);
+        d1 := #[d:d in D|d eq 1];
+        if #inE gt 0 then
+            if not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
+            chi := T[N][o];
+            u := UnitGenerators(chi);
+        end if;
+        E := [];
+        for i:=1 to #inE do
+            e := inE[i];
+            assert e[1] eq HF[d1+i];
+            // only look at cases where the coefficient ring is the full ring of integers of a cyclotomic field
+            if not IsCyclotomicPolynomial(R!e[1]) then E[i] := e; continue; end if;
+            if e[3] ne 1 then E[i] := e; continue; end if;
+            assert e[4][1] ne 0;
+            f := e[1];
+            aa := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
+            b := [Eltseq(r):r in Rows(IdentityMatrix(Rationals(),#aa[1]))];
+            v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,aa))] else [];
+            w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
+            E[i] := <f,b,e[3],e[4],aa,<u,w>,e[7]>;
+        end for;
+        r[10] := sprint(E);
+        Puts(fp,Join(r,":"));
+        Flush(fp);
+        cnt +:= 1;
+        if not Quiet and #E gt 0 then printf "%o:%o:%o:%o (%.3os)\n",r[1],r[2],r[3],r[5],Cputime()-t; end if;
+    end for;
+    if not Quiet then printf "Wrote %o of %o records to %o\n", cnt, #S, outfile; end if;
+end procedure;
+
+// Reoptimized representation of Hecke ring for forms where we store exact eigenvalues
 procedure OptimizeCoefficients (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0,SplitInput:=false)
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
     if SplitInput then infile cat:= Sprintf("_%o",JobId); end if;
@@ -832,10 +925,11 @@ procedure ProcessPariGPData (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0)
             X := [<u,[Eltseq(v):v in ValuesOnUnitGenerators(chi)]>:d in D|d eq 1];
             for e in inE do
                 aa := [Eltseq(a):a in Rows(Matrix(Rationals(),e[5])*Matrix(Rationals(),e[2]))];
-                f,b,a,c,d,pr := OptimizedOrderBasis([Rationals()!a:a in e[1]],aa);
+                f,b,a,c,d,pr,m := OptimizedOrderBasis([Rationals()!a:a in e[1]],aa);
                 v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,NFSeq(f,b,a))] else [];
                 w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
-                Append(~E,<f,b,c,d eq 0 select 0 else 1,a,<u,w>>);  Append(~pra,pr select 1 else 0);  Append(~HF,f); Append(~X,<u,v>);
+                Append(~E,<f,b,c,<d,d eq 0 select Factorization(1) else Factorization(d)>,a,<u,w>,m>);
+                Append(~pra,pr select 1 else 0);  Append(~HF,f); Append(~X,<u,v>);
             end for;
             assert #E eq #inE;
             assert #pra eq #HF;
@@ -1069,6 +1163,67 @@ procedure FixGeneratorBound (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0,SplitI
     if not Quiet then printf "Wrote %o records to %o in %o secs\n", cnt, outfile, Cputime()-start; end if;
 end procedure;
 
+procedure ReComputeHeckeCutters (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0,SplitInput:=false)
+    start := Cputime();
+    if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
+    if SplitInput and Jobs ne 1 then infile cat:= Sprintf("_%o",JobId); end if;
+    S:=Split(Read(infile),"\n");
+    if not Quiet then printf "Loaded %o records from %o\n", #S, infile; end if;
+    fp := Open(outfile,"w");
+    n := 0; cnt := 0; ucnt := 0;
+    m := 0;
+    for s in S do
+        n +:= 1;
+        if SplitInput or ((n-JobId) mod Jobs) eq 0 then
+            t := Cputime();
+            r := Split(s,":");
+            N := StringToInteger(r[1]);
+            k := StringToInteger(r[2]);
+            o := StringToInteger(r[3]);
+            D := StringToIntegerArray(r[5]);
+            if #D eq 0 then Puts(fp,Join(r,":")); continue; cnt +:= 1; end if;
+            HC := eval(r[9]);
+            E := [**];
+            if D[1] eq 1 then
+                T := eval(r[6]);
+                for i:=1 to #D do
+                    if D[i] gt 1 then break; end if;
+                    E[i] := T[i];
+                end for;
+            end if;
+            Ein := eval(r[10]);
+            for e in Ein do Append(~E,NFSeq(e[1],e[2],e[5])); end for;
+            if #E ne #D then
+                if k eq 1 then printf "ERROR: Unable to process space %o:%o:%o with dims %o, missing exact eigevnalue data for some forms\n", N, k, o, D; end if;
+                Puts(fp,Join(r,":"));
+                cnt +:= 1;
+                continue;
+            end if;
+            newHC := ComputeHeckeCuttersFromEigenvalues(N,E);
+            if #HC gt 0 then
+                if HC ne newHC then
+                    printf "WARNING! Hecke cutters changed for space %o.%o.%o with dims %o!\n",N,k,o,D;
+                    print "Old:", sprint(HC);
+                    print "New:", newHC;
+                else
+                    // if not Quiet then printf "Confirmed existing Hecke cutters for space %o.%o.%o with dims %o.\n",N,k,o,D; end if;
+                end if;
+            end if;
+            if newHC ne HC then r[9] := sprint(newHC); end if;
+            Puts(fp,Join(r,":"));
+            if not Quiet and newHC ne HC then printf "Computed new Hecke cutter %o for %o:%o:%o with dims %o in %o secs.\n", sprint(newHC), r[1],r[2],r[3],D,Cputime()-t; end if;
+            cnt +:= 1; ucnt +:= 1;
+            if newHC ne HC and #newHC gt 0 and #newHC[1] gt 0 and Max([a[1]:a in newHC[1]] cat [m]) gt m then
+                m := Max([a[1]:a in newHC[1]] cat [m]);
+                print "Max new cutter prime is now", m;
+            end if;
+        end if;
+    end for;
+    Flush(fp);
+    if not Quiet then printf "Updated %o of %o records written to %o in %o secs\n", ucnt, cnt, outfile, Cputime()-start; end if;
+    if not Quiet then print "Max new cutter prime is", m; end if;
+end procedure;
+
 procedure FixFactorization (infile,outfile,factorfile:Quiet:=false,Jobs:=1,JobId:=0,SplitInput:=false)
     start := Cputime();
     T := AssociativeArray(Integers());
@@ -1156,6 +1311,36 @@ procedure FixFactorizationFromData (oldfile,newfile,outfile:Quiet:=false,JobId:=
     Flush(fp);
     if not Quiet then printf "Wrote %o records to %o in %o secs\n", cnt, outfile, Cputime()-start; end if;
 end procedure;
+
+procedure MarkTwistsProved (infile,outfile:Quiet:=false,JobId:="")
+    start := Cputime();
+    if #JobId gt 0 then
+        infile cat:= Sprintf("_%o",JobId);
+        outfile cat:= Sprintf("_%o",JobId);
+    end if;
+    S:=Split(Read(infile),"\n");
+    if not Quiet then printf "Loaded %o records from %o\n", #S, infile; end if;
+    fp := Open(outfile,"w");
+    n := 0; cnt := 0; upd := 0;
+    for s in S do
+        n +:= 1;
+        r := Split(s,":");
+        if r[11] eq "[]" and r[12] eq "[]" then Puts(fp,s); cnt +:= 1; continue; end if;
+        cm := eval(r[11]);
+        for t in cm do assert t[1] eq 1; end for;
+        it := eval(r[12]);
+        newit := [[<1,t[2],t[3],t[4]>:t in ft]:ft in it];
+        if newit eq it then Puts(fp,s); cnt +:= 1; continue; end if;
+        if not Quiet then printf "Set proved flags for inner twists in space %o:%o:%o: %o changed to %o\n", r[1],r[2],r[3],sprint(it),sprint(newit); end if;
+        r[12] := sprint(newit);
+        Puts(fp,Join(r,":"));
+        cnt +:= 1;
+        upd +:= 1;
+    end for;
+    Flush(fp);
+    if not Quiet then printf "Wrote %o of %o records (%o updated) to %o in %o secs\n", cnt, n, upd, outfile, Cputime()-start; end if;
+end procedure;
+
 
 procedure DumpNFPolys (infile,outfile:Quiet:=false,Jobs:=1,JobId:=0,SplitInput:=false)
     start := Cputime();
@@ -1262,3 +1447,4 @@ procedure MergeSpaceData (infile1, infile2, outfile:StraceUpdate:=false)
     Flush(fp);
     printf "Wrote %o records (%o updated) to file %o, total time %.3os\n", #S, cnt, outfile, Cputime()-start;
 end procedure;
+

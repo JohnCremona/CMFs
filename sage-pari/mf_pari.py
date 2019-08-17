@@ -112,9 +112,13 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
         print("NK = {} (gp character = {})".format(NK,chi_gp))
     SturmBound = pNK.mfsturm()
     Snew = pNK.mfinit(0)
-    total_dim = Snew.mfdim()
-    # Get the character polynomial
+    reldim = Snew.mfdim()
+    if reldim==0:
+        if Detail:
+            print("The space {}:{}:{} is empty".format(N,k,chi_number))
+        return []
 
+    # Get the character polynomial
     # Note that if the character order is 2*m with m odd then Pari uses the
     # m'th cyclotomic polynomial and not the 2m'th (e.g. for a
     # character of order 6 it uses t^2+t+1 and not t^2-t+1).
@@ -122,24 +126,27 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
     chi_order_2 = chi_order//2 if chi_order%4==2 else chi_order
     chipoly = cyclotomic_polynomial(chi_order_2,'t')
     chi_degree = chipoly.degree()
+    totdim = reldim * chi_degree
     assert chi_degree==euler_phi(chi_order)==euler_phi(chi_order_2)
     if Detail:
-        print("Computed newspace {}:{}:{}, dimension={}*{}={}, now splitting into irreducible subspaces".format(N,k,chi_number, chi_degree,total_dim,chi_degree*total_dim))
+        print("Computed newspace {}:{}:{}, dimension={}*{}={}, now splitting into irreducible subspaces".format(N,k,chi_number, chi_degree, reldim, totdim))
         if Detail>1:
             print("Sturm bound = {}".format(SturmBound))
             print("character order = {}".format(chi_order))
 
     # Get the relative polynomials:  these are polynomials in y with coefficients either integers or polmods with modulus chipoly
-    if Detail: t1=time.time(); print("...calling mfsplit(0,1) (no eigenforms, just polys)...")
-    forms, pols = Snew.mfsplit(0,1)
+    # But we only need the poly for the largest space if its absolute dimension is less than 20
+    d = max(reldim // 2, dmax // chi_degree) if dmax else 0
+    if Detail: t1=time.time(); print("...calling mfsplit({},{})...".format(d,d))
+    forms, pols = Snew.mfsplit(d,d)
     if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
-    if Detail>2: print("forms[GP] = {}\npols[GP] = {}".format(forms,pols))
-    nnf = len(pols)
+    if Detail>2: print("mfsplit({},1) returned pols[GP] = {}".format(d,pols))
     dims = [chi_degree*f.poldegree() for f in pols]
-    if nnf==0:
-        if Detail:
-            print("The space {}:{}:{} is empty".format(N,k,chi_number))
-        return []
+    # We may be missing the largest newform, add its dimension in if needed
+    d = totdim - sum(dims+[0])
+    if d:
+        dims += [d]
+    nnf = len(dims)
     if Detail:
         print("The space {}:{}:{} has {} newforms, dimensions {}".format(N,k,chi_number,nnf,dims))
 
@@ -162,12 +169,8 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
         traces[0] = straces[1:]
     else:
         if Detail: s0=time.time()
-        dimlim = dims[-2:-1][0] / chi_degree
-        if Detail: t1=time.time(); print("...calling mfsplit({},{}) to get all but largest eigenform...".format(dimlim,dimlim))
-        forms, spols = Snew.mfsplit(dimlim,dimlim)
-        if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
-        forms = [pari.apply("trace",forms[i]) if spols[i].poldegree() > 1 else forms[i] for i in range(len(forms))]
-        ttraces = [pari.apply(pari_trace(chi_degree),coeffs*nf) for nf in forms]
+        tforms = [pari.apply("trace",forms[i]) if pols[i].poldegree() > 1 else forms[i] for i in range(nnf-1)]
+        ttraces = [pari.apply(pari_trace(chi_degree),coeffs*nf) for nf in tforms]
         ltraces = [straces[i] - sum([ttraces[j][i] for j in range(len(ttraces))]) for i in range(nan+1)]
         traces = [list(t)[1:] for t in ttraces] + [ltraces[1:]]
         if Detail>1: print("Traceforms: {}".format(traces))
@@ -175,34 +178,12 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
 
     # Get coefficients an for all newforms f of dim <= dmax (if dmax is set)
     # Note that even if there are only dimension 1 forms we want to compute an so that pari puts the AL-eigenvalues in the right order
-    m = max([d for d in dims if (dmax==0 or d<=dmax)] + [0])
+    # m = max([d for d in dims if (dmax==0 or d<=dmax)] + [0])
     d1 = len([d for d in dims if d == 1])
-    if m:
-        # Don't compute a full eigenbasis if we don't need to!
-        if max(dims) > m:
-            dimlim = m / chi_degree
-            if Detail: t1=time.time(); print("...calling mfsplit({},{}) to get eigenforms whose coeffs we need to compute...".format(dimlim,dimlim))
-            forms, spols = Snew.mfsplit(dimlim,dimlim)
-            newforms = [f for f in forms]
-            if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
-        else:
-            if Detail: t1=time.time(); print("...computing mfeigenbasis...")
-            newforms = [Snew.mftobasis(nf) for nf in Snew.mfeigenbasis()]
-            if Detail: print("Call to mfeigenbasis took {:.3f} secs".format(time.time()-t1))
-        ans = [coeffs*f for f in newforms]
-        # if there is more than one form with the same dimension, update trace forms to make sure they match, otherwise the ordering may be off
-        if len(Set(dims)) < len(dims):
-            for i in range(len(ans)):
-                traces[i] = [abstrace(an,dims[i]) for an in ans[i]][1:]
-        ans += [None for _ in range(len(ans),nnf)]
-        newforms = [None for _ in range(d1)] + newforms
-        newforms += [None for _ in range(len(newforms),nnf)]
-        if Detail>2:
-            print("ans[GP] = {}".format(ans))
-    else:
-        # set an for dim 1 forms, if any, just to be consistent
-        ans = [traces[i] for i in range(d1)] + [None for _ in range(d1,nnf)]
-        newforms = [None for _ in range(nnf)]
+    dm = len([i for i in range(nnf) if dmax==0 or dims[i] <= dmax])
+    ans = [traces[i] for i in range(d1)] + [coeffs*forms[i] for i in range(d1,dm)] + [None for i in range(dm,nnf)]
+    if Detail>2: print("ans[GP] = {}".format(ans))
+    newforms = [None for i in range(d1)] + [forms[i] for i in range(d1,dm)] + [None for i in range(dm,nnf)]
 
     # Compute AL-eigenvalues if character is trivial:
     if chi_order==1:
@@ -216,35 +197,32 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
         ALeigs = [[] for _ in range(nnf)]
 
     Nko = (N,k,chi_number)
-    # print("len(traces) = {}".format(len(traces)))
-    # print("len(newforms) = {}".format(len(newforms)))
-    # print("len(pols) = {}".format(len(pols)))
-    # print("len(ans) = {}".format(len(ans)))
-    # print("len(ALeigs) = {}".format(len(ALeigs)))
     if Detail: print("traces set = {}".format([1 if t else 0 for t in traces]))
     if Detail: print("ans set = {}".format([1 if a else 0 for a in ans]))
+    Qx = PolynomialRing(QQ,'x')
     pari_nfs = [
         { 'Nko': Nko,
           'SB': SturmBound,
           'chipoly': chipoly,
+          'dim': dims[i],
           'pari_newform': newforms[i],
-          'poly': pols[i],
+          'poly': Qx.gen() if dims[i] == 1 else (pols[i] if dims[i] <= dmax else None),
+          'best_poly': Qx.gen() if dims[i] == 1 else None,
           'ans': ans[i],
           'ALeigs': ALeigs[i],
           'traces': traces[i],
         }   for i in range(nnf)]
-
-    # This processing returns full data but the polynomials have not
-    # yet been polredbested and the an coefficients have not been
-    # optimized (or even made integral):
-    #return pari_nfs
-
+    if len(pari_nfs)>1:
+        pari_nfs.sort(key=lambda f: f['traces'])
     t1=time.time()
     if Detail:
         print("{}: finished constructing GP newforms (time {:0.3f})".format(Nko,t1-t0))
-    nfs = [process_pari_nf_v1(nf, dmax, Detail) for nf in pari_nfs]
-    if len(nfs)>1:
-        nfs.sort(key=lambda f: f['traces'])
+    if d1 == dm:
+        return pari_nfs
+
+    # At this point we have everything we need, but the ans have not been optimized (or even made integral)
+    nfs = [process_pari_nf_v1(pari_nfs[i], dmax, Detail) for i in range(d1,dm)]
+
     t2=time.time()
     if Detail:
         print("{}: finished first processing of newforms (time {:0.3f})".format(Nko,t2-t1))
@@ -269,7 +247,7 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
                 if 'eigdata' in nf:
                     print(nf['eigdata']['ancs'])
         print("Total time for space {}: {:0.3f}".format(Nko,t4-t0))
-    return nfs
+    return [pari_nfs[i] for in range(d1)] + nfs + [pari_nfs[i] for i in range(dm,nnf)]
 
 def Newforms_v2(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t0=time.time()

@@ -74,66 +74,58 @@ intrinsic SturmBound (N::RngIntElt, k::RngIntElt) -> RngIntElt
     return Integers()!Floor(k*m/12);
 end intrinsic;
 
-// Use Shimura 3.6.4 to get Sturm bound for twist of form of character chi by a character phi
-intrinsic TwistSturmBound (N::RngIntElt, k::RngIntElt, chi::GrpDrchElt, phi::GrpDrchElt) -> RngIntElt
-{ Sturm bound for space known to contain twist of form of level N weight k character chi by character phi. }
+// [obsolete] Use Shimura 3.6.4 to get Sturm bound for twist of form of character chi by a character phi
+// Use Lemma 1.4 in  Booker, Min, Strombergsson https://arxiv.org/pdf/1803.06016.pdf, Lemma 12.2.1 in CMF paper
+// No longer used -- per Lemma 12.2.8 it suffices to check to the max of the Sturm bound and the largest Hecke cutter prime
+intrinsic TwistSturmBound (N::RngIntElt, k::RngIntElt, chi::GrpDrchElt, psi::GrpDrchElt) -> RngIntElt
+{ Sturm bound for space known to contain twist of form of level N weight k character chi by character psi. }
     require N ge 1 and k ge 1: "Level N and weight k must be positive integers";
-    return SturmBound(LCM([N,Conductor(phi)^2,Conductor(phi)*Conductor(chi)]),k);
-end intrinsic;
-
-// Use Shimura 3.6.4 to get Sturm bound for twist of form of character chi by a character phi
-intrinsic TwistSturmBound (N::RngIntElt, k::RngIntElt, cchi::RngIntElt, cphi::RngIntElt) -> RngIntElt
-{ Sturm bound for space known to contain twist of form of level N weight k character chi by character phi. }
-    require N ge 1 and k ge 1 and cchi ge 1 and cphi ge 1: "Level N, weight k, and conductors of chi and phi must be positive integers";
-    return SturmBound(LCM([N,cphi^2,cchi*cphi]),k);
+//    return SturmBound(LCM([N,Conductor(phi)^2,Conductor(phi)*Conductor(chi)]),k);
+    return SturmBound(LCM([N,Conductor(psi)*Conductor(psi*chi)]),k);
 end intrinsic;
 
 intrinsic SelfTwistCandidates (a::SeqEnum, N::RngIntElt, k::RngIntElt) -> SeqEnum[RngIntElt]
-{ Given sequence of coefficients a=[a_1,a_2,...] of a newform of level N and weight k, returns a list of integers D dividing N for which it is possible that the newform admits a self-twist by Kronecker(D,*); all such D will be negative if k > 1. }
-    D := [Integers()|];
+{ Given sequence of coefficients a=[a_1,a_2,...] of a newform of level N and weight k, returns a list of primitive characters of conductor D dividing N for which it is possible that the newform admits a self-twist by Kronecker(D,*); all such characters be odd if k > 1. }
+    D := [**];
     P := PrimesInInterval(1,#a);
     for chi in [x: x in Elements(DirichletGroup(N)) | Order(x) eq 2 and (k eq 1 or IsOdd(x))] do
-        sign := IsOdd(chi) select -1 else 1;
-        if &and[a[p] eq 0 : p in P | chi(p) eq -1] then Append(~D,sign*Conductor(chi)); end if;
+        if &and[a[p] eq 0 : p in P | chi(p) eq -1] then Append(~D,DirichletGroup(Conductor(chi))!chi); end if;
     end for;
     return D;
 end intrinsic;
 
-intrinsic SelfTwists (a::SeqEnum, S::ModSym: TraceHint:=[], pBound:=0) -> SeqEnum[RngIntElt], BoolElt
-{ Given a (possibly empty) prefix of the q-expansion of an eigenform f for a space of modular symbols S returns a list of fundamental discriminants D for which f admits a self-twist by Kronecker(D,*).  In weight k >= 2 this list is either empty or contains a single negative discriminant.  }
+intrinsic SelfTwists (a::SeqEnum, S::ModSym: TraceHint:=[], pBound:=0) -> SeqEnum[RngIntElt]
+{ Given a (possibly empty) prefix of the q-expansion of an eigenform f for a space of modular symbols S returns a list of fundamental discriminants D for which f admits a self-twist by Kronecker(D,*).  Currently requires k >= 2, in which case this list is either empty or contains a single negative discriminant.
+  Checks primes up to greater of #a, Sturm bound, and pBound (set pBound to the largest Hecke cutter prime to get a provably correct result). }
     N := Level(S);  k := Weight(S);  chi := DirichletCharacter(S);
-    assert k ge 2; // this ensures only one self twist (and it must be by a negative quadratic character)
-    if Order(chi) eq 1 and IsSquarefree(N) then return [Integers()|],true; end if;  // apply Ribet Thm. 3.9 and Cor 3.10 if character is trivial
-    // If TraceHint is specified, try to use it to rule out self twists
+    assert k ge 2; // this ensures only one self twist (and it must be by an odd quadratic character)
+    if Order(chi) eq 1 and IsSquarefree(N) then return [Integers()|]; end if;  // apply Ribet Thm. 3.9 and Cor 3.10 if character is trivial
+    // If TraceHint is specified, try to use it to rule out self twists: if trace(a_p)!=0 then a_p!=0 and we know chi(p)=1 (without computing a_p)
     if #TraceHint gt 0 then
         DT := SelfTwistCandidates(TraceHint,N,k);
-        if #DT eq 0 then return [Integers()|],true; end if;
+        if #DT eq 0 then return [Integers()|]; end if;
     else
-        DT := [Integers()|];
+        DT := [**];
     end if;
     if #a lt 7 then F := Eigenform(S,8); a:=[Coefficient(F,n) : n in [1..7]]; end if;
-    D := SelfTwistCandidates(a,N,k);
-    if #DT gt 0 then D := [d:d in D|d in DT]; end if;
+    DC := SelfTwistCandidates(a,N,k);
+    // Only keep candidates that also worked for the trace hint, if one was given
+    D := #DT gt 0 select [*psi:psi in DC|#[i:i in [1..#DT]|DT[i] eq psi] gt 0*] else DC;
     if #D eq 0 then return [Integers()|],true; end if;
     while #D gt 1 do 
         F := Eigenform(S,#a+1);
         a := [Coefficient(F,n) : n in [1..2*#a]];
-        D := SelfTwistCandidates(a,N,k);
+        DC := SelfTwistCandidates(a,N,k);
+        D := #DT gt 0 select [*psi:psi in DC|#[i:i in [1..#DT]|DT[i] eq psi] gt 0*] else DC;
     end while;
-    if #D eq 0 then return [Integers()|],true; end if;
-    D := D[1];
-    sB := TwistSturmBound (N,k,Abs(D),Conductor(chi));
-    if pBound gt 0 and sB gt pBound and sB gt #a then
-        printf "Specified prime bound %o is less than Sturm bound %o, returned result may not be provably correct (but is an upper limit)\n", pBound, sB;
-        B := pBound;
-    else
-        B := sB;
-    end if;
+    if #D eq 0 then return [Integers()|]; end if;
+    psi := D[1];
+    B := Max([#a,SturmBound(N,k),pBound]);
     P := PrimesInInterval(1,B);
     s := Cputime();
     if B le #a then 
-        for p in P do if KroneckerSymbol(D,p) eq -1 and a[p] ne 0 then return [],true; end if; end for;
-        return [D],true;
+        for p in P do if psi(p) eq -1 and a[p] ne 0 then return [Integers()|]; end if; end for;
+        return [Parity(psi)*Conductor(psi)];
     end if;
     if B gt 1000 then
         printf "Computing a_p for p <= %o to check if dimension %o eigenform of level %o, weight %o, chi-conductor %o admits self-twists by %o...\n", B, QDimension(S), N, k, Conductor(chi), D;
@@ -141,8 +133,8 @@ intrinsic SelfTwists (a::SeqEnum, S::ModSym: TraceHint:=[], pBound:=0) -> SeqEnu
     end if;
     F := Eigenform(S,P[#P]+1);
     if B gt 1000 then printf "Took %.3o seconds to compute %o eigenform coefficients\n", Cputime()-s, B; end if;
-    for p in P do if KroneckerSymbol(D,p) eq -1 and Coefficient(F,p) ne 0 then return [Integers()|],true; end if; end for;
-    return [D],B eq sB;
+    for p in P do if psi(p) eq -1 and Coefficient(F,p) ne 0 then return [Integers()|],true; end if; end for;
+    return [Sign(psi)*Conductor(psi)];
 end intrinsic;
 
 intrinsic TwistingCharacters (x1::GrpDrchElt,x2::GrpDrchElt) -> List
@@ -166,37 +158,38 @@ intrinsic TwistingCharacters (x1::GrpDrchElt,x2::GrpDrchElt) -> List
 end intrinsic;
 
 intrinsic InnerTwists (a::SeqEnum, chi::GrpDrchElt, k::RngIntElt) -> List, RngIntElt
-{ Given a list of coffieicnts of the q-expansion of an eigenform f of character chi and weight k returns a list Dirichlet characters phi for which f*phi is conjugate to f; also returns a corresponding list of integers n such that checking a_p  for p <= n suffices to give a rigorous result (so if #a >= n, result is rigorous and otherwise not).  Note: assumes Parent(a) = Q(f). }
+{ Given a list of coffieicnts of the q-expansion of an eigenform f of character chi and weight k returns a list Dirichlet characters psi for which f*psi is conjugate to f, provided #a exceeds the Sturm bound and the largest Hecke cutter prime, result is rigorous.  Note: assumes Parent(a) = Q(f). }
     N := Modulus(chi);
     K := Universe(a);
-    if Degree(K) eq 1 then return [**], 0; end if;
-    if Order(chi) eq 1 and IsSquarefree(N) then return [**], 0; end if;  // we can apply Ribet Thm. 3.9 and Cor 3.10 if chi is trivial
+    if Degree(K) eq 1 then return [**]; end if;
+    if Order(chi) eq 1 and IsSquarefree(N) then return [**]; end if;  // we can apply Ribet Thm. 3.9 and Cor 3.10 if chi is trivial
     // Ribet Prop. 3.2 holds in general: if f has an inner twist by phi then phi must take values in Q(chi) \subseteq Q(f)
     // In fact, more is true: if chi takes nonzero values in <zeta_m> then phi takes values in <+/-zeta_m>
-    X := &cat [[* phi : phi in TwistingCharacters(chi,gchi) | IsDivisibleBy(LCM(2,Order(chi)),Order(phi)) and Conductor(phi) gt 1 *] : gchi in Conjugates(chi)];
-    if #X eq 0 then return [**], 0; end if;
+    // We use cond(psi)cond(chi*psi) | N, per Lemma 1.4 of Booker, Min, Strombergsson https://arxiv.org/pdf/1803.06016.pdf
+    // which is also Theorem 12.2.5 in CMF paper
+    X := &cat [[* psi : psi in TwistingCharacters(chi,gchi) | IsDivisibleBy(N,Conductor(psi)*Conductor(chi*psi)) and IsDivisibleBy(LCM(2,Order(chi)),Order(psi)) and Conductor(psi) gt 1 *] : gchi in Conjugates(chi)];
+    if #X eq 0 then return [**]; end if;
     rho := EmbedCharacterField(chi,k,a);
     n := 0;
     P := [p: p in PrimesInInterval(1,#a) | GCD(N,p) eq 1 and a[p] ne 0];
     for p in P do
         f := MinimalPolynomial(a[p]);
-        X := [* phi : phi in X | MinimalPolynomial(rho(phi(p))*a[p]) eq f *];
-        if #X eq 0 then return [**], p; end if;
+        X := [* psi : psi in X | MinimalPolynomial(rho(psi(p))*a[p]) eq f *];
+        if #X eq 0 then return [**]; end if;
         n +:= 1;
         if n eq 10 then break; end if;  // arbitrary cutoff, doesn't effect correctness only performance
     end for;
     A := Remove(Automorphisms(K),1);
     Y := [**];
-    for phi in X do
+    for psi in X do
         B := A;
-        for p in P do B := [s : s in B | s(a[p]) eq rho(phi(p))*a[p]]; if #B le 1 then break; end if; end for;
+        for p in P do B := [s : s in B | s(a[p]) eq rho(psi(p))*a[p]]; if #B le 1 then break; end if; end for;
         if #B eq 0 then continue; end if;
         assert #B eq 1;
         s := B[1];
-        if #[p : p in P | s(a[p]) eq rho(phi(p))*a[p]] eq #P then Append(~Y,phi); end if;
+        if #[p : p in P | s(a[p]) eq rho(psi(p))*a[p]] eq #P then Append(~Y,psi); end if;
     end for;
     if #Y eq 0 then return [**], #a; end if;
-    M := [TwistSturmBound(N,k,chi,phi) : phi in Y];
-    return [* MinimalBaseRingCharacter(chi) : chi in Y *], M;
+    return [* MinimalBaseRingCharacter(psi) : psi in Y *];
 end intrinsic;
 
