@@ -247,7 +247,7 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
                 if 'eigdata' in nf:
                     print(nf['eigdata']['ancs'])
         print("Total time for space {}: {:0.3f}".format(Nko,t4-t0))
-    return [pari_nfs[i] for in range(d1)] + nfs + [pari_nfs[i] for i in range(dm,nnf)]
+    return [pari_nfs[i] for i in range(d1)] + nfs + [pari_nfs[i] for i in range(dm,nnf)]
 
 def Newforms_v2(N, k, chi_number, dmax=20, nan=100, Detail=0):
     t0=time.time()
