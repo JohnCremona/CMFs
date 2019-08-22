@@ -130,7 +130,7 @@ def read_dtp(fname):
     print("Average time (nonzero spaces)  = {:0.3f}".format(tot_time0/nspaces0))
     return data
 
-def file_stats(fname):
+def file_stats(fname, dmax=20):
     # read full data: N:k:i:t:dims:traces:ALs:polys:cutters:eigdata:cm:it:pra
     data = {}
     max_time = tot_time = tot_time0 = 0.0
@@ -138,7 +138,7 @@ def file_stats(fname):
     nspaces = 0
     nspaces0 = 0 # exclude trvial spaces
     norbits = 0
-    n20 = 0
+    notbig = 0
     alldims = []
     for L in open(fname).readlines():
         L=L.replace("\n","")
@@ -160,7 +160,7 @@ def file_stats(fname):
         data[key] = {'dims':dims}
         nspaces += 1
         norbits += len(dims)
-        n20 += sum(0<d<=20 for d in dims)
+        notbig += sum(0<d<=dmax for d in dims)
         if dims:
             nspaces0 += 1
             alldims += dims
@@ -168,7 +168,7 @@ def file_stats(fname):
     alldims=list(set(alldims))
     alldims.sort()
     print("Read {} spaces of which {} are nontrivial; {} Galois orbits.".format(nspaces, nspaces0, norbits))
-    print("{} orbits have dimension <=20".format(n20))
+    print("{} orbits have dimension <={}".format(notbig,dmax))
     print("largest three dimensions: {}".format(alldims[-3:]))
     print("Total time = {:0.3f}".format(tot_time))
     print("Max time = {:0.3f}s ({:0.3f}m, {:0.3f}h) for space {}".format(max_time, max_time/60.0, max_time/3600.0,max_space))
