@@ -1,3 +1,17 @@
+intrinsic getrecs(filename::MonStgElt) -> SeqEnum
+{ Reads a colon delimited file, returns list of lists of strings (one list per line). }
+    return [Split(r,":"):r in Split(Read(filename))];
+end intrinsic;
+
+intrinsic putrecs(filename::MonStgElt,S::SeqEnum[SeqEnum[MonStgElt]]) -> RngIntElt
+{ Given a list of lists of strings, creates a colon delimited file with one list per line, returns number of records written. }
+    fp := Open(filename,"w");
+    n := 0;
+    for r in S do Puts(fp,Join(r,":")); n+:=1; end for;
+    Flush(fp);
+    return n;
+end intrinsic;
+
 intrinsic sum(X::[]) -> .
 { Sum of a sequence (empty sum is 0). }
     return #X eq 0 select Universe(X)!0 else &+X;
@@ -36,9 +50,9 @@ end intrinsic;
 intrinsic StringToIntegerArray(s::MonStgElt) -> SeqEnum[RngIntElt]
 { Given string representing a sequence of integers, returns the sequence (faster and safer than eval). }
     t := strip(s);
-    if t eq "[]" then return []; end if;
+    if t eq "[]" then return [Integers()|]; end if;
     assert #t ge 2 and t[1] eq "[" and t[#t] eq "]";
-    return [StringToInteger(n):n in Split(t[2..#t-1],",")];
+    return [Integers()|StringToInteger(n):n in Split(t[2..#t-1],",")];
 end intrinsic;
 
 intrinsic atoii(s::MonStgElt) -> SeqEnum[RngIntElt]

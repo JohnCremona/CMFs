@@ -25,54 +25,72 @@ intrinsic NFFactoredDiscriminant (f::SeqEnum) -> RngIntElt, SeqEnum
 end intrinsic;
 
 intrinsic SubDiscriminant(f::RngUPolElt,P::SeqEnum) -> RngIntElt
-{ Given polynomial f and list of primes P, returns product of p-parts of disc(f) lever p in P. }
+{ Given polynomial f and list of primes P, returns product of p-parts of disc(f) for p in P. }
     if #P eq 0 then return 1; end if;
     D := Integers()!Discriminant(f);
     return &*[p^Valuation(D,p):p in P];
 end intrinsic;
 
-intrinsic MinimalSubSibling (f::RngUPolElt:SplitDegree:=0,Ramification:=[Integers()|],Detail:=0) -> RngUPolElt
-{ Given an irreducible polynomial f in Q[x] returns a polynomial g with the same splitting field as f with both the degree of g and |disc(Q[x]/(g))| minimal among those g for which Q[x]/(g(x)) lies in Q[x]/(f(x)); this will be the minimal sibling if Q[x]/(f(x)) is Galois. }
-    if SplitDegree eq 0 then
-        if Detail gt 0 then printf "Computing degree of splitting field of %o...",f; t:=Cputime(); end if;
-        SplitDegree := #GaloisGroup(f);
-        if Detail gt 0 then printf "took %.3os to determine splitting field degree %o\n.",Cputime()-t, SplitDegree; end if;
-    end if;
-    if Type(Ramification) eq RngIntElt then Ramification := PrimeDivisors(Ramification); end if;
-    disc := func<f|#Ramification gt 0 select SubDiscriminant(f,Ramification) else Abs(Discriminant(f))>;
-    K := NumberField(f);
-    if Detail gt 0 then printf "Computing subfields of number field defined by %o...",f; t:=Cputime(); end if;
-    L := Sort([DefiningPolynomial(L[1]):L in Subfields(K)],func<a,b|Degree(a)-Degree(b)>);
-    if Detail gt 0 then printf "took %.3os to construct %o subfields.\n",Cputime()-t, #L; end if;
-    h := f; dh := Degree(h); Dh := 0;
-    for g in L do
-        if Detail gt 0 then printf "Checking subfield defined by %o...", g; t := Cputime(); end if;
-        if Degree(g) eq dh and #GaloisGroup(g) eq SplitDegree then Dg := disc(g); if Dh eq 0 or Dg lt Dh then h := g; Dh := Dg; end if; end if;
-        if Degree(g) lt dh and #GaloisGroup(g) eq SplitDegree then h := g; dh := Degree(h); Dh := disc(h); end if;
-        if Detail gt 0 then printf "took %.3os.\n",Cputime()-t; if h eq g then printf "Updated h, degree %o discriminant %o\n", Degree(h), Dh; end if; end if;
-    end for;
-    return h;
+intrinsic MinimalDegreeSiblings(f::RngUPolElt) -> SeqEnum[RngUPolElt]
+{ Returns a list of polynomials of minimal degree that have the same splitting field as f.}
+    require Degree(f) ge 1: "Polynomial must be nonconstant";
+    G,r,S := GaloisGroup(f);  assert GaloisProof(f,S);
+    subs := Sort([H`subgroup : H in Subgroups(G:IndexLimit:=Degree(f)) | #Core(G,H`subgroup) eq 1],func<a,b|#b-#a>);
+    subs := [H : H in subs | #H eq #subs[1]];
+    return [Parent(f)!GaloisSubgroup(S,H) : H in subs];
 end intrinsic;
 
-intrinsic MinimalSubSibling (f::SeqEnum:SplitDegree:=0) -> SeqEnum
-{ Given an irreducible polynomial f in Q[x] returns a polynomial g with the same splitting field as f with both the degree of g and |disc(Q[x]/(g))| minimal among those g for which Q[x]/(g(x)) lies in Q[x]/(f(x)); this will be the minimal sibling if Q[x]/(f(x)) is Galois. }
-    return Eltseq(MinimalSubSibling(PolynomialRing(Rationals())!f:SplitDegree:=SplitDegree));
+intrinsic MinimalDegreeSiblings(f::SeqEnum) -> SeqEnum[SeqEnum]
+{ Returns a list of polynomials of minimal degree that have the same splitting field as f.}
+    return [Eltseq(g):g in MinimalDegreeSiblings(PolynomialRing(Universe(f))!f)];
+end intrinsic;
+
+intrinsic MinimalSiblings(f::RngUPolElt) -> SeqEnum[RngUPolElt]
+{ Returns a list of polynomials of minimal degree defining number fields of minimal discriminant whose Galois closure is the splitting field as f.}
+    require Degree(f) ge 1: "Polynomial must be nonconstant";
+    require BaseRing(f) eq Rationals() or BaseRing(f) eq Integers(): "Polynomial must be defined over Q or Z";
+    G,r,S := GaloisGroup(f);  assert GaloisProof(f,S);
+    subs := Sort([H`subgroup : H in Subgroups(G:IndexLimit:=Degree(f)) | #Core(G,H`subgroup) eq 1],func<a,b|#b-#a>);
+    subs := [H : H in subs | #H eq #subs[1]];
+    subs := Sort([<Abs(NFDiscriminant(h)),h> where h:=Polredbest(g) : g in [Parent(f)!GaloisSubgroup(S,H) : H in subs]]);
+    return [a[2]: a in subs | a[1] eq subs[1][1]];
+end intrinsic;
+
+intrinsic MinimalSiblings(f::SeqEnum) -> SeqEnum[SeqEnum]
+{ Returns a list of polynomials of minimal degree defining number fields of minimal discriminant whose Galois closure is the splitting field as f.}
+    return [Eltseq(g):g in MinimalSiblings(PolynomialRing(Rationals())!f)];
+end intrinsic;
+
+intrinsic MinimalSibling(f::RngUPolElt) -> RngUPolElt
+{ Returns Polredabs polynomial of minimal degree defining number field of minimal discriminant with minimal L2-norm whose Galois closure is the splitting field as f (ties are broken lexicographically).}
+    require Degree(f) ge 1: "Polynomial must be nonconstant";
+    require BaseRing(f) eq Rationals() or BaseRing(f) eq Integers(): "Polynomial must be defined over Q or Z";
+    if Degree(f) eq 1 then return Parent(f)![1,0]; end if;
+    sibs := MinimalSiblings(f);
+    if #sibs eq 1 then return Polredabs(sibs[1]); end if;
+    sibs := [Polredabs(g):g in sibs];
+    L2Norm := func<f|&+[BaseRing(f)|c^2:c in Coefficients(f)]>;
+    sibs := Sort(sibs,func<g,h|L2Norm(g)-L2Norm(h)>);
+    return Sort([g:g in sibs|L2Norm(g) eq m])[1] where m := L2Norm(sibs[1]);
+end intrinsic;
+
+intrinsic MinimalSibling(f::SeqEnum) -> SeqEnum
+{ Returns Polredabs polynomial of minimal degree defining number field of minimal discriminant with minimal L2-norm whose Galois closure is the splitting field as f (ties are broken lexicographically).}
+    return Eltseq(MinimalSibling(PolynomialRing(Rationals())!f));
 end intrinsic;
 
 intrinsic MinimalCentralSibling (f::RngUPolElt) -> RngUPolElt
-{ Given an irreducible polynomial f in Q[x] returns an irreducible polynomial g of minimal degree and minimal |disc(Q[x]/(g))|) such that the splitting field of g is the fixed field of the center of the Galois group of f. }
-    L := SplittingField(f);
-    G := AutomorphismGroup(L);
-    K := FixedField(L,Center(G));
-    if Degree(K) eq 1 then return [1,0]; end if;
-    H := quo<G|Center(G)>;
-    if IsAbelian(H) then return DefiningPolynomial(K); end if;
-    return MinimalSubSibling(Polredbest(DefiningPolynomial(K)):SplitDegree:=#H);
+{ Given an irreducible polynomial f in Q[x] returns an irreducible polynomial g of minimal degree and minimal |disc(Q[x]/(g))| such that the splitting field of g is the fixed field of the center of the Galois group of f. }
+    require Degree(f) ge 1: "Polynomial must be nonconstant";
+    require BaseRing(f) eq Rationals() or BaseRing(f) eq Integers(): "Polynomial must be defined over Q or Z";
+    G,r,S := GaloisGroup(f);  assert GaloisProof(f,S);
+    g := Parent(f)!GaloisSubgroup(S,Center(G));
+    return MinimalSibling(g);
 end intrinsic;
 
 intrinsic MinimalCentralSibling (f::SeqEnum) -> SeqEnum
-{ Given an irreducible polynomial f in Q[x] returns an irreducible polynomial g of minimal degree and minimal |disc(Q[x]/(g))|) such that the splitting field of g is the fixed field of the center of the Galois group of f. }
-    return Eltseq(MinimalCentralSibling(PolynomialRing(Rationals())!f));
+{ Given an irreducible polynomial f in Q[x] returns an irreducible polynomial g of minimal degree and minimal |disc(Q[x]/(g))| such that the splitting field of g is the fixed field of the center of the Galois group of f. }
+    return Eltseq(MinimalCentralSibling(PolynomialRing(Universe(f))!f));
 end intrinsic;
 
 intrinsic NFPolyIsIsomorphic (f::RngUPolElt,g::RngUPolElt) -> BoolElt
@@ -315,7 +333,7 @@ intrinsic NFSeqs (KPoly::SeqEnum,  OBasis::SeqEnum[SeqEnum], Seqs::SeqEnum[SeqEn
 end intrinsic;
 
 intrinsic NFSeqIsIsomorphic (KPoly1::SeqEnum,Seq1::SeqEnum[SeqEnum], KPoly2::SeqEnum, Seq2::SeqEnum[SeqEnum]) -> BoolElt, SeqEnum[FldRatElt]
-{ Given two sequences that both contain a basis for the same number specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If returns the image of first power basis generator in the second. }
+{ Given two sequences that both contain a basis for the same number field specified in terms of (possibly different) power bases, determine if there is a field isomorphism that maps one sequence to the other.  If returns the image of first power basis generator in the second. }
     require #KPoly1 eq #KPoly2: "Field polynomials must have the same degree";
     require #Seq1 eq #Seq2: "Sequences must have the same length";
     R<x> := PolynomialRing(Rationals());

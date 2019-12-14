@@ -32,6 +32,16 @@ function AnalyticConductor (N, k)
     return N*(Exp(Psi(k/2))/(2*Pi(RealField())))^2;
 end function;
 
+function CompareCCLists(a,b)
+    for i:=1 to #a do
+        if Real(a[i]) lt Real(b[i]) then return -1; end if;
+        if Real(a[i]) gt Real(b[i]) then return 1; end if;
+        if Imaginary(a[i]) lt Imaginary(b[i]) then return -1; end if;
+        if Imaginary(a[i]) gt Imaginary(b[i]) then return 1; end if;
+    end for;
+    return 0;
+end function;
+
 // return latex string for cv^e, where c is an integer, v is a string (e.g. "q" or "\\\\beta"), and e is a positive integer
 function LatexTerm(c,v,e:First:=false)
     if c eq 0 then return ""; end if;
@@ -422,7 +432,7 @@ procedure FormatNewspaceData (infile, newspace_outfile, gamma1_outfile, trace_ou
                     if #ALsub gt 0 then Append(~AL_dims,<[[p, p in s select 1 else -1]:p in P],sum(ALsub),#ALsub>); end if;
                 end for;
                 rec["AL_dims"] := AL_dims;
-                rec["plus_dim"] := sum([a[2]:a in AL_dims|prod([b[2]:b in a[1]]) eq 1]);
+                rec["plus_dim"] := sum([a[2]:a in AL_dims|prod([Integers()|b[2]:b in a[1]]) eq 1]);
             end if;
             if #r ge 9 then
                 cutters := eval(r[9]);
@@ -447,7 +457,7 @@ procedure FormatNewspaceData (infile, newspace_outfile, gamma1_outfile, trace_ou
             g1rec["traces"] := num_traces gt 0 select [rec["traces"]] else (num_traces eq 0 select [] else "\\N");
             g1rec["newspace_dims"] := [rec["dim"]];
             g1rec["num_spaces"] := rec["dim"] gt 0 select 1 else 0;
-            g1rec["sturm_bound"] := Floor(k*N^2*prod([(1-1/p^2):p in PrimeDivisors(N)])/12);
+            g1rec["sturm_bound"] := Floor(k*N^2*prod([Rationals()|(1-1/p^2):p in PrimeDivisors(N)])/12);
         end if;
         assert N eq g1N and k eq g1k; // input must be sorted by N,k,o
         if o gt 1 then
@@ -707,7 +717,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
     ArtinTable:=AssociativeArray();
     if artin_reps ne "" then
         start := Cputime();
-        S:=Split(Read(artin_reps),"\n");  // format is level:1:char_orbit:hecke_orbit:label:artin_label:discs:ptype:pname:ppoly:deg:id:poly:th:tzr,tzm
+        S:=Split(Read(artin_reps),"\n");  // format is level:1:char_orbit:hecke_orbit:label:artin_label:discs:ptype:pname:ppoly:deg:id:poly:tzr,tzm:th
         for s in S do r:=Split(s,":"); ArtinTable[r[5]]:= r; end for;
         printf "Loaded %o records from Artin rep file %o in %o secs.\n", #Keys(ArtinTable), artin_reps, Cputime()-start;
     end if;
@@ -792,16 +802,17 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
         if o eq 1 then
             v := [Integers()|n : x in u];
         else
-            v := [Integers()|n*a : a in ConreyCharacterAngles(N,clist[1],u)] where clist := eval(ConreyTable[[N,o]]);
+            v := [Integers()|n*a : a in ConreyCharacterAngles(N,clist[1],u)] where clist := atoii(ConreyTable[[N,o]]);
         end if;
         rec["char_values"] := <N,n,u,v>;
         m := #[d:d in dims|d eq 1];
         for n := 1 to #dims do
+            dim := dims[n];
             // clear columns that are not space invariant
             for c in newforms_columns do if not c[3] then rec[c[1]] := "\\N"; end if; end for;
             for c in hecke_nf_columns do if not c[3] then rechnf[c[1]] := "\\N"; end if; end for;
             rec["hecke_orbit"] := n;
-            rec["dim"] := dims[n];
+            rec["dim"] := dim;
             rec["relative_dim"] := ExactQuotient(dims[n],Degree(chi));
             label := NewformLabel(N,k,o,n);
             rec["label"] := label;
@@ -819,7 +830,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
             Flush(trace_fp);
             if o eq 1 then
                 rec["atkin_lehner_eigenvals"] := r[7][n];
-                rec["fricke_eigenval"] := prod([a[2]:a in r[7][n]]);
+                rec["fricke_eigenval"] := prod([Integers()|a[2]:a in r[7][n]]);
                 rec["atkin_lehner_string"] := #r[7][n] gt 0 select &cat[a[2] eq 1 select "+" else "-" : a in r[7][n]] else "";
             end if;
             if IsDefined(RankTable,label) and RankTable[label][1] ge 0 then
@@ -871,19 +882,50 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
             if k gt 1 then
                 rec["sato_tate_group"] := rec["is_cm"] eq 1 select Sprintf("%o.2.1.d%o",k-1,Order(chi)) else Sprintf("%o.2.3.c%o",k-1,Order(chi));
             end if;
-            if k eq 2 and o eq 1 and dims[n] eq 1 then Append(~ro, Sprintf("\"EllipticCurve/Q/%o/%o\"",N,Base26Encode(n-1))); end if;
+            if k eq 2 and o eq 1 and dim eq 1 then Append(~ro, Sprintf("\"EllipticCurve/Q/%o/%o\"",N,Base26Encode(n-1))); end if;
             ero := [];
             if IsDefined(ArtinTable,label) then
                 ar := ArtinTable[label];
-                if ar[6] ne "?" then
+                if #ar[6] gt 0 and ar[6] ne "?" then
+                    L := atoii(ConreyTable[[r[1],r[3]]]);
                     arlabels := Split(ar[6],"c");
-                    cn := StringToIntegerArray(arlabels[2]);
-                    assert #cn eq dims[n];
-                    for c in cn do
-                        artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "c" cat IntegerToString(c) cat "\"";
-                        Append(~ro,artin_url);
+                    cn := StringToIntegerArray(arlabels[2]); assert #cn eq dim;
+                    artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "\"";
+cmf_url:="ModularForm/GL2/Q/holomorphic/" cat Join(Split(label,"."),"/");
+print cmf_url cat ":" cat artin_url[2..#artin_url-1];
+                    Append(~ro,"\"ArtinRepresentation/" cat arlabels[1] cat "\"");  // Artin rep Galois orbit URL
+                    if dim eq 1 then
+                        artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "c1\"";
+cmf_url:="ModularForm/GL2/Q/holomorphic/" cat Join(Split(label,"."),"/") cat "/" cat sprint(L[1]) cat "/1";
+print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                         Append(~ero,[artin_url]);
-                    end for;
+                    else
+                        // The artin rep labels of conjugates are in lex-order of an, we need to do the same for the cmfs
+                        // When there is only one character in the character orbit this isn't necessary, but we do it as a sanity check anyway
+                        assert n gt m and n le m+#r[10];
+                        nn := n-m;
+                        an := NFSeq(r[10][nn][1],r[10][nn][2],r[10][nn][5]);
+                        xi := CharacterFromValues(N,r[17][n][1],[Parent(an[1])|z:z in r[17][n][2]]);
+                        E := LabelEmbeddings(an,ConreyConjugates(chi,xi:ConreyLabelList:=L):Precision:=100);  assert #E eq dim;
+                        rd := ExactQuotient(dim,Degree(chi));
+                        ms := [(Index(L,e[1])-1)*rd + e[2]:e in E];
+                        ccvcmp := func<v,w|&+[Abs(v[i]-w[i]):i in [1..#v]]>;
+                        CC := ComplexField();
+                        nbnd := 2;
+                        while true do
+                            tmp := [Conjugates(an[i]) : i in [1..nbnd]];  tmp := [[CC|tmp[i][j]:i in [1..nbnd]] : j in [1..dim]];
+                            if Min([Min([ccvcmp(tmp[i],tmp[j]):j in [i+1..dim]]):i in [1..dim-1]]) gt 1 then break; end if;
+                            nbnd *:= 2;
+                        end while;
+                        tmp := Sort([<ms[i],tmp[i]>:i in [1..dim]],func<a,b|CompareCCLists(a[2],b[2])>);  tmp :=[a[1]:a in tmp];
+                        cn := [cn[Index(tmp,i)]:i in [1..dim]];
+                        for i:=1 to dim do
+                            artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "c" cat IntegerToString(cn[i]) cat "\"";
+cmf_url:="ModularForm/GL2/Q/holomorphic/" cat Join(Split(label,"."),"/") cat "/" cat sprint(L[((i-1) div rd) + 1]) cat "/" cat sprint(((i-1) mod rd)+1);
+print cmf_url cat ":" cat artin_url[2..#artin_url-1];
+                            Append(~ero,[artin_url]);
+                        end for;
+                    end if;
                 end if;
                 D := eval(ar[7]);
                 assert Set(D) eq Set(std);
@@ -898,9 +940,9 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                         if not f in unknown_fields then Include(~unknown_fields,f); PrintFile("unknown_fields.txt",sprint(f)); unknown_cnt +:= 1; end if;
                     end if;
                 end if;
-                if #ar ge 11 then rec["artin_degree"] := ar[11]; end if;
-                if #ar ge 12 then rec["artin_image"] := ar[12]; end if;
-                if #ar ge 13 and ar[13] ne "[]" then 
+                if #ar ge 11 and ar[11] ne "" and ar[11] ne "?" then rec["artin_degree"] := ar[11]; end if;
+                if #ar ge 12 and ar[12] ne "" and ar[12] ne "?" then rec["artin_image"] := ar[12]; end if;
+                if #ar ge 13 and ar[13] ne "" and ar[13] ne "?" and ar[13] ne "[]" then 
                     f:=eval(ar[13]);  assert #f gt 1;
                     rec["artin_field"] := f;
                     if IsDefined(FieldTable,f) then
@@ -920,7 +962,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
             f := 0;
             if n le #r[8] then
                 f := r[8][n];
-                assert #f eq dims[n]+1;
+                assert #f eq dim+1;
                 rec["field_poly"] := f;
                 rechnf["field_poly"] := f;
                 if #f eq 2 then
@@ -939,7 +981,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                     if zb then
                         rec["field_poly_is_real_cyclotomic"] := 0;
                     else
-                        for m in EulerPhiInverse(2*dims[n]) do if not IsDefined(RCP,m) then RCP[m]:=RealCyclotomicPolynomial(m); RCPI[RCP[m]]:=m; end if; end for;
+                        for m in EulerPhiInverse(2*dim) do if not IsDefined(RCP,m) then RCP[m]:=RealCyclotomicPolynomial(m); RCPI[RCP[m]]:=m; end if; end for;
                         zb := IsDefined(RCPI,R!f);
                         if zb then zn := RCPI[R!f]; end if;
                         rec["field_poly_is_real_cyclotomic"] := zb select 1 else 0;
@@ -983,11 +1025,11 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
             if n gt m and n le m+#r[10] then
                 nn := n-m;
                 assert f eq r[10][nn][1];
-                assert #r[10][nn][2] eq dims[n];
-                dens := [Integers()|LCM([Denominator(x):x in r[10][nn][2][i]]):i in [1..dims[n]]];
-                nums := [[Integers()|dens[i]*x:x in r[10][nn][2][i]]:i in [1..dims[n]]];
+                assert #r[10][nn][2] eq dim;
+                dens := [Integers()|LCM([Denominator(x):x in r[10][nn][2][i]]):i in [1..dim]];
+                nums := [[Integers()|dens[i]*x:x in r[10][nn][2][i]]:i in [1..dim]];
                 if r[10][nn][4][1] ne 0 then
-                    assert (r[10][nn][4][1] lt 0 and r[18][n] eq 0 and IsEven(dims[n]) and IsOdd(dims[n] div 2)) or (r[10][nn][4][1] gt 0 and (r[18][n] eq 1 or IsDivisibleBy(dims[n],4)));
+                    assert (r[10][nn][4][1] lt 0 and r[18][n] eq 0 and IsEven(dim) and IsOdd(dim div 2)) or (r[10][nn][4][1] gt 0 and (r[18][n] eq 1 or IsDivisibleBy(dim,4)));
                     rec["field_disc"] := r[10][nn][4][1];
                     rec["field_disc_factorization"] := (r[10][nn][4][1] lt 0 select [<-1,1>] else []) cat r[10][nn][4][2];
                 end if;
@@ -995,7 +1037,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                 rec["hecke_ring_index"] := r[10][nn][3];
                 rec["hecke_ring_index_factorization"] := Factorization(r[10][nn][3]);
                 rec["hecke_ring_index_proved"] := r[10][nn][4][1] eq 0 select 0 else 1;
-                rechnf["hecke_ring_rank"] := dims[n];
+                rechnf["hecke_ring_rank"] := dim;
                 if k eq 1 and rec["field_poly_is_cyclotomic"] eq 1 then
                     rechnf["hecke_ring_power_basis"] := 0;
                     zzn := zn;
@@ -1024,12 +1066,12 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                     for p in LPP do Puts(lpoly_fp,Sprintf("%o:%o:%o",code,curly(sprint(Eltseq(Norm(KR!1 - a[p]*KR.1 + xi(p)*p^(k-1)*KR.1^2)))),p)); end for;
                     lpcnt +:=#LPP; Flush(lpoly_fp);
                 else
-                    rechnf["hecke_ring_power_basis"] := (dens eq [1:i in [1..dims[n]]] and nums eq [[i eq j select 1 else 0:i in [1..dims[n]]]:j in [1..dims[n]]]) select 1 else 0;
+                    rechnf["hecke_ring_power_basis"] := (dens eq [1:i in [1..dim]] and nums eq [[i eq j select 1 else 0:i in [1..dim]]:j in [1..dim]]) select 1 else 0;
                     rechnf["hecke_ring_cyclotomic_generator"] := 0;
                     if rechnf["hecke_ring_power_basis"] eq 0 then
                         rechnf["hecke_ring_denominators"] := dens;
                         rechnf["hecke_ring_numerators"] := nums;
-                        dd := dims[n];
+                        dd := dim;
                         A := (GL(dd,Rationals())!Matrix(r[10][nn][2]))^-1;
                         A := [[A[i][j]:j in [1..dd]]:i in [1..dd]];
                         idens := [LCM([Denominator(x):x in A[i]]):i in [1..#A]];
@@ -1070,16 +1112,6 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
     printf "Wrote %o records to %o, and %o records to %o, and %o records to file %o, and %o records to file %o, total time %.3o secs\n", cnt, newform_outfile, hnfcnt, hecke_outfile, trcnt, trace_outfile, lpcnt, lpoly_outfile, Cputime()-start;
     if unknown_cnt gt 0 then printf "Appended %o unknown polredabs field polys to unknown_fields.txt\n", unknown_cnt; end if;
 end procedure;
-
-function CompareCCLists(a,b)
-    for i:=1 to #a do
-        if Real(a[i]) lt Real(b[i]) then return -1; end if;
-        if Real(a[i]) gt Real(b[i]) then return 1; end if;
-        if Imaginary(a[i]) lt Imaginary(b[i]) then return -1; end if;
-        if Imaginary(a[i]) gt Imaginary(b[i]) then return 1; end if;
-    end for;
-    return 0;
-end function;
 
 // Round real and imaginary parts of complex number z to accuracty of 1/absprec (so values within 1/(2*absprec) will come out the same)
 function RoundCC(z,absprec)

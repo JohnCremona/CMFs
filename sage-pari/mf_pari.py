@@ -98,9 +98,10 @@ def is_semisimple_modular(M, m,  nprimes=5):
             np-=1
 
 
-def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
+def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0, dims_only=False):
     t0=time.time()
     G = pari(N).znstar(1)
+    Qx = PolynomialRing(QQ,'x')
     chi_dc = char_orbit_index_to_DC_number(N,chi_number)
     chi_gp = G.znconreylog(chi_dc)
     chi_order = ZZ(G.charorder(chi_gp))
@@ -137,15 +138,36 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
     # Get the relative polynomials:  these are polynomials in y with coefficients either integers or polmods with modulus chipoly
     # But we only need the poly for the largest space if its absolute dimension is less than 20
     d = max(reldim // 2, dmax // chi_degree) if dmax else 0
+    if dims_only:
+        if Detail: t1=time.time(); print("...calling mfsplit({},{})...".format(d,1))
+        forms, pols = Snew.mfsplit(d,1)
+        if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
+        if Detail>2: print("mfsplit({},1) returned pols[GP] = {}".format(d,pols))
+        dims = [chi_degree*f.poldegree() for f in pols]
+        dims += [] if sum(dims+[0]) == totdim else [totdim-sum(dims+[0])] # add dimension of largest newform if needed
+        nnf = len(dims)
+        if Detail:
+            print("The space {}:{}:{} has {} newforms, dimensions {}".format(N,k,chi_number,nnf,dims))
+        pari_nfs = [
+            { 'Nko': (N,k,chi_number),
+              'SB': SturmBound,
+              'chipoly': chipoly,
+              'dim': dims[i],
+              'traces': [],
+              'ALeigs': [],
+              'ans': [],
+              'poly': Qx.gen() if dims[i] == 1 else (pols[i] if dims[i] <= dmax else None),
+              'pari_newform':None,
+              'best_poly':None
+            }   for i in range(nnf)]
+        return pari_nfs
+
     if Detail: t1=time.time(); print("...calling mfsplit({},{})...".format(d,d))
     forms, pols = Snew.mfsplit(d,d)
     if Detail: print("Call to mfsplit took {:.3f} secs".format(time.time()-t1))
     if Detail>2: print("mfsplit({},1) returned pols[GP] = {}".format(d,pols))
     dims = [chi_degree*f.poldegree() for f in pols]
-    # We may be missing the largest newform, add its dimension in if needed
-    d = totdim - sum(dims+[0])
-    if d:
-        dims += [d]
+    dims += [] if sum(dims+[0]) == totdim else [totdim-sum(dims+[0])] # add dimension of largest newform if needed
     nnf = len(dims)
     if Detail:
         print("The space {}:{}:{} has {} newforms, dimensions {}".format(N,k,chi_number,nnf,dims))
@@ -199,7 +221,6 @@ def Newforms_v1(N, k, chi_number, dmax=20, nan=100, Detail=0):
     Nko = (N,k,chi_number)
     if Detail: print("traces set = {}".format([1 if t else 0 for t in traces]))
     if Detail: print("ans set = {}".format([1 if a else 0 for a in ans]))
-    Qx = PolynomialRing(QQ,'x')
     pari_nfs = [
         { 'Nko': Nko,
           'SB': SturmBound,
@@ -1088,7 +1109,7 @@ def data_to_string(N,k,o,t,newforms):
 
     return ":".join([str(N), str(k), str(o), "{:0.3f}".format(t), dims, traces, ALeigs, polys, cutters, eigs, cm, it, pra])
 
-def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0, Detail=0):
+def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0, Detail=0, dims_only=False):
     out = open(filename, 'w') if filename else None
     screen = sys.stdout
     Nmax = int(Nk2max/4.0)
@@ -1124,7 +1145,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
                 screen.flush()
                 t0=time.time()
                 try:
-                    newforms = Newforms(N,k,i+1,dmax,nan, Detail)
+                    newforms = Newforms(N,k,i+1,dmax,nan,Detail,dims_only)
                     t0=time.time()-t0
                     line = data_to_string(N,k,i+1,t0,newforms) + "\n"
                     if out:
@@ -1146,13 +1167,13 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
         print("Completed apart from: {}".format(failed_spaces))
     #return nspaces
 
-def OneSpace_v1(N, k, char_number, dmax=20, nan=100, filename=None, prefix="", Detail=0):
+def OneSpace_v1(N, k, char_number, dmax=20, nan=100, filename=None, prefix="", Detail=0, dims_only=False):
     append = True
     if filename==None:
         filename = "{}{}.{}.{}.txt".format(prefix,N, k, char_number)
         append = False
     t0=time.time()
-    newforms = Newforms_v1(N,k,char_number,dmax,nan, Detail)
+    newforms = Newforms_v1(N,k,char_number,dmax,nan, Detail, dims_only)
     t0=time.time()-t0
     line = data_to_string(N,k,char_number,t0,newforms) + "\n"
     if append:
