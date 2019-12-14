@@ -129,6 +129,27 @@ intrinsic CharacterOrbit(chi::GrpDrchElt) -> RngIntElt
     assert #M eq 1;
     return M[1];
 end intrinsic;
+
+intrinsic KroneckerCharacterOrbits(M::RngIntElt) -> RngIntElt
+{ A list of paris <D,i> where D is a fundamental discriminant dividing the modulus M and i is the orbit index of the corresponding Kronecker character. }
+    require M gt 0: "The modulus M should be a positive integer.";
+    D := [-d:d in Divisors(M)|IsFundamentalDiscriminant(-d)] cat [d:d in Divisors(M)|IsFundamentalDiscriminant(d)];
+    if #D eq 0 then return []; end if;
+    if #D eq 1 then return [<D[1],2>]; end if;
+    G := DirichletGroup(M);
+    X := [G|KroneckerCharacter(d):d in D];
+    B := 32;
+    while true do T := [[X[i](n):n in [1..B]]:i in [1..#X]]; if #Set(T) eq #T then break; end if; B *:=2; end while;
+    X := Sort([<T[i],D[i]>:i in [1..#D]]);
+    return [<X[i][2],1+i>:i in [1..#X]];
+end intrinsic;
+
+intrinsic KroneckerCharacterOrbit(D::RngIntElt,M::RngIntElt) -> RngIntElt
+{ The index of the orbit of the Kronecker character for the fundamental discriminant D in modulus M. }
+    require IsFundamentalDiscriminant(D): "D should be a fundamental quadratic discriminant.";
+    require M gt 0 and IsDivisibleBy(M,D): "The modulus M should be a positive integer divisible by the fundamental discriminant D.";
+    return [r[2] : r in KroneckerCharacterOrbits(M) | r[1] eq D][1];
+end intrinsic;
     
 intrinsic Conjugates(chi::GrpDrchElt:RepTable:=AssociativeArray()) -> RngIntElt
 { Returns a list of conjugate characters.  For faster performance, use optional RepTable parameter. }

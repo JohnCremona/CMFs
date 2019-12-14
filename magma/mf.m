@@ -129,7 +129,7 @@ end function;
 
 // Given a list of a_n for a newform of character chi and weight k returns a list of quadruples <b,n,M,i> where b=0,1 indicates proven results, n is a multiplicity,
 // and M,i identifies a Galois orbit [M.i] of primitive characters of modulus M for which the newform admits n distinct inner twists by characters in [M.i]
-// IMPORTANT: we assume caller has ensured that #a exceeds the Sturm bound and the largest Hecke cutter prime so that result is rigorous (by Lemma 12.2.8)
+// IMPORTANT: we assume caller has ensured that #a exceeds the Sturm bound and the largest Hecke cutter prime so that result is rigorous (by Lemma 12.2.9)
 function InnerTwistData (a,chi,k:CharTable:=AssociativeArray())
     xi := InnerTwists(a,chi,k);
     for x in xi do M := Modulus(x); if not IsDefined(CharTable,M) then G,T := CharacterOrbitReps(M:RepTable); CharTable[M] := <G,T>; end if; end for;
@@ -319,7 +319,7 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
     X := [<u,[Eltseq(v):v in ValuesOnUnitGenerators(chi)]>:i in [1..#HF]];
     cm := []; it := [];
     tb := SturmBound(N,k);
-    if #HC[1] gt 0 and HC[1][#HC[1]][1] gt tb then
+    if #HC gt 0 and #HC[1] gt 0 and HC[1][#HC[1]][1] gt tb then
         if ComputeTwists then printf "Increasing twist bound to %o past Sturm bound %o to hit all Hecke cutters\n", HC[#HC][1][1], tb; end if;
         tb := HC[#HC][1][1];
     end if;
@@ -723,7 +723,7 @@ procedure DecomposeSpaces (outfile,B:TodoFile:="",B0:=0,Quiet:=false,DimensionsO
                         for M in Divisors(N) do if not IsDefined(A,M) then G, T := CharacterOrbitReps(M:RepTable); A[M] := <G,T>; end if; end for;
                         if not Quiet then printf "took %o secs\n",Cputime()-t; end if;
                         if not Quiet then printf "\nProcessing space %o:%o:%o with Coeffs=%o, DegBound=%o\n", N,k,o, Coeffs, DegBound; t:=Cputime(); end if;
-                        str := NewspaceData(chi,k,o:CharTable:=A,TraceHint:=hint,NumberOfCoefficients:=Coeffs,ComputeEigenvalues:=Eigenvalues,ComputeCutters:=Cutters,EmbeddingPrecision:=Precision,ComputeTwists:=Twists,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
+                        Nustr := NewspaceData(chi,k,o:CharTable:=A,TraceHint:=hint,NumberOfCoefficients:=Coeffs,ComputeEigenvalues:=Eigenvalues,ComputeCutters:=Cutters,EmbeddingPrecision:=Precision,ComputeTwists:=Twists,ComputeTraceStats:=TraceStats,DegreeBound:=DegBound,Detail:=Quiet select 0 else 1);
                         if not Quiet then printf "Total time for space %o:%o:%o was %os\n\n", N,k,o,Cputime()-t; end if;
                     end if;
                     Puts(fp,str);
