@@ -228,6 +228,7 @@ analytic_rank | smallint | order of vanishing of L-function at s=1 (an upper bou
 analytic_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
 self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
 is_self_twist | boolean | whether this form is a self twist
+minimal_twist | text | minimal label in the twist-class of this newform (currently only computed for weight 1)
 is_cm | boolean | whether the form has CM
 is_rm | boolean | whether the form has RM
 self_twist_discs | integer[] | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants)
