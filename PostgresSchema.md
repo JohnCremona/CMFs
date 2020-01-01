@@ -228,7 +228,7 @@ analytic_rank | smallint | order of vanishing of L-function at s=1 (an upper bou
 analytic_rank_proved | boolean | true if analytic rank is provably correct (it is always an upper bound)
 self_twist_type | smallint | 0=none, 1=cm, 2=rm, 3=both
 is_self_twist | boolean | whether this form is a self twist
-minimal_twist | text | minimal label in the twist-class of this newform (currently only computed for weight 1)
+minimal_twist | text | minimal label in the twist-class of this newform (if known)
 is_cm | boolean | whether the form has CM
 is_rm | boolean | whether the form has RM
 self_twist_discs | integer[] | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants)
@@ -236,7 +236,7 @@ cm_discs | integer[] | list of CM discriminants (the negative discriminants list
 rm_discs | integer[] | list of RM discriminants (the positive discriminants listed in self_twist_discs)
 self_twist_proved | boolean | whether the self twists have been proved unconditionally
 has_non_self_twist | smallint | 1 if form admits a non-trivial inner twist, 0 if it does not, -1 if unknown
-inner_twists | integer[] | List of septuples of integers [b,m,M,o,parity,order,disc] where <M,o> identifies the Galois orbit if a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
+inner_twists | integer[] | List of septuples of integers [b,m,M,o,parity,order,disc] where <M,o> identifies the Galois orbit of a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
 inner_twist_count | integer | number of inner twists (includes proved and unproved), -1 if inner twists have not been computed (this applies to all forms of dimension > 20 and weight > 1)
 atkin_lehner_eigenvals | integer[] | a list of pairs [p, ev] where ev is 1 or -1, the Atkin-Lehner eigenvalue for each p dividing N (NULL overall if nontrivial character, an empty list for level 1 and trivial character)
 atkin_lehner_string | text | list of signs +/- of Atkin-Lehner eigenvalues ordered by p (facilitates lookups)
@@ -266,6 +266,29 @@ weight | smallint | weight k
 char_orbit_index | smallint | character orbit index i
 hecke_orbit | integer | Hecke orbit index x
 portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
+
+
+**Table** `mf_newform_twists`:
+
+Column | Type | Notes
+-------|------|------
+source_label | text | label (N.k.i.x) of the newform being twisted
+target_label | text | label (N.k.i.x) of the twisted newform
+twisting_char_label | text | label N.i of the twisting character orbit [psi] (psi is always primitive)
+multiplicity | smallint | # of twists by distinct psi in [psi] for each embedded newform
+parity | smallint | parity of the twisting character psi (this and all following columns could be obtained via joins but they take almost no space, speed up searches and page construction, and they will never change)
+conductor | integer | conductor of psi (equal to the N in its label since psi is primitive)
+order | integer | order of psi
+degree | integer | degree of psi = [Q(psi):Q] = phi(order) = cardinality of character orbit [psi]
+source_level | integer | level of the source newform
+target_level | integer | level of the target newform
+source_dim | integer | dimension of the source newform
+target_dim | integer | dimension of the target newform
+source_char_orbit | smallint | character orbit index of source newform
+target_char_orbit | smallint | character orbit index of target newform
+twist_class_label | text | minimal label (N.k.i.x) of a twist equivalent newform (identifies twist equivalence class)
+twist_class_level | integer | level of the minimal twist equivalent newform
+twist_class_weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
 
 
 Hecke eigenvalues
@@ -347,8 +370,8 @@ orbit_index | smallint | (i) Index in the list of traces down to Q of the values
 modulus | integer
 conductor | integer
 prim_orbit_index | integer | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
-order | integer
-parity | smallint
+order | integer | order of the character
+parity | smallint | +1 = even, -1 =  odd
 galois_orbit | integer[] | sorted list of conrey_labels in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
