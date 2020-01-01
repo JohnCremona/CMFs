@@ -267,8 +267,10 @@ char_orbit_index | smallint | character orbit index i
 hecke_orbit | integer | Hecke orbit index x
 portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
+Twists
+======
 
-**Table** `mf_newform_twists`:
+**Table** `mf_twists`:
 
 Column | Type | Notes
 -------|------|------
