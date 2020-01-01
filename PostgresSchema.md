@@ -286,8 +286,9 @@ source_level | integer | level of the source newform
 target_level | integer | level of the target newform
 source_dim | integer | dimension of the source newform
 target_dim | integer | dimension of the target newform
-source_char_orbit | smallint | character orbit index of source newform
-target_char_orbit | smallint | character orbit index of target newform
+source_char_orbit | smallint | character orbit index of source newform (modulus is source_level)
+target_char_orbit | smallint | character orbit index of target newform (modulus is target_level)
+twisting_char_orbit | smallint | character orbit index of the twisting character (modulus is conductor)
 twist_class_label | text | minimal label (N.k.i.x) of a twist equivalent newform (identifies twist equivalence class)
 twist_class_level | integer | level of the minimal twist equivalent newform
 weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
