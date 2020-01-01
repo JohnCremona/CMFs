@@ -290,7 +290,7 @@ source_char_orbit | smallint | character orbit index of source newform
 target_char_orbit | smallint | character orbit index of target newform
 twist_class_label | text | minimal label (N.k.i.x) of a twist equivalent newform (identifies twist equivalence class)
 twist_class_level | integer | level of the minimal twist equivalent newform
-twist_class_weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
+weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
 
 
 Hecke eigenvalues
