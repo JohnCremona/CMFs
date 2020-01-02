@@ -7,12 +7,10 @@ Sage
 Code
 -------
 
-karim.gp: Karim Belabas's original function
-* mf.gp: defines the DecomposeSpaces() function in gp for dimension split, traces, polnomials
-* mf.m: defines the DecomposeSpaces() and ComputeCoefficientFields() funtions in Magma
-* mf.py: Python (Sage) scripts for reading and comparing output from DecomposeSpaces()
-* polredabs.m defines Magma interface to polredabs and polredbest (use Attach("polredabs.m"))
-* conrey.m: functions for converting between Galois orbits of Dirichlet characters and Conrey labels of Dirichlet characters
+The magma subdirectory contains magma code for computing modular forms for weight k > 1 and for post-processing, formatting, and sanity-checking data computed by both magma and pari-gp (including weight k = 1).
+
+the sage-pari subdirectory contains pari/gp and sage scripts for computing modular forms using pari-gp
+
 
 Data
 -------
