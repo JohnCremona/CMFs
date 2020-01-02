@@ -234,7 +234,7 @@ is_rm | boolean | whether the form has RM
 self_twist_discs | integer[] | list of discriminants giving self twists (either 0,1,or 3 quadratic discriminants)
 cm_discs | integer[] | list of CM discriminants (the negative discriminants listed in self_twist_discs)
 rm_discs | integer[] | list of RM discriminants (the positive discriminants listed in self_twist_discs)
-self_twist_proved | boolean | whether the self twists have been proved unconditionally
+self_twist_proved | boolean | whether the self twists have been proved unconditionally (always true, we can drop this now)
 has_non_self_twist | smallint | 1 if form admits a non-trivial inner twist, 0 if it does not, -1 if unknown
 inner_twists | integer[] | List of septuples of integers [b,m,M,o,parity,order,disc] where <M,o> identifies the Galois orbit of a Dirichlet character, m is the number of characters in this orbit that give rise to an inner twist, and b is 1 if the inner twists is proved.  All inner twists are guaranteed to be included in the list, but those without proved set could be false positives.
 inner_twist_count | integer | number of inner twists (includes proved and unproved), -1 if inner twists have not been computed (this applies to all forms of dimension > 20 and weight > 1)
