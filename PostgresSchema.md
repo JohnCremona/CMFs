@@ -35,7 +35,7 @@ This table represents (Galois orbits of) spaces of newforms `S_k^new(N, [\chi])`
 
 Column | Type | Notes
 -------|------|------
-label | text | Format is N.k.i where N = level, k = weight, i = base26 encoding of character orbit index (a=1)
+label | text | Format is N.k.i where N = level, k = weight, a = base26 encoding of character orbit index ('a'=1)
 level | integer | the level N of the modular form
 level_radical | integer | product of prime divisors of N
 level_primes | integer[] | list of primes divisors of N
@@ -47,7 +47,7 @@ weight | smallint | the weight k of the modular form
 weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
-char_orbit_index | smallint | the index i of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
+char_orbit_index | smallint | the index a of the galois orbit of the character for this space.  Galois orbits of Dirichlet characters of modulus N are sorted by the character order and then lexicographically by traces (to Q) of values on 1...N-1.  
 char_orbit_label | text | base26 encoding of char_orbit_index with a=1
 conrey_indexes | integer[] | Sorted list of Conrey indexes of characters in this Galois orbit
 char_order | integer | the order of the character
@@ -122,7 +122,7 @@ a5_dim | integer | total dimension of A5 Hecke orbits (only set for weight 1)
 
 Column | Type | Notes
 -------|------|------
-label | text | label (N.k.i) of the newspace
+label | text | label (N.k.a) of the newspace
 level | integer | level N
 weight | smallint | weight k
 char_orbit_index | smallint | index of the character orbit `[\chi]` n the sorted list of character orbits of modulus N
@@ -145,12 +145,12 @@ This table represents embeddings of newspaces at level M into cusp spaces at lev
 
 Column | Type | Notes
 -------|------|------
-label | text | label N.k.i for the cuspidal space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
+label | text | label N.k.a for the cuspidal space `S_k(N, [\chi])` (same as the label for `S_k^{new}(N, [\chi])`)
 level | integer | level N of the cuspidal space `S_k(N, [\chi])`
 weight | smallint | weight k of the cuspidal space `S_k(N, [\chi])`
-char_orbit_index | smallint | index i of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
-char_orbit_label | text | base-26 encoding (1='a') of index i of the character orbit that appears in label
-conrey_indexes | integer[] | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by i
+char_orbit_index | smallint | index a of the character orbit `[\chi]` in the sorted list of character orbits of modulus N
+char_orbit_label | text | base-26 encoding (1='a') of index a of the character orbit that appears in label
+conrey_indexes | integer[] | list of Conrey indexes n of the characters N.n in the Galois orbit indexed by a
 sub_label | text | The label of the newspace `S_k^{new}(M, [\psi])` that appears as a non-trivial subspace of`S_k(N, [\chi])`
 sub_level | integer | (M)
 sub_char_orbit_index | smallint | index j of `[\psi]` in sorted list of character orbits of modulus M
@@ -179,8 +179,8 @@ Newforms
 
 Column | Type | Notes
 -------|------|------
-label | text | newform label N.k.i.x where N=level, k=weight, i=char_orbit_label, x=hecke_orbit_label (both i and x are base26 indexes with a=1)
-space_label | text | (newspace label N.k.i
+label | text | newform label N.k.a.x where N=level, k=weight, i=char_orbit_label, x=hecke_orbit_label (both a and x are base26 indexes with 'a'=1)
+space_label | text | (newspace label N.k.a
 level | integer | the level N of the modular form
 level_radical | integer | product of prime divisors of N
 level_primes | integer[] | list of prime divisors of N
@@ -193,7 +193,7 @@ weight_parity | smallint | (-1)^k
 analytic_conductor | double precision | `N*(Exp(Psi((k)/2))/(2*pi))^2 where Psi(t) := Gamma'(t)/Gamma(t)`
 Nk2 | integer | `N*k^2`
 char_orbit_index | smallint | The index i of the Galois orbit of this form in the sorted list of character orbits, as described above.
-char_orbit_label | text | base26 encodeing of char_orbit_index i (with a=1).
+char_orbit_label | text | base26 encodeing of char_orbit_index a (with a=1).
 char_conductor | integer | Conductor of the Dirichlet character
 prim_orbit_index | smallint | char_orbit_index for the primitive version of this character
 char_order | integer | the order of the character
@@ -203,7 +203,7 @@ char_parity | smallint | 1 or -1, depending on the parity of the character
 char_is_real | boolean | whether the character takes only real values (trivial or quadratic)
 char_values | jsonb | quadruple <N,n,u,v> where N is the level, n is the order of the character, u is a list of generators for the unit group of Z/NZ, and v is a corresponding list of integers for which chi(u[i]) = zeta_n^v[i]
 hecke_orbit | integer | the index of this newform in its newpace (lex-ordered by traces), its base26 endoding is the x in the newofrm lable (a=1)
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits, used in eigenvalue tables.  `N + (k<<24) + ((i-1)<<36) + ((x-1)<<52)`.
+hecke_orbit_code | bigint | encoding of the tuple (N.k.a.x) into 64 bits, used in eigenvalue tables.  `N + (k<<24) + ((a-1)<<36) + ((x-1)<<52)`.
 dim | integer | the Q-dimension of this Galois orbit
 relative_dim | integer | the Q(chi)-dimension of this Hecke orbit (=dim/char_degree)
 field_disc | numeric | discriminant of the coefficient field, if known
@@ -260,26 +260,25 @@ sato_tate_group | text | LMFDB label of Sato-Tate group (currently only present 
 
 Column | Type | Notes
 -------|------|------
-label | text | label (N.k.i.x) of the newform
+label | text | label (N.k.a.x) of the newform
 level | integer | level N
 weight | smallint | weight k
-char_orbit_index | smallint | character orbit index (base26 encoding i appears in label)
+char_orbit_index | smallint | character orbit index (base26 encoding a appears in label)
 hecke_orbit | integer | Hecke orbit index (base26 endcoding x appears in label)
 portrait | text | base-64 encoded image of the newform (plot created by portrait.sage) to display in the properties box
 
 Twists
 ======
 
-**Table** `mf_twists`:
+**Table** `mf_twists_nf`:
 
 Column | Type | Notes
 -------|------|------
-source_label | text | label (N.k.i.x) of the newform being twisted
-target_label | text | label (N.k.i.x) of the twisted newform
-twisting_char_label | text | label N.i of the twisting character orbit [psi] (psi is always primitive)
+source_label | text | label (N.k.a.x) of the newform being twisted
+target_label | text | label (N.k.a.x) of the twisted newform
+twisting_char_label | text | label M.a of the twisting character orbit [psi] (psi is always primitive)
 multiplicity | smallint | # of twists by distinct psi in [psi] for each embedded newform
-parity | smallint | parity of the twisting character psi (this and all following columns could be obtained via joins)
-conductor | integer | conductor of psi (equal to the N in its label since psi is primitive)
+conductor | integer | conductor of psi (equal to the modulus M in its label since psi is primitive)
 order | integer | order of psi
 degree | integer | degree of psi = [Q(psi):Q] = phi(order) = cardinality of character orbit [psi]
 source_level | integer | level of the source newform
@@ -291,7 +290,30 @@ target_char_orbit | smallint | character orbit index of target newform (numeric 
 twisting_char_orbit | smallint | character orbit index of the twisting character (numeric value of i in twisting_char_label)
 source_hecke_orbit | integer | Hecke orbit index of source newform (numeric value of x in source label)
 target_hecke_orbit | integer | Hecke orbit index of target newform (numeric value of x in target label)
-twist_class_label | text | minimal label (N.k.i.x) of a twist equivalent newform (identifies twist equivalence class)
+twist_class_label | text | newform label N.k.a.x of the designated twist class representative (of minimal level and character)
+twist_class_level | integer | level of the minimal twist equivalent newform
+weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
+
+
+**Table** `mf_twists_cc`:
+
+Column | Type | Notes
+-------|------|------
+source_label | text | label (N.k.a.x.n.i) of the embedded newform being twisted
+target_label | text | label (N.k.a.x.n.i) of the twisted embedded newform
+twisting_char_label | text | Conrey label M.n of the twisting character psi (psi is always primitive)
+conductor | integer | conductor of psi (equal to the modulus M in its label since psi is primitive)
+order | integer | order of psi
+degree | integer | degree of psi = [Q(psi):Q] = phi(order) = cardinality of character orbit [psi]
+source_level | integer | level of the source newform
+target_level | integer | level of the target newform
+source_dim | integer | dimension of the source newform
+target_dim | integer | dimension of the target newform
+source_conrey_index | integer | Conrey index of source newform (numeric value of n in source_label)
+target_conrey_index | integer | Conrey index of target newform character (numeric value of n in target_label)
+source_hecke_orbit_code | bigint | Hecke orbit code of source newform (64-bit encoding of N.k.a.x in source label)
+target_hecke_orbit_code | bigint | Hecke orbit code of target newform (64-bit encoding of N.k.a.x in target label)
+twist_class_label | text | embedded newform label N.k.a.x.n.i of the designated twist class representative (of minimal level and character)
 twist_class_level | integer | level of the minimal twist equivalent newform
 weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
 
@@ -303,11 +325,11 @@ Hecke eigenvalues
 
 Column | Type | Notes
 -------|------|------
-label | text | label of newform (N.k.i.x)
+label | text | label of newform (N.k.a.x)
 level | integer | level N
 weight | smallint | weight k
-char_orbit_index | smallint | character orbit index (base26 encodes as i in newform label, a=1)
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
+char_orbit_index | smallint | character orbit index (base26 encodes as a in newform label, 'a'=1)
+hecke_orbit_code | bigint | encoding of the tuple (N.k.a.x) into 64 bits
 field_poly | numeric[] | list of integers of defining polynomial for Hecke field
 hecke_ring_rank | integer | rank of Hecke ring as a free Z-module (same as dimension of form, degree of field_poly)
 hecke_ring_power_basis | boolean | if true the chanage of basis matrix is the (implicit) identity matrix, in which case hecke_ring_numerators, ..., hecke_ring_inverse_denominators are set to null
@@ -326,7 +348,7 @@ maxp | integer | largest prime p for which ap is stored
 
 Column | Type | Notes
 -------|------|------
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
+hecke_orbit_code | bigint | encoding of the tuple (N.k.a.x) into 64 bits
 n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z
 
@@ -335,7 +357,7 @@ trace_an | numeric | trace of a_n down to Z
 
 Column | Type | Notes
 -------|------|------
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
+hecke_orbit_code | bigint | encoding of the tuple (N.k.a.x) into 64 bits
 p | integer | prime identifying L-poly L_p(T) = prod_(sigma in Gal(Q(f)/Q) (1 - sigma(a_p(f))T + chi(p)p^(k-1)T^2))
 lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs at good p, either 1 or dim+1 at bad p)
 
@@ -343,7 +365,7 @@ lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs 
 
 Column | Type | Notes
 -------|------|------
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i) into 64 bits (this is the same as the Hecke orbit code for the first newform in the space, but in this table the traces are sums over the entire newspace N.k.i)
+hecke_orbit_code | bigint | encoding of the tuple (N.k.a) into 64 bits (this is the same as the Hecke orbit code for the first newform in the space, but in this table the traces are sums over the entire newspace N.k.a)
 n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z, where a_n is the sum of a_n over all newforms in the space
 
@@ -352,11 +374,18 @@ trace_an | numeric | trace of a_n down to Z, where a_n is the sum of a_n over al
 
 Column | Type | Notes
 -------|------|------
-hecke_orbit_code | bigint | encoding of the tuple (N.k.i.x) into 64 bits
-lfunction_label | text | (N.k.c.x.n) where N.c is the Conrey label of the restriction to the cyclotomic field and n enumerates the embeddings with the same character (starting at 1)
-conrey_label | integer | the Conrey label for the restriction of the embedding to the character field
-embedding_index | integer | enumeration of which embedding (shows up in L-function link) for the given conrey label
-embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_label, embedding_index).  1-indexed.
+label | text | label N.k.a.x.n.i of the embedded newform
+level | integer | the level N of the embedded newform
+weight | smallint | weight k of the embedded newform
+char_orbit_index | smallint | orbit index a of the character N.n of the embedded newform
+hecke_orbit | integer | the integer value of x in the Hecke orbit code
+hecke_orbit_code | bigint | encoding of the tuple (N.k.a.x) into 64 bits
+conrey_index | integer | Conrey index n of the character N.n of the embedded newform
+embedding_index | integer | index of embedding among the embeddings for the given conrey_index
+embedding_m | integer | enumeration of which embedding over all conrey labels in the specified hecke orbit.  Ordering is the same as lexicographic on (conrey_index, embedding_index).  1-indexed.
+dual_conrey_index | integer | Conrey index of the dual character
+dual_embedding_index | integer | embedding_index of dual (complex conjugate) embedded newform
+dual_embedding_m | integer | embedding_m for dual embedded newform
 embedding_root_real | double precision | real part of the root corresponding to this embedding
 embedding_root_imag | double precision | imaginary part of the root corresponding to this embedding
 an_normalized | double precision[] | list of pairs {x,y} of doubles x, y so that `a_n = n^{k-1)/2} * (x + iy)` for `n \in [1,1000]`
@@ -370,14 +399,14 @@ Dirichlet characters
 
 Column | Type | Notes
 -------|------|------
-orbit_label | text | (N.i), where N is the modulus and i is the orbit index (currently not base26 encoded!)
-orbit_index | smallint | (i) Index in the list of traces down to Q of the values of all characters of modulus N
+orbit_label | text | character orbit label N.a, where N is the modulus and a is the orbit index (currently not base26 encoded, this should really be fixed!)
+orbit_index | smallint | Index in the list of traces down to Q of the values of all characters of modulus N
 modulus | integer
 conductor | integer
 prim_orbit_index | integer | Orbit index for the primitive character inducing this one (note that this index identifies a Galois orbit of characters of modulus M = conductor)
 order | integer | order of the character
 parity | smallint | +1 = even, -1 =  odd
-galois_orbit | integer[] | sorted list of conrey_labels in the same galois orbit
+galois_orbit | integer[] | sorted list of conrey indexes of characters in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
 char_degree | integer | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
@@ -389,10 +418,10 @@ Note that the values in this table are stored as integers m so that the actual v
 
 Column | Type | Notes
 -------|------|------
-label | text | N.n where N is the modulus and n is the conrey label
-modulos | smallint | the modulos, i.e., the N in the label
-conrey_index | smallint | the conrey label, i.e., the n in the label
-orbit_label | text | N.i where N is the modulus and i is the orbit_index
+label | text | N.n where N is the modulus and n is the conrey index
+modulus | smallint | the modulis, i.e., the N in the label
+conrey_index | smallint | the n in the Conrey label N.n
+orbit_label | text | N.a where N is the modulus and a is the orbit_index
 prim_label | text | the label of primitive character inducing this one
 modulus | integer
 conrey_index | integer
