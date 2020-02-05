@@ -282,6 +282,7 @@ multiplicity | smallint | # of twists by distinct psi in [psi] for each embedded
 conductor | integer | conductor of psi (equal to the modulus M in its label since psi is primitive)
 order | integer | order of psi
 degree | integer | degree of psi = [Q(psi):Q] = phi(order) = cardinality of character orbit [psi]
+parity | smallint | parity of psi
 source_level | integer | level of the source newform
 target_level | integer | level of the target newform
 source_dim | integer | dimension of the source newform
@@ -306,12 +307,14 @@ twisting_char_label | text | Conrey label M.n of the twisting character psi (psi
 conductor | integer | conductor of psi (equal to the modulus M in its label since psi is primitive)
 order | integer | order of psi
 degree | integer | degree of psi = [Q(psi):Q] = phi(order) = cardinality of character orbit [psi]
+parity | smallint | parity of psi
 source_level | integer | level of the source newform
 target_level | integer | level of the target newform
-source_dim | integer | dimension of the source newform
-target_dim | integer | dimension of the target newform
+source_dim | integer | dimension of the source newform orbit
+target_dim | integer | dimension of the target newform orbit
 source_conrey_index | integer | Conrey index of source newform (numeric value of n in source_label)
 target_conrey_index | integer | Conrey index of target newform character (numeric value of n in target_label)
+twisting_conrey_index | integer | Conrey index of twisting character psi (numeric value of n in twisting_char_label)
 source_hecke_orbit_code | bigint | Hecke orbit code of source newform (64-bit encoding of N.k.a.x in source label)
 target_hecke_orbit_code | bigint | Hecke orbit code of target newform (64-bit encoding of N.k.a.x in target label)
 twist_class_label | text | embedded newform label N.k.a.x.n.i of the designated twist class representative (of minimal level and character)
