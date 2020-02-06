@@ -293,7 +293,9 @@ twisting_char_orbit | smallint | character orbit index of the twisting character
 source_hecke_orbit | integer | Hecke orbit index of source newform (numeric value of x in source label)
 target_hecke_orbit | integer | Hecke orbit index of target newform (numeric value of x in target label)
 twist_class_label | text | newform label N.k.a.x of the designated twist class representative (of minimal level and character)
-twist_class_level | integer | level of the minimal twist equivalent newform
+twist_class_level | integer | level of the twist-minimal newforms in this twist class (N in twist_class_label)
+source_is_minimal | boolean | true if source newform is twist-minimal and has minimal character
+target_is_minimal | boolean | true if target newform is twist-minimal and has minimal character
 weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
 
 
@@ -318,7 +320,9 @@ twisting_conrey_index | integer | Conrey index of twisting character psi (numeri
 source_hecke_orbit_code | bigint | Hecke orbit code of source newform (64-bit encoding of N.k.a.x in source label)
 target_hecke_orbit_code | bigint | Hecke orbit code of target newform (64-bit encoding of N.k.a.x in target label)
 twist_class_label | text | embedded newform label N.k.a.x.n.i of the designated twist class representative (of minimal level and character)
-twist_class_level | integer | level of the minimal twist equivalent newform
+twist_class_level | integer | level of the minimal twist equivalent embedded newform
+source_is_minimal | boolean | true if source newform is twist-minimal and has minimal character
+target_is_minimal | boolean | true if target newform is twist-minimal and has minimal character
 weight | smallint | weight k of source and target newforms (and all newforms in the twist equivalence class)
 
 
