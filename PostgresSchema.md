@@ -283,6 +283,7 @@ conductor | integer | conductor of psi (equal to the modulus M in its label sinc
 order | integer | order of psi
 degree | integer | degree of psi = [Q(psi):Q] = phi(order) = cardinality of character orbit [psi]
 parity | smallint | parity of psi
+self_twist_disc | integer | for self twists the discriminant of the Kronecker character (1 for trivial char), 0 otherwise
 source_level | integer | level of the source newform
 target_level | integer | level of the target newform
 source_dim | integer | dimension of the source newform
