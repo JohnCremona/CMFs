@@ -7,21 +7,42 @@ intrinsic NewformLabel(N::RngIntElt,k::RngIntElt,o::RngIntElt,n::RngIntElt) -> M
 end intrinsic;
 
 intrinsic SplitNewformLabel(s::MonStgElt) -> RngIntElt,RngIntElt,RngIntElt,RngIntElt
-{ Given the label N.k.o.n of a newform, return the level N, weight k, char orbit o, Hecke orbit n. }
+{ Given the label N.k.a.x of a newform, return the level N, weight k, char orbit (as an integer), Hecke orbit (as an integer). }
     r := Split(s,".");
-    return StringToInteger(r[1]),StringToInteger(r[2]),Base26Decode(r[3])+1,Base26Decode(r[4])+1;
+    return [StringToInteger(r[1]),StringToInteger(r[2]),Base26Decode(r[3])+1,Base26Decode(r[4])+1];
+end intrinsic;
+
+intrinsic SplitEmbeddedNewformLabel(s::MonStgElt) -> RngIntElt,RngIntElt,RngIntElt,RngIntElt
+{ Given the label N.k.a.x.n.i of a newform, return the level N, weight k, char orbit (as an integer), Hecke orbit (as an integer), Conrey index n, relative embedding index i. }
+    r := Split(s,".");
+    return [StringToInteger(r[1]),StringToInteger(r[2]),Base26Decode(r[3])+1,Base26Decode(r[4])+1,StringToInteger(r[5]),StringToInteger(r[6])];
+end intrinsic;
+
+intrinsic CompareNewformLabels(s::MonStgElt,t::MonStgElt) -> RngIntElt
+{ Compares newform label strings of the form N.k.a.x lexicographically bu level N, weight k, char orbit a, Hecke orbit x, returns -1,0,1. }
+    return s eq t select 0 else (SplitNewformLabel(s) lt SplitNewformLabel(t) select -1 else 1);
+end intrinsic;
+
+intrinsic CompareEmbeddedNewformLabels(s::MonStgElt,t::MonStgElt) -> RngIntElt
+{ Compares newform label strings of the form N.k.a.x lexicographically bu level N, weight k, char orbit a, Hecke orbit x, returns -1,0,1. }
+    return s eq t select 0 else (SplitEmbeddedNewformLabel(s) lt SplitEmbeddedNewformLabel(t) select -1 else 1);
 end intrinsic;
 
 intrinsic NewspaceLabel(N::RngIntElt,k::RngIntElt,o::RngIntElt) -> MonStgElt
-{ Given positive integers N,k,o specifying the level, weight, char orbit of a newspace, return the label of the newspace. }
+{ Given positive integers N,k,a specifying the level, weight, char orbit of a newspace, return the label of the newspace. }
     require N gt 0 and k gt 0 and o gt 0: "Inputs to NewspaceLabel must be positive integers.";
     return Join([IntegerToString(N),IntegerToString(k),Base26Encode(o-1)],".");
 end intrinsic;
 
 intrinsic SplitNewspaceLabel(s::MonStgElt) -> RngIntElt, RngIntElt, RngIntElt
-{ Given the label N.k.o of a newspace, return the level N, weight k, char orbit o. }
+{ Given the label N.k.a of a newspace, return the level N, weight k, char orbit a. }
     r := Split(s,".");
     return StringToInteger(r[1]),StringToInteger(r[2]),Base26Decode(r[3])+1;
+end intrinsic;
+
+intrinsic CompareNewspaceLabels(s::MonStgElt,t::MonStgElt) -> RngIntElt
+{ Compares newspace label strings of the form N.k.o lexicographically bu level N, weight k, char orbit o, returns -1,0,1. }
+    return s eq t select 0 else (SplitNewspaceLabel(s) lt SplitNewspaceLabel(t) select -1 else 1);
 end intrinsic;
 
 intrinsic Gamma1Label(N::RngIntElt,k::RngIntElt) -> MonStgElt

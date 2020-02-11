@@ -576,7 +576,7 @@ end procedure;
 /*
 List below produced in sage using:
     
-from lmfdb.db_backend import db
+from lmfdb import db
 sage: for k in sorted(db.mf_newforms.col_type.keys()):
      print '<"%s","%s",%s>,'%(k,db.mf_newforms.col_type[k],"true" if db.mf_newspaces.col_type.get(k) else "false")
         
@@ -595,6 +595,7 @@ newforms_columns := [
 <"atkin_lehner_string","text", false>,
 <"char_conductor","integer", true>,
 <"char_degree","integer", true>,
+<"char_is_minimal","boolean", true>,
 <"char_is_real","boolean", true>,
 <"char_orbit_index","smallint", true>,
 <"char_orbit_label","text", true>,
@@ -636,6 +637,7 @@ newforms_columns := [
 <"level_is_squarefree","boolean",true>,
 <"level_primes","integer[]", true>,
 <"level_radical","integer", true>,
+<"minimal_twist","text", false>,
 <"nf_label","text", false>,
 <"prim_orbit_index","smallint", true>,
 <"projective_field","numeric[]", false>,
@@ -648,7 +650,6 @@ newforms_columns := [
 <"rm_discs","integer[]", false>,
 <"sato_tate_group", "text", false>,
 <"self_twist_discs","integer[]", false>,
-<"self_twist_proved","boolean", false>,
 <"self_twist_type","smallint", false>,
 <"space_label","text", true>,
 <"trace_display","numeric[]", false>,
@@ -686,7 +687,39 @@ hecke_lpolys_columns := [
 <"p","integer">
 ];
 
-procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_labels: Detail:=0, Jobs:=1, JobId:=0, conrey_labels:="",  analytic_ranks:="", artin_reps:="", related_objects:="", SplitInput:=false)
+
+/*
+ Format of infile is N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd:eap where
+
+ 1) N = level, a positive integer
+ 2) k = weight, a positive integer (for .m.txt files, k > 1)
+ 3) i = character orbit of chi (Galois orbits of Dirichlet characters chi of modulus N are lex-sorted by order and then by trace vectors [tr(chi(n)) for n in [1..N]], taking traces from Q(chi) to Q; the first orbit index is 1, corresponding to the trivial character, the second orbit will correspond to a quadratic character).
+ 4) t = time in secs to compute this line of data
+ 5) D = sorted list of dimensions [d1,d2,...] of Galois stable subspaces of S_k^{new}(N,chi), ordered by dimension
+ 6) T = lex-sorted list of trace vectors [[tr(a_1),...tr(a_n)],...] for Galois conjugacy classes of eigenforms f corresponding to the subspaces listed in D, traces are from the coefficient field of the form down to Q (note that lex-sorting trace vectors sorts subspaces by dimension because tr(a_1)=tr(1) is the degree of the coefficient field)
+ 7) A = Atkin-Lehner signs (empty list if chi is not the trivial character (i.e. i=1)) [[<p,sign> for p in Divisors(N)],...], one list of Atkin-Lehner signs for each subspace listed in D.
+ 8) F = Hecke field polys [[f0,f1,...,1],...] list of coeffs (constant coeff first), one list for each subspace listed in D of dimension up to the degree bound (currently 20); note that F[n] corresponds to the space D[n] but F may be shorter than D
+ 9) C = Hecke cutters [[<p,[g0,g1,...,1]>,...],...] list of minimal lists of coefficients of kernel polys g_p in T_p sufficient to distinguish all the subspaces listed in D (i.e. the ith form is the unique form lying in the kernel of g_p(T_p) for all the tuples <p,coeffs(g_p)> in the ith list)
+10) E = Hecke Eigenvalue data [<g,b,c,d,a,x,m>,...] list of 7-tuples of Hecke eigenvalue data for each subspace listed in D of dimension greater than 1 up to the degree bound where:
+      1) g is a list of coefficients of a polredbestified field poly for the Hecke field K (should match entry in F),
+      2) b is a list of lists of rationals specifying a basis for the Hecke ring R:=Z[a_n] in terms of the power basis for g
+      3) c is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K of the Hecke field
+      4) d is a pair <disc,fac> where disc is the discriminant of O_K (0 if not known) and fac=[<p,e>,...] is its factorization.
+      5) a is a list of lists of integers encoding eigenvalues in terms of the basis b
+      6) x is a pair <u,v> where u lists integers generating (Z/NZ)* and v lists of values of chi on u in basis b
+      7) m is the least integer such that the coefficients a_1,...,a_m generate the Hecke ring (as a ring)
+11) cm = list of pairs <proved,discs> where proved=0,1 and discs is a list of 0, 1, or 3 fundamental discriminants (for k > 1 there is at most 1 and it is a negative discriminant), one pair for each subspace listed in D
+12) tw = list of lists of quadrauples <proved,n,m,o> where proved=0,1, n >=1 is a multiplicity, and m and o identify a Galois orbit of a characters [phi] of modulus m for which the corresponding form admits n distinct non-trivial inner-twist by characters in xi in [phi], one list for each subspace up to degree bound. All self-twists are guaranteed to be included, but quadruples with proved=0 could in principal be false positives.
+13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
+14) zr = list of proportions of zero a_p over primes p < 2^13 (decimal number), one for each subspace
+15) mm = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
+16) h = list of trace hashes (linear combination of tr(a_p) over p in [2^12,2^13] mod 2^61-1), one for each subspace of dimension up to the degree bound (not yet present for weight 1)
+17) X = list of pairs <u,v>, one for each entry in F, where u is a list of integer generators for (Z/NZ)* and v is a list of lists of rationals specifying corresponding values of chi in the Hecke field in terms of the power basis for F[i].
+18) sd = list of boolean values (0,1), one for each subspace in D indicating whether the subspace is self-dual (meaning the a_n are real-valued)
+19) eap = list of lists of lists of embedded ap's, one for each subspace in D of dimension greater than the degree bound; for trivial character these are lists of real numbers, otherwise lists of pairs of real numbers encoding real and imaginary parts (the latter 0 if a_n is real).  For each subspace of dimension d there are d lists of embedded ap's [a_2,a_3,...]
+*/
+
+procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, Jobs:=1, JobId:=0, conrey_labels:="", artin_reps:="", SplitInput:=false)
     assert Jobs gt 0 and JobId ge 0 and JobId lt Jobs;
     if not "." in outfile_suffix then outfile_suffix cat:= ".txt"; end if;
     if Jobs ne 1 then outfile_suffix cat:= Sprintf("_%o",JobId); end if;
@@ -697,40 +730,49 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
     ConreyTable:=AssociativeArray();
     if conrey_labels ne "" then
         start:=Cputime();
-        S := Split(Read(conrey_labels),"\n"); // format is N:o:[n1,n2,...] (list of conrey chars chi_N(n,*) in orbit o for modulus N)
+        S := Split(Read(conrey_labels),"\n");  // format is N:o:[n1,n2,...]:conductor:prim_index:order:deg:parity:isreal:isminimal (use conrey_XXX.txt)
         for s in S do r:=Split(s,":"); ConreyTable[[StringToInteger(r[1]),StringToInteger(r[2])]] := r[3]; end for;
         printf "Loaded %o records from conrey label file %o in %o secs.\n", #Keys(ConreyTable), conrey_labels, Cputime()-start;
     end if;
     start:=Cputime();
     R<x>:=PolynomialRing(Integers());
-    S:=Split(Read(field_labels),"\n");  // format is coeffs:label
+    S:=Split(Read("lmfdb_nf_labels.txt"));  // format is coeffs:label
     FieldTable:=AssociativeArray();
     for s in S do r:=Split(s,":"); FieldTable[eval(r[1])]:= r[2]; end for;
-    printf "Loaded %o records from field label file %o in %o secs.\n", #Keys(FieldTable), field_labels, Cputime()-start;
-    RankTable:=AssociativeArray();
-    if analytic_ranks ne "" then
-        start := Cputime();
-        S:=Split(Read(analytic_ranks),"\n");  // format is label:rank:proved
-        for s in S do r:=Split(s,":"); RankTable[r[1]]:= [StringToInteger(r[2]),StringToInteger(r[3])]; end for;
-        printf "Loaded %o records from analytic rank file %o in %o secs.\n", #Keys(RankTable), analytic_ranks, Cputime()-start;
+    printf "Loaded %o records from lmfdb_nf_labels.txt in %o secs.\n", #Keys(FieldTable), Cputime()-start;
+    RankTable:=AssociativeArray();  start := Cputime();
+    b,S := ReadTest("mf_ranks.txt");  // format is label:rank:proved
+    if b then
+        for s in Split(S) do r:=Split(s,":"); RankTable[r[1]]:= [StringToInteger(r[2]),StringToInteger(r[3])]; end for;
+        printf "Loaded %o records from mf_ranks.txt in %o secs.\n", #Keys(RankTable), Cputime()-start;
     end if;
-    ArtinTable:=AssociativeArray();
+    ArtinTable:=AssociativeArray();  start := Cputime();
     if artin_reps ne "" then
-        start := Cputime();
-        S:=Split(Read(artin_reps),"\n");  // format is level:1:char_orbit:hecke_orbit:label:artin_label:discs:ptype:pname:ppoly:deg:id:poly:tzr,tzm:th
-        for s in S do r:=Split(s,":"); ArtinTable[r[5]]:= r; end for;
+        S := Read(artin_reps);  // format is level:1:char_orbit:hecke_orbit:label:artin_label:discs:ptype:pname:ppoly:min_twist_label:deg:id:poly:tzratio,tzmoments:thahs
+        for s in Split(S) do r:=Split(s,":"); ArtinTable[r[5]]:= r; end for;
         printf "Loaded %o records from Artin rep file %o in %o secs.\n", #Keys(ArtinTable), artin_reps, Cputime()-start;
     end if;
-    RelatedObjects:=AssociativeArray();
-    if related_objects ne "" then
-        start := Cputime();
-        S:=Split(Read(related_objects),"\n");  // format is level:1:char_orbit:hecke_orbit:label:artin_label:discs:ptype:pname:ppoly:deg:id:poly:th:tzr,tzm
-        for s in S do r:=Split(s,":"); if IsDefined(RelatedObjects,r[1]) then Append(~RelatedObjects[r[1]],r[2]); else RelatedObjects[r[1]] := [r[2]]; end if; end for;
-        printf "Loaded %o records from related objects file %o in %o secs.\n", #Keys(RelatedObjects), artin_reps, Cputime()-start;
+    InnerTwistTable := AssociativeArray();  start := Cputime();
+    b,S := ReadTest("mftwists_inner.txt");   // format is source:target:chars:mults (ignore records with source != target)
+    if b then
+        for s in Split(S) do r:=Split(s,":"); if r[1] eq r[2] then InnerTwistTable[r[1]] := [r[3],r[4],r[5]]; end if; end for;
+        printf "Loaded %o records from mftwists_inner.txt in %o secs.\n", #Keys(InnerTwistTable), Cputime()-start;
+    end if;
+    MinimalTwistTable := AssociativeArray();  start := Cputime();
+    b,S := ReadTest("mftwists_minimal.txt");  // format is source:target
+    if b then
+        for s in Split(S) do r:=Split(s,":"); MinimalTwistTable[r[2]] := r[1]; end for;
+        printf "Loaded %o records from mftwists_minimal.txt in %o secs.\n", #Keys(MinimalTwistTable), Cputime()-start;
+    end if;
+    RelatedObjects:=AssociativeArray();  start := Cputime();
+    b,S := ReadTest("mf_related_objects.txt");  // format is label:URL
+    if b then
+        for s in Split(S) do r:=Split(s,":"); if IsDefined(RelatedObjects,r[1]) then Append(~RelatedObjects[r[1]],r[2]); else RelatedObjects[r[1]] := [r[2]]; end if; end for;
+        printf "Loaded %o records from mf_related_objects.txt in %o secs.\n", #Keys(RelatedObjects), Cputime()-start;
     end if;
     start := Cputime();
     if SplitInput then infile cat:= Sprintf("_%o",JobId); end if;
-    S := Split(Read(infile),"\n");
+    S := Split(Read(infile));
     printf "Loaded %o records from input file %o in %o secs.\n", #S, infile, Cputime()-start;
     start:=Cputime();
     newform_fp := Open(newform_outfile,"w");
@@ -788,9 +830,10 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
         rec["space_label"] := NewspaceLabel(N,k,o);
         rec["char_orbit_label"] := Base26Encode(o-1);
         rec["char_order"] := Order(chi);
+        rec["char_is_minimal"] := IsMinimal(chi) select 1 else 0;
         if o gt 1 and not IsDefined(ConreyTable,[N,o]) then
             t := Cputime();
-            ConreyTable[[N,o]] := sprint(ConreyLabels(chi));
+            ConreyTable[[N,o]] := sprint(ConreyIndexes(chi));
             printf "Generating Conrey labels for character orbit %o of modulus %o in %.3os\n", o, N, Cputime()-t;
         end if;
         rec["conrey_indexes"] := o eq 1 select "[1]" else ConreyTable[[N,o]];
@@ -836,8 +879,10 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
             if IsDefined(RankTable,label) and RankTable[label][1] ge 0 then
                 rec["analytic_rank"] := RankTable[label][1];
                 rec["analytic_rank_proved"] := RankTable[label][2];
+            else
+                printf "Warning: no record for newform %o found in RankTable\n", label;
             end if;
-            rec["self_twist_proved"] := r[11][n][1];
+            assert r[11][n][1] eq 1;  // self twists should always be proved (and can be derived from inner twists if not)
             std := Sort(r[11][n][2],func<a,b|Abs(a)-Abs(b)>);
             assert #std in [0,1,3] and (#std lt 3 or k eq 1);
             rec["cm_discs"] := [d:d in std|d lt 0];
@@ -847,6 +892,16 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
             rec["is_cm"] := #[d:d in std|d lt 0] gt 0 select 1 else 0; 
             rec["is_rm"] := #[d:d in std|d gt 0] gt 0 select 1 else 0;
             if #std eq 3 then rec["self_twist_type"] := 3; else if #std eq 0 then rec["self_twist_type"] := 0; else rec["self_twist_type"] := std[1] lt 0 select 1 else 2; end if; end if;
+            if #InnerTwistTable gt 0 then
+                if IsDefined(InnerTwistTable,label) then
+                    assert Set(std) eq Set(StringToIntegerArray(InnerTwistTable[label][3]));
+                else
+                    printf "Warning: no record for newform %o found in InnerTwistTable\n", label;
+                end if;
+            end if;
+            itproved := false;
+            rec["inner_twist_count"] := -1;
+            rec["has_non_self_twist"] := -1;
             if n le #r[12] then
                 rec["has_non_self_twist"] := #r[12][n] gt 0 select 1 else 0;
                 for it in r[12][n] do if not IsDefined(OT,it[3]) then G,T := CharacterOrbitReps(it[3]:RepTable);  OT[it[3]] := <G,T>; end if; end for;
@@ -854,9 +909,23 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                                        [<r[11][n][1],1,Modulus(psi),CharacterOrbit(psi),Parity(psi),2,d> where psi:=KroneckerCharacter(d,Rationals()) : d in rec["self_twist_discs"]] cat
                                        [<it[1],it[2],it[3],it[4],Parity(psi),Order(psi),0> where psi:=OT[it[3]][1][it[4]] : it in r[12][n]];
                 rec["inner_twist_count"] := sum([t[2]:t in rec["inner_twists"]]);
+                if #InnerTwistTable gt 0 then
+                    if IsDefined(InnerTwistTable,label) then
+                        z := InnerTwistTable[label];
+                        psis := [SplitCharacterOrbitLabel(s): s in StringToStrings(z[1])];  ms := atoii(z[2]);
+                        assert Set([[x[2],x[3],x[4]]:x in rec["inner_twists"]]) eq Set([[ms[i],psis[i][1],psis[i][2]]:i in [1..#ms]]);
+                        if #[it:it in rec["inner_twists"]|it[1] ne 1] gt 0 then print "Proved previously unproved inner twist!"; end if;
+                        rec["inner_twists"] := [<1,a[2],a[3],a[4],a[5],a[6],a[7]>:a in rec["inner_twists"]];
+                        itproved := true;
+                    else
+                        printf "Warning: no record for newform %o found in InnerTwistTable\n", label;
+                    end if;
+                end if;
                 // attempt to prove unproved inner twists using the fact that the automorphism group of the Hecke field must contain a subgroup
                 // of cardinality equal to the number of inner twists divided by the number of self twists
-                if rec["self_twist_proved"] eq 1 and n le #r[8] then
+                // No longer needed since we provably compute all twists
+                /*
+                if not itproved and n le #r[8] then
                     st := 1+#rec["self_twist_discs"];
                     itm := sum([a[2]:a in rec["inner_twists"]|a[1] eq 1]);
                     itM := rec["inner_twist_count"];
@@ -874,9 +943,30 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                         end if;
                     end if;
                 end if;
+                */
             else
-                rec["inner_twist_count"] := -1;
-                rec["has_non_self_twist"] := -1;
+                if #InnerTwistTable gt 0 then
+                    if IsDefined(InnerTwistTable,label) then
+                        z := InnerTwistTable[label];  Ds := [1] cat rec["self_twist_discs"];
+                        psis := [SplitCharacterOrbitLabel(s): s in StringToStrings(z[1])];  ms := atoii(z[2]);
+                        for psi in psis do if not IsDefined(OT,psi[1]) then G,T := CharacterOrbitReps(psi[1]:RepTable);  OT[psi[1]] := <G,T>; end if; end for;
+                        it := [<1,ms[i],psis[i][1],psis[i][2],Parity(psi),Order(psi),(d in Ds select d else 0) where d:=KroneckerDiscriminant(psi)>
+                                   where psi:=OT[psis[i][1]][1][psis[i][2]] : i in [1..#psis]];
+                        rec["inner_twists"] := [t:t in it|t[7] ne 0] cat [t:t in it|t[7] eq 0]; // put self twists first
+                        rec["inner_twist_count"] := sum([t[2]:t in it]);
+                        rec["has_non_self_twist"] := #psis gt #Ds select 1 else 0;
+                        itproved := true;
+                    else
+                        printf "Warning: no record for newform %o found in InnerTwistTable\n", label;
+                    end if;
+                end if;
+            end if;
+            if #MinimalTwistTable gt 0 then
+                if IsDefined(MinimalTwistTable,label) then
+                    rec["minimal_twist"] := MinimalTwistTable[label];
+                else
+                    printf "Warning: no record for newform %o found in MinimalTwistTable\n", label;
+                end if;
             end if;
             ro := IsDefined(RelatedObjects,label) select RelatedObjects[label] else [Parent("")|];
             if k gt 1 then
@@ -891,13 +981,9 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix, field_label
                     arlabels := Split(ar[6],"c");
                     cn := StringToIntegerArray(arlabels[2]); assert #cn eq dim;
                     artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "\"";
-cmf_url:="ModularForm/GL2/Q/holomorphic/" cat Join(Split(label,"."),"/");
-print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                     Append(~ro,"\"ArtinRepresentation/" cat arlabels[1] cat "\"");  // Artin rep Galois orbit URL
                     if dim eq 1 then
                         artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "c1\"";
-cmf_url:="ModularForm/GL2/Q/holomorphic/" cat Join(Split(label,"."),"/") cat "/" cat sprint(L[1]) cat "/1";
-print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                         Append(~ero,[artin_url]);
                     else
                         // The artin rep labels of conjugates are in lex-order of an, we need to do the same for the cmfs
@@ -906,7 +992,7 @@ print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                         nn := n-m;
                         an := NFSeq(r[10][nn][1],r[10][nn][2],r[10][nn][5]);
                         xi := CharacterFromValues(N,r[17][n][1],[Parent(an[1])|z:z in r[17][n][2]]);
-                        E := LabelEmbeddings(an,ConreyConjugates(chi,xi:ConreyLabelList:=L):Precision:=100);  assert #E eq dim;
+                        E := LabelEmbeddings(an,ConreyConjugates(chi,xi:ConreyIndexList:=L):Precision:=100);  assert #E eq dim;
                         rd := ExactQuotient(dim,Degree(chi));
                         ms := [(Index(L,e[1])-1)*rd + e[2]:e in E];
                         ccvcmp := func<v,w|&+[Abs(v[i]-w[i]):i in [1..#v]]>;
@@ -921,8 +1007,6 @@ print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                         cn := [cn[Index(tmp,i)]:i in [1..dim]];
                         for i:=1 to dim do
                             artin_url := "\"ArtinRepresentation/" cat arlabels[1] cat "c" cat IntegerToString(cn[i]) cat "\"";
-cmf_url:="ModularForm/GL2/Q/holomorphic/" cat Join(Split(label,"."),"/") cat "/" cat sprint(L[((i-1) div rd) + 1]) cat "/" cat sprint(((i-1) mod rd)+1);
-print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                             Append(~ero,[artin_url]);
                         end for;
                     end if;
@@ -940,10 +1024,11 @@ print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                         if not f in unknown_fields then Include(~unknown_fields,f); PrintFile("unknown_fields.txt",sprint(f)); unknown_cnt +:= 1; end if;
                     end if;
                 end if;
-                if #ar ge 11 and ar[11] ne "" and ar[11] ne "?" then rec["artin_degree"] := ar[11]; end if;
-                if #ar ge 12 and ar[12] ne "" and ar[12] ne "?" then rec["artin_image"] := ar[12]; end if;
-                if #ar ge 13 and ar[13] ne "" and ar[13] ne "?" and ar[13] ne "[]" then 
-                    f:=eval(ar[13]);  assert #f gt 1;
+                if rec["minimal_twist"] ne "\\N" then assert rec["minimal_twist"] eq ar[11]; else rec["minimal_twist"] := ar[11]; end if;
+                if #ar ge 12 and ar[12] ne "" and ar[12] ne "?" then rec["artin_degree"] := ar[12]; end if;
+                if #ar ge 13 and ar[13] ne "" and ar[13] ne "?" then rec["artin_image"] := ar[13]; end if;
+                if #ar ge 14 and ar[14] ne "" and ar[14] ne "?" and ar[14] ne "[]" then 
+                    f:=eval(ar[14]);  assert #f gt 1;
                     rec["artin_field"] := f;
                     if IsDefined(FieldTable,f) then
                         rec["artin_field_label"] := FieldTable[f];
@@ -951,11 +1036,14 @@ print cmf_url cat ":" cat artin_url[2..#artin_url-1];
                         if not f in unknown_fields then Include(~unknown_fields,f); PrintFile("unknown_fields.txt",sprint(f)); unknown_cnt +:= 1; end if;
                     end if;
                 end if;
-                if #ar ge 14 then
-                    rec["trace_zratio"] := ar[14];
-                    rec["trace_moments"] := ar[15];
-                    rec["trace_hash"] := ar[16];
+                if #ar ge 15 then
+                    rec["trace_zratio"] := ar[15];
+                    rec["trace_moments"] := ar[16];
+                    rec["trace_hash"] := ar[17];
                 end if;
+            end if;
+            if rec["minimal_twist"] ne "\\N" then
+                rec["is_twist_minimal"] := N eq StringToInteger(Split(rec["minimal_twist"],".")[1]) select 1 else 0;
             end if;
             rec["related_objects"] := ro;
             if #ero gt 0 then rec["embedded_related_objects"] := ero; end if;
@@ -1113,6 +1201,255 @@ print cmf_url cat ":" cat artin_url[2..#artin_url-1];
     if unknown_cnt gt 0 then printf "Appended %o unknown polredabs field polys to unknown_fields.txt\n", unknown_cnt; end if;
 end procedure;
 
+/*
+....: for k in sorted(db.mf_nf_twists.col_type.keys()):
+....:     if k != "id":
+....:         print '<"%s","%s">,'%(k,db.mf_twists_nf.col_type[k])
+....:     
+*/
+twists_nf_columns := [
+<"conductor","integer">,
+<"degree","integer">,
+<"multiplicity","smallint">,
+<"order","integer">,
+<"parity","smallint">,
+<"self_twist_disc","integer">,
+<"source_char_orbit","smallint">,
+<"source_dim","integer">,
+<"source_hecke_orbit","integer">,
+<"source_is_minimal","boolean">,
+<"source_label","text">,
+<"source_level","integer">,
+<"target_char_orbit","smallint">,
+<"target_dim","integer">,
+<"target_hecke_orbit","integer">,
+<"target_is_minimal","boolean">,
+<"target_label","text">,
+<"target_level","integer">,
+<"twist_class_label","text">,
+<"twist_class_level","integer">,
+<"twisting_char_label","text">,
+<"twisting_char_orbit","smallint">,
+<"weight","smallint">
+];
+
+/*
+    infile format is source:target:[psi1,...,psin],[m1,...mn]
+    where source and target are newform labels, psi1,...psin are character orbit labels, and m1,...mn are multiplicities
+
+    dimfile format is N:k:o:[d1,...,dn] where N=level, k=weight, o=charorbit, t=time (ignored), [d1...dn] is a list of dimension of newforms in newspace N.k.o
+    (use mfsplit.txt for this)
+
+    conreyfile format is  N:o:[n1,n2,...]:conductor:prim_index:order:deg:parity:isreal:isminimal (use conrey_XXX.txt)
+*/
+procedure FormatTwistDataNF (infile, outfile, conreyfile)
+    start := Cputime();
+    NewspaceDimsTable := AssociativeArray();
+    S := Read("mfsplit.txt");  // format is N:k:o:[d1,...,dn]
+    for s in Split(S) do r:=Split(s,":"); NewspaceDimsTable[[atoi(r[1]),atoi(r[2]),atoi(r[3])]] := atoii(r[4]); end for;
+    printf "Loaded %o records from mfsplit.txt in %o secs.\n", #NewspaceDimsTable, Cputime()-start; start := Cputime();
+    MinimalTwistTable := AssociativeArray();  MinimalTwistLevel := AssociativeArray();
+    S := Read("mftwists_minimal.txt");  // format is source:target
+    for s in Split(S) do r:=Split(s,":"); MinimalTwistTable[r[2]] := r[1]; MinimalTwistLevel[r[2]] := atoi(Split(r[1],".")[1]); end for;
+    printf "Loaded %o records from mftwists_minimal.txt in %o secs.\n", #MinimalTwistTable, Cputime()-start; start := Cputime();
+    T := [Split(r,":"):r in Split(Read(conreyfile),"\n")];
+    CharacterTable:=IndexFibers(T,func<r|[atoi(r[1]),atoi(r[2])]>:Unique);
+    printf "Loaded data for %o characters from file %o in %o secs.\n", #CharacterTable, conreyfile, Cputime()-start; start:=Cputime();
+    S := [Split(r,":"):r in Split(Read(infile))];
+    printf "Loaded %o records from %o in %.3os\n", #S, infile, Cputime()-start;  start := Cputime();
+    function getchar(label)
+        a := SplitCharacterOrbitLabel(label);
+        r := CharacterTable[a][3]; n := atoi(Split(r[2..#r-1],",")[1]);
+        return DirichletCharacter(a[1],n);
+    end function;
+    fp := Open(outfile,"w");
+    write_header ("", fp, twists_nf_columns);
+    rec := AssociativeArray(Parent(""));
+    cnt := 0;
+    for r in S do
+        N,k,o,i := Explode(SplitNewformLabel(r[1]));
+        rec["twist_class_label"] := MinimalTwistTable[r[1]];
+        rec["twist_class_level"] := MinimalTwistLevel[r[1]];
+        rec["source_label"] := r[1];
+        rec["source_level"] := N;
+        rec["source_char_orbit"] := o;
+        rec["source_hecke_orbit"] := i;
+        rec["source_is_minimal"] := N eq rec["twist_class_level"] and CharacterTable[[N,o]][10] eq "1" select "1" else "0";
+        rec["source_dim"] := NewspaceDimsTable[[N,k,o]][i];
+        rec["weight"] := k;
+        N,k2,o,i := Explode(SplitNewformLabel(r[2]));
+        assert k2 eq k;
+        rec["target_label"] := r[2];
+        rec["target_level"] := N;
+        rec["target_char_orbit"] := o;
+        rec["target_hecke_orbit"] := i;
+        rec["target_is_minimal"] := N eq rec["twist_class_level"] and CharacterTable[[N,o]][10] eq "1" select "1" else "0";
+        rec["target_dim"] := NewspaceDimsTable[[N,k,o]][i];
+        chars := StringToStrings(r[3]);
+        mults := atoii(r[4]);
+        assert #chars gt 0 and #chars eq #mults;
+        discs := atoii(r[5]);
+        for i:=1 to #chars do
+            rec["twisting_char_label"] := chars[i];
+            c := CharacterTable[SplitCharacterOrbitLabel(chars[i])];
+            assert c[1] eq c[4];
+            rec["twisting_char_orbit"] := c[2];
+            rec["multiplicity"] := mults[i];
+            rec["conductor"] := c[4];
+            rec["order"] := c[6];
+            rec["degree"] := c[7];
+            rec["parity"] := c[8];
+            if c[6] eq "2" and rec["source_label"] eq rec["target_label"] then
+                D := KroneckerDiscriminant(getchar(chars[i]));
+                rec["self_twist_disc"] := D in discs select D else 0;
+            else
+                rec["self_twist_disc"] := c[6] eq "1" select 1 else 0;
+            end if;
+            s1 := Set([x:x in Keys(rec)]);  s2 := Set([t[1]: t in twists_nf_columns]);
+            if s1 ne s2 then error Sprintf("twists_nf_columns match error diffs %o and %o", s1 diff s2, s2 diff s1); end if;
+            Puts(fp,Join([sprint(rec[t[1]]):t in twists_nf_columns],":"));
+            cnt +:= 1;
+        end for;
+        Flush(fp);
+    end for;
+    Flush(fp); delete fp;
+    printf "Wrote %o records to %o, total time %.3o secs\n", cnt, outfile, Cputime()-start;
+end procedure;
+
+/*
+sage: for k in sorted(db.mf_twists_cc.col_type.keys()):
+....:     if k != "id":
+....:         print '<"%s","%s">,'%(k,db.mf_twists_cc.col_type[k])
+*/
+
+twists_cc_columns := [
+<"conductor","integer">,
+<"degree","integer">,
+<"order","integer">,
+<"parity","smallint">,
+<"source_conrey_index","integer">,
+<"source_dim","integer">,
+<"source_embedding_index","integer">,
+<"source_hecke_orbit_code","bigint">,
+<"source_is_minimal","boolean">,
+<"source_label","text">,
+<"source_level","integer">,
+<"target_conrey_index","integer">,
+<"target_dim","integer">,
+<"target_embedding_index","integer">,
+<"target_hecke_orbit_code","bigint">,
+<"target_is_minimal","boolean">,
+<"target_label","text">,
+<"target_level","integer">,
+<"twist_class_label","text">,
+<"twist_class_level","integer">,
+<"twisting_char_label","text">,
+<"twisting_conrey_index","integer">,
+<"weight","smallint">
+];
+
+/*
+    infile format is source:target:[psi1,...,psin] where source and target are embedded newform labels N.k.a.x.n.i and psi1,...psin are Conrey labels q.n
+
+    dimfile format is N:k:o:[d1,...,dn] where N=level, k=weight, o=charorbit, t=time (ignored), [d1...dn] is a list of dimension of newforms in newspace N.k.o
+    (use mfsplit.txt for this)
+
+    conreyfile format is  N:o:[n1,n2,...]:conductor:prim_index:order:deg:parity:isreal:isminimal (use conrey_XXX.txt)
+*/
+procedure FormatTwistDataCC (infile, outfile, conreyfile:Jobs:=1, JobId:=0)
+    start := Cputime();
+    NewspaceDimsTable := AssociativeArray();
+    S := Read("mfsplit.txt");  // format is N:k:o:[d1,...,dn]
+    for s in Split(S) do r:=Split(s,":"); NewspaceDimsTable[[atoi(r[1]),atoi(r[2]),atoi(r[3])]] := atoii(r[4]); end for;
+    printf "Loaded %o records from mfsplit.txt in %o secs.\n", #NewspaceDimsTable, Cputime()-start; start := Cputime();
+    MinimalTwistTable := AssociativeArray();  MinimalTwistLevel := AssociativeArray();
+    S := Read("mftwists_cc_minimal.txt");  // format is source:target
+    for s in Split(S) do r:=Split(s,":"); MinimalTwistTable[r[2]] := r[1]; MinimalTwistLevel[r[2]] := atoi(r[1][1..Index(r[1],".")-1]); end for;
+    printf "Loaded %o records from mftwists_cc_minimal.txt in %o secs.\n", #MinimalTwistTable, Cputime()-start; start := Cputime();
+    T := [Split(r,":"):r in Split(Read(conreyfile),"\n")];
+    N := atoi(T[#T][1]);    // we assume conreyfile is sorted by level
+    CharacterTable := [[0:i in [1..n]]:n in [1..N]];  cnt := 0;
+    for i:=1 to #T do N := atoi(T[i][1]); ns := atoii(T[i][3]); for j in ns do CharacterTable[N][j] := i; cnt +:= 1; end for; end for;
+    printf "Loaded data for %o characters in %o orbits from file %o in %o secs.\n", cnt, #T, conreyfile, Cputime()-start; start:=Cputime();
+    S := [Split(r,":"):r in Split(Read(infile))];
+    printf "Loaded %o records from %o in %.3os\n", #S, infile, Cputime()-start; start := Cputime();
+    if Jobs gt 1 then outfile cat:= Sprintf("_%o",JobId); end if;
+    fp := Open(outfile,"w");
+    if JobId eq 0 then write_header (Jobs gt 1 select "mf_twists_cc_header.txt" else "", fp, twists_cc_columns); end if;
+    rec := AssociativeArray(Parent(""));
+    cnt := 0;
+    for r in S do
+        N,k,o,i,n,j := Explode(SplitEmbeddedNewformLabel(r[1]));
+        if N mod Jobs ne JobId then continue; end if;
+        rec["twist_class_label"] := MinimalTwistTable[r[1]];
+        rec["twist_class_level"] := MinimalTwistLevel[r[1]];
+        rec["source_label"] := r[1];
+        rec["source_level"] := N;
+        rec["source_conrey_index"] := n;
+        rec["source_embedding_index"] := j;
+        rec["source_hecke_orbit_code"] := HeckeOrbitCode(N,k,o,i);
+        rec["source_is_minimal"] := N eq rec["twist_class_level"] and T[CharacterTable[N][n]][10] eq "1" select "1" else "0";
+        rec["source_dim"] := NewspaceDimsTable[[N,k,o]][i];
+        rec["weight"] := k;
+        N,k2,o,i,n,j := Explode(SplitEmbeddedNewformLabel(r[2]));
+        assert k2 eq k;
+        rec["target_label"] := r[2];
+        rec["target_level"] := N;
+        rec["target_conrey_index"] := n;
+        rec["target_embedding_index"] := j;
+        rec["target_hecke_orbit_code"] := HeckeOrbitCode(N,k,o,i);
+        rec["target_is_minimal"] := N eq rec["twist_class_level"] and T[CharacterTable[N,n]][10] eq "1" select "1" else "0";
+        rec["target_dim"] := NewspaceDimsTable[[N,k,o]][i];
+        chars := StringToStrings(r[3]);
+        for i:=1 to #chars do
+            rec["twisting_char_label"] := chars[i];
+            psi := SplitCharacterLabel(chars[i]);
+            rec["twisting_conrey_index"] := psi[2];
+            c := T[CharacterTable[psi[1]][psi[2]]];
+            assert c[1] eq c[4] and atoi(c[4]) eq psi[1];
+            rec["conductor"] := c[4];
+            rec["order"] := c[6];
+            rec["degree"] := c[7];
+            rec["parity"] := c[8];
+            s1 := Set([x:x in Keys(rec)]);  s2 := Set([t[1]: t in twists_cc_columns]);
+            if s1 ne s2 then error Sprintf("twists_c_columns match error diffs %o and %o", s1 diff s2, s2 diff s1); end if;
+            Puts(fp,Join([sprint(rec[t[1]]):t in twists_cc_columns],":"));
+            cnt +:= 1;
+        end for;
+        Flush(fp);
+    end for;
+    Flush(fp); delete fp;
+    printf "Wrote %o records to %o, total time %.3o secs\n", cnt, outfile, Cputime()-start;
+end procedure;
+
+/*
+sage: for k in sorted(db.mf_twists_cc.col_type.keys()):
+....:     if k != "id":
+....:         print '<"%s","%s">,'%(k,db.mf_twists_cc.col_type[k])
+*/
+twists_cc_columns := [
+<"conductor","integer">,
+<"degree","integer">,
+<"order","integer">,
+<"parity","smallint">,
+<"source_conrey_index","integer">,
+<"source_dim","integer">,
+<"source_hecke_orbit_code","bigint">,
+<"source_label","text">,
+<"source_level","integer">,
+<"target_conrey_index","integer">,
+<"target_dim","integer">,
+<"target_hecke_orbit_code","bigint">,
+<"target_label","text">,
+<"target_level","integer">,
+<"twist_class_label","text">,
+<"twist_class_level","integer">,
+<"twisting_char_label","text">,
+<"twisting_conrey_index","integer">,
+<"weight","smallint">
+];
+
+
 // Round real and imaginary parts of complex number z to accuracty of 1/absprec (so values within 1/(2*absprec) will come out the same)
 function RoundCC(z,absprec)
     return Round(absprec*Real(z))/absprec + Round(absprec*Imaginary(z))/absprec * Parent(z).1;
@@ -1146,6 +1483,30 @@ function SatakeAngle(ap,chip,p,k,pi:nmax:=0)
     return thetas[1] le thetas[2] select thetas[1] else thetas[2];
 end function;
 
+/*
+sage: from lmfdb import db
+sage: for k in sorted(db.mf_hecke_cc.col_type.keys()):
+.,..:      print '<"%s","%s">,'%(k,db.mf_hecke_cc.col_type[k])
+*/
+hecke_cc_columns := [
+<"an_normalized","double precision[]">,
+<"angles","double precision[]">,
+<"char_orbit_index","smallint">,
+<"conrey_index","integer">,
+<"dual_conrey_index","integer">,
+<"dual_embedding_index","integer">,
+<"dual_embedding_m","integer">,
+<"embedding_index","integer">,
+<"embedding_m","integer">,
+<"embedding_root_imag","double precision">,
+<"embedding_root_real","double precision">,
+<"hecke_orbit","integer">,
+<"hecke_orbit_code","bigint">,
+<"label","text">,
+<"level","integer">,
+<"weight","smallint">
+];
+
 procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBound:=0, Detail:=0, Jobs:=1, JobId:=0, conrey_labels:= "", ap_only:=false, SplitInput:=false)
     assert Jobs gt 0 and JobId ge 0 and JobId lt Jobs;
     if Jobs ne 1 then outfile cat:= Sprintf("_%o",JobId); end if;
@@ -1162,13 +1523,7 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
     printf "Loaded %o records from input file %o in %o secs.\n", #S, infile, Cputime()-start;
     start:=Cputime();
     outfp := Open(outfile,"w");
-    if JobId eq 0 and not ap_only then
-        headfp := Jobs gt 1 select Open("mf_hecke_cc_header.txt","w") else outfp;
-        Puts(headfp,"hecke_orbit_code:lfunction_label:conrey_index:embedding_index:embedding_m:embedding_root_real:embedding_root_imag:an_normalized:angles");
-        Puts(headfp,"bigint:text:integer:integer:integer:double precision:double precision:double precision[]:double precision[]");
-        Puts(headfp,"");
-        Flush(headfp);
-    end if;
+    if JobId eq 0 and not ap_only then write_header ("", outfp, hecke_cc_columns); end if;
     cnt := 0;
     prec := ap_only select Precision else 2*Precision+1; // make sure we use enough intermediate precision to compute Satake angles to target precision
     CC := ComplexField(prec);
@@ -1178,6 +1533,7 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
     coeffs := Coeffs gt 0 select Coeffs else 3000;
     T := AssociativeArray(Integers());
     Q := [[q[1]^q[2]:q in Factorization(n)]:n in [1..coeffs]];
+    rec := AssociativeArray(Parent(""));
     for s in S do
         N := StringToInteger(Substring(s,1,Index(s,":")-1));
         if not SplitInput and ((N-JobId) mod Jobs) ne 0 then continue; end if;
@@ -1185,6 +1541,9 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
         if rs[5] eq "[]" then continue; end if;
         r := <eval(a):a in rs>;
         N := r[1]; k := r[2]; o := r[3]; dims := r[5];
+        rec["level"] := N;
+        rec["weight"] := k;
+        rec["char_orbit_index"] := o;
         if o gt 1 and not IsDefined(T,N) then T[N] := CharacterOrbitReps(N); end if;
         chi := o eq 1 select DirichletGroup(N)!1 else T[N][o];
         space_label := Sprintf("%o.%o.%o",N,k,Base26Encode(o-1));
@@ -1192,23 +1551,25 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
         off1 := #[d:d in dims|d eq 1];
         off2 := off1 + #r[10];
         assert #r[17] ge off2;
+        // Dynamicall adjust coeffs if not specified
+        if Coeffs eq 0 then if N le 1000 then coeffs := 1000; else if N le 4000 then coeffs := 2000; else coeffs:= 3000; end if; end if; end if;
+        P := PrimesInInterval(1,coeffs);
+        if not ap_only then Z := [(CC!n)^((k-1)/2):n in [1..coeffs]]; end if;   // precompute normalization factors here
         for i := 1 to #dims do
             if DegreeBound gt 0 and dims[i] gt DegreeBound then
                 printf "Skipping form %o:%o:%o:%o because its dimension %o exceeds the specified degree bound %o.\n",N,k,o,i,dims[i],DegreeBound;
                 break;
             end if;
             t := Cputime();
-            label := space_label cat "." cat Base26Encode(i-1);
+            newform_label := space_label cat "." cat Base26Encode(i-1);
             if i gt off2 and (#r lt 19 or i-off2 gt #r[19]) then
                 printf "Warning: skipping form %o:%o:%o:%o because neither eignvalue nor embedding data is present.\n",N,k,o,i;
                 break;
             end if;
-            code := HeckeOrbitCode(N,k,o,i);
+            rec["hecke_orbit"] := i;
+            rec["hecke_orbit_code"] := HeckeOrbitCode(N,k,o,i);
             d := dims[i];
             cd := Degree(chi); rd := ExactQuotient(d,cd);
-            // Dynamicall adjust coeffs if not specified
-            if Coeffs eq 0 then if N le 1000 then coeffs := 1000; else if N le 4000 then coeffs := 2000; else coeffs:= 3000; end if; end if; end if;
-            P := PrimesInInterval(1,coeffs);
             if i le off2 then
                 // Here if we have exact eigenvalue data (including dimension 1 case where eigenvalues are integers)
                 if i gt off1 then X := r[10][i-off1]; a := NFSeq(X[1],X[2],X[5]); K := Parent(a[1]); else a := r[6][i]; K := Rationals(); end if;
@@ -1216,13 +1577,19 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
                 assert d eq Degree(K);
                 xi := CharacterFromValues(N,r[17][i][1],[K|z:z in r[17][i][2]]);
                 // use more precision here, we need to be sure to separate conjugates
-                E := d gt 1 select LabelEmbeddings(a,ConreyConjugates(chi,xi:ConreyLabelList:=L):Precision:=Max(prec,100)) else [[L[1],1]];
+                E := d gt 1 select LabelEmbeddings(a,ConreyConjugates(chi,xi:ConreyIndexList:=L):Precision:=Max(prec,100)) else [[L[1],1]];
                 root := d gt 1 select Conjugates(Parent(a[1]).1:Precision:=prec) else [CC!0];
                 if ap_only then
                     A :=  [Conjugates(a[p]:Precision:=prec) : p in P];
                 else
                     A := [Conjugates(a[n]:Precision:=prec) : n in [1..coeffs]];
                     C := [Conjugates(xi(p):Precision:=prec) : p in P];
+                end if;
+                Edual := E;
+                if r[18][i] ne 1 then
+                    // if not self-dual then K is totally complex and Magma always lists embeddings as conjugate pairs 
+                    assert IsEven(d);
+                    for j in [1..(d div 2)] do Edual[2*j-1] := E[2*j]; Edual[2*j] := E[2*j-1]; end for;
                 end if;
             else
                 // Here if we are working with embedded eigenvalue data, in which case we assume that the embeddings are given to us in the correct order
@@ -1248,33 +1615,60 @@ procedure FormatHeckeCCData (infile, outfile: Coeffs:=0, Precision:=20, DegreeBo
                     A := [[CC|A[m][n]:m in [1..d]] : n in [1..coeffs]];                 // transpose to match NF conjugates (as above)
                     C := [[cchi[m](p):m in [1..d]]: p in P];
                 end if;
+                Edual := E;
+                if r[18][i] ne 1 then
+                    assert IsEven(d);
+                    B := 16;
+                    while B le coeffs do
+                        X := [Round(100*&+[n*Real(A[n][m]/Z[n])^3:n in [1..B]]):m in [1..d]];
+                        if 2*#Set(X) eq d and &and[Multiplicity(Multiset(X),x) eq 2 : x in Set(X)] then break; end if;
+                        B *:= 2;  if B gt coeffs and B lt 2*coeffs then B := coeffs; end if;
+                    end while;
+                    if B gt coeffs then
+                        printf "Warning: unable to identify conjugatee embeddings for form %o, dual-embedding data will be omitted\n", newform_label;
+                        print Multiset(X);
+                        Edual := [];
+                    else
+                        X := Sort([[X[j],j]:j in [1..#X]]);
+                        for j:= 1 to d div 2 do Edual[X[2*j-1][2]] := E[X[2*j][2]]; Edual[X[2*j][2]] := E[X[2*j-1][2]]; end for;
+                    end if;
+                end if;
             end if;
             if k eq 1 then nmax := Max(EulerPhiInverse(2*d)); else nmax := 0; end if;
             for m := 1 to d do
                 e := E[m];
-                lfunc_label := Sprintf("%o.%o.%o",label,e[1],e[2]);
-                embedding_m := (Index(L,e[1])-1)*rd + e[2];
+                rec["label"] := Sprintf("%o.%o.%o",newform_label,e[1],e[2]);
+                rec["conrey_index"] := e[1];
+                rec["embedding_index"] := e[2];
+                rec["embedding_m"] := (Index(L,e[1])-1)*rd + e[2];
+                if #Edual eq 0 then
+                    rec["dual_conrey_index"] := "\\N"; rec["dual_embedding_index"] := "\\N"; rec["dual_embedding_m"] := "\\N";
+                else
+                    edual := Edual[m];
+                    rec["dual_conrey_index"] := edual[1];
+                    rec["dual_embedding_index"] := edual[2];
+                    rec["dual_embedding_m"] := (Index(L,edual[1])-1)*rd + edual[2];
+                end if;
+                rec["embedding_root_real"] := #root gt 0 select sprintreal(Real(root[m]),Precision) else "\\N";
+                rec["embedding_root_imag"] := #root gt 0 select sprintreal(Imaginary(root[m]),Precision) else "\\N";
                 if ap_only then
                     // don't normalize or use curly braces here, this data is being used to compute L-functions and is not to be loaded directly into postgres
-                    an := sprint([[sprintreal(Real(A[n][m]),Precision),sprintreal(Imaginary(A[n][m]),Precision)] : n in [1..#P]]);
-                    angles := "\\N";
+                    ap := sprint([[sprintreal(Real(A[n][m]),Precision),sprintreal(Imaginary(A[n][m]),Precision)] : n in [1..#P]]);
+                    str := bracket(strip(Sprintf("%o:%o:%o:%o:%o:%o",rec["hecke_code,"],rec["label"],e[1],e[2],rec["embedding_m"],ap)));
                 else
                     // normalize an here
-                    an := curly(sprint([[sprintreal(Real(A[n][m]/n^((k-1)/2)),Precision),sprintreal(Imaginary(A[n][m]/n^((k-1)/2)),Precision)] : n in [1..coeffs]]));
-                    angles := curly(sprint([(GCD(N,p) eq 1 select sprintreal(SatakeAngle(A[p][m],C[j][m],p,k,pi:nmax:=nmax),Precision) else "null") where p:=P[j] : j in [1..#P]]));
-                end if;
-                reroot := #root gt 0 select sprintreal(Real(root[m]),Precision) else "\\N";
-                imroot := #root gt 0 select sprintreal(Imaginary(root[m]),Precision) else "\\N";
-                if ap_only then
-                    str := bracket(strip(Sprintf("%o:%o:%o:%o:%o:%o",code,lfunc_label,e[1],e[2],embedding_m,an)));
-                else
-                    str := bracket(strip(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o",code,lfunc_label,e[1],e[2],embedding_m,reroot,imroot,an,angles)));
+                    rec["an_normalized"] := curly(sprint([[sprintreal(Real(A[n][m]/Z[n]),Precision),sprintreal(Imaginary(A[n][m]/n^((k-1)/2)),Precision)] : n in [1..coeffs]]));
+                    rec["angles"] := curly(sprint([(GCD(N,p) eq 1 select sprintreal(SatakeAngle(A[p][m],C[j][m],p,k,pi:nmax:=nmax),Precision) else "null") where p:=P[j] : j in [1..#P]]));
+                    s1 := Set([x:x in Keys(rec)]);  s2 := Set([t[1]: t in hecke_cc_columns]);
+                    if s1 ne s2 then error Sprintf("hecke_cc_columns match error diffs %o and %o", s1 diff s2, s2 diff s1); end if;
+                    str := bracket(Join([sprint(rec[t[1]]):t in hecke_cc_columns],":"));
+                    // strip(Sprintf("%o:%o:%o:%o:%o:%o:%o:%o:%o",code,lfunc_label,e[1],e[2],embedding_m,reroot,imroot,an,angles)));
                 end if;
                 if Detail gt 0 then print str; end if;
                 Puts(outfp,str);  cnt +:= 1;
                 Flush(outfp);
             end for;
-            if Detail ge 0 then printf "Computed CC eignenvalue data (%o coeffs, %o digits) for form %o:%o:%o:%o(%o) of dimension %o in %os (%os)\n",coeffs,Precision,N,k,o,i,label,d,Cputime()-t,Cputime()-start; end if;
+            if Detail ge 0 then printf "Computed CC eignenvalue data (%o coeffs, %o digits) for form %o:%o:%o:%o(%o) of dimension %o in %os (%os)\n",coeffs,Precision,N,k,o,i,newform_label,d,Cputime()-t,Cputime()-start; end if;
         end for;
         Flush(outfp);
     end for;
@@ -1498,4 +1892,59 @@ procedure CreateDimensionTableTwo(outfile,MaxNk2:MaxN:=0,Jobs:=1,JobId:=0)
         Flush(fp);
         printf "Wrote %o records for level %o in %os\n", n, N, Cputime()-start;
     end for;
+end procedure;
+
+/*
+sage: from lmfdb import db
+sage: for k in sorted(db.char_dir_orbits.col_type.keys()):
+         print '<"%s","%s">,'%(k,db.char_dir_orbits.col_type[k])
+*/
+char_dir_orbits_columns := [
+<"char_degree","integer">,
+<"conductor","integer">,
+<"galois_orbit","integer[]">,
+<"is_minimal","boolean">,
+<"is_primitive","boolean">,
+<"is_real","boolean">,
+<"label","text">,
+<"modulus","integer">,
+<"orbit_index","smallint">,
+<"orbit_label","text">,
+<"order","integer">,
+<"parity","smallint">,
+<"prim_orbit_index","integer">
+];
+
+/*
+    infile format is N:o:[n1,n2,...]:conductor:prim_index:order:deg:parity:isreal:isminimal (use conrey_XXX.txt)
+*/
+procedure FormatCharacterOrbitTable(infile,outfile)
+    start := Cputime();
+    S := getrecs(infile);
+    printf "Loaded %o records from %o in %.3o secs\n", #S, infile, Cputime()-start;
+    fp := Open(outfile,"w");
+    write_header ("", fp, char_dir_orbits_columns);
+    rec := AssociativeArray();
+    cnt := 0;
+    for r in S do
+        rec["modulus"] := r[1];
+        rec["orbit_index"] := r[2];
+        rec["label"] := r[1] cat "." cat Base26Encode(atoi(r[2])-1);
+        rec["orbit_label"] := r[1] cat "." cat r[2];
+        rec["galois_orbit"] := curly(r[3]);
+        rec["conductor"] := r[4];
+        rec["prim_orbit_index"] := r[5];
+        rec["is_primitive"] := r[1] eq r[4] select "t" else "f";  if rec["is_primitive"] eq "t" then assert r[2] eq r[5]; end if;
+        rec["order"] := r[6];
+        rec["char_degree"] := r[7];
+        rec["parity"] := r[8];
+        rec["is_real"] := r[9] eq "1" select "t" else "f";
+        rec["is_minimal"] := r[10] eq "1" select "t" else "f";
+        s1 := Set([x:x in Keys(rec)]);  s2 := Set([t[1]: t in char_dir_orbits_columns]);
+        if s1 ne s2 then error Sprintf("twists_columns match error diffs %o and %o", s1 diff s2, s2 diff s1); end if;
+        Puts(fp,Join([sprint(rec[t[1]]):t in char_dir_orbits_columns],":"));
+        cnt +:= 1;
+    end for;
+    Flush(fp); delete fp;
+    printf "Wrote %o records to %o, total time %.3o secs\n", cnt, outfile, Cputime()-start;
 end procedure;

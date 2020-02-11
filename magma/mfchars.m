@@ -18,15 +18,11 @@ end intrinsic;
 intrinsic  EmbedCharacterField (chi::GrpDrchElt,k::RngIntElt,a::SeqEnum[FldNumElt]) -> Map
 { Computes a Hecke-compatible embeding of Q(chi) into the coefficient field Q(f) of a weight k eigenform f of character chi with specified Fourier coefficients (NB: an error may occur if not enough coefficients are provided). }
     require k gt 0: "Weight must be a positive integer";
-    K := Universe(a);
+    K := NumberField(Universe(a));
     if Degree(chi) eq 1 then return hom<Rationals()->K|>; end if;
-    N := Modulus(chi); e := Order(chi); F:=CyclotomicField(e);
-    b,m := IsCyclotomicPolynomial(DefiningPolynomial(K));
-    if b then
-        if IsDivisibleBy(m,e) then z := K.1^ExactQuotient(m,e); else assert IsOdd(m) and IsDivisibleBy(2*m,e); z := (-K.1)^ExactQuotient(2*m,e); end if;
-    else
-        z := Roots(ChangeRing(DefiningPolynomial(F),K))[1][1];
-    end if;
+    N := Modulus(chi); e := Order(chi); F:=Codomain(chi);
+    u,pi := TorsionUnitGroup(K);
+    z := K!pi(u.1)^ExactQuotient(#u,e);
     assert z^e eq 1;
     T := [r:r in [1..e-1]|GCD(r,e) eq 1];
     for n:= 2 to Floor(Sqrt(#a)) do
@@ -74,14 +70,19 @@ intrinsic SturmBound (N::RngIntElt, k::RngIntElt) -> RngIntElt
     return Integers()!Floor(k*m/12);
 end intrinsic;
 
-// [obsolete] Use Shimura 3.6.4 to get Sturm bound for twist of form of character chi by a character phi
-// Use Lemma 1.4 in  Booker, Min, Strombergsson https://arxiv.org/pdf/1803.06016.pdf, Lemma 12.2.1 in CMF paper
-// No longer used -- per Lemma 12.2.8 it suffices to check to the max of the Sturm bound and the largest Hecke cutter prime
+intrinsic TwistLevelBound (N::RngIntElt, chi::GrpDrchElt, psi::GrpDrchElt) -> RngIntElt
+{ Upper bound (by divisibility) on the level of the newspace known to contain twist of form of level N weight k character chi by character psi. }
+    require N ge 1: "Level N must be positive integers";
+    return LCM([N,Conductor(psi)*Conductor(psi*chi)]);
+end intrinsic;
+
+// Uses Lemma 1.4 in  Booker, Min, Strombergsson https://arxiv.org/pdf/1803.06016.pdf, Lemma 11.2.1 in CMF paper
+// No longer used for inner twists -- per Lemma 12.2.8 it suffices to check to the max of the Sturm bound and the largest Hecke cutter prime
 intrinsic TwistSturmBound (N::RngIntElt, k::RngIntElt, chi::GrpDrchElt, psi::GrpDrchElt) -> RngIntElt
 { Sturm bound for space known to contain twist of form of level N weight k character chi by character psi. }
     require N ge 1 and k ge 1: "Level N and weight k must be positive integers";
-//    return SturmBound(LCM([N,Conductor(phi)^2,Conductor(phi)*Conductor(chi)]),k);
-    return SturmBound(LCM([N,Conductor(psi)*Conductor(psi*chi)]),k);
+//    return SturmBound(LCM([N,Conductor(phi)^2,Conductor(phi)*Conductor(chi)]),k); // weaker bound from Shimura 3.6.4
+    return SturmBound(TwistLevelBound(N,chi,psi),k);
 end intrinsic;
 
 intrinsic SelfTwistCandidates (a::SeqEnum, N::RngIntElt, k::RngIntElt) -> SeqEnum[RngIntElt]
@@ -128,7 +129,7 @@ intrinsic SelfTwists (a::SeqEnum, S::ModSym: TraceHint:=[], pBound:=0) -> SeqEnu
         return [Parity(psi)*Conductor(psi)];
     end if;
     if B gt 1000 then
-        printf "Computing a_p for p <= %o to check if dimension %o eigenform of level %o, weight %o, chi-conductor %o admits self-twists by %o...\n", B, QDimension(S), N, k, Conductor(chi), D;
+        printf "Computing a_p for p <= %o to check if dimension %o eigenform of level %o, weight %o, chi-conductor %o admits self-twists by %o...\n", B, Dimension(S)*Degree(chi), N, k, Conductor(chi), D;
         s := Cputime();
     end if;
     F := Eigenform(S,P[#P]+1);
@@ -137,28 +138,29 @@ intrinsic SelfTwists (a::SeqEnum, S::ModSym: TraceHint:=[], pBound:=0) -> SeqEnu
     return [Sign(psi)*Conductor(psi)];
 end intrinsic;
 
-intrinsic TwistingCharacters (x1::GrpDrchElt,x2::GrpDrchElt) -> List
-{ Given Dirichlet characters x1 and x2 returns a list of Dirichlet characters chi for which x1*chi^2 = x2.  The modulus of chi will be the LCM M of the moduli of x1 and x2 if both have odd conductor, otherwise it will be of modulus 8*M. }
-    N := LCM(Modulus(x1),Modulus(x2));
-    if IsEven(Conductor(x1)) or IsEven(Conductor(x2)) then N := LCM(N,8); end if;
-    x1 := FullDirichletGroup(N)!x1; x2 := FullDirichletGroup(N)!x2;
-    chi2 := x2 / x1;
-    if IsOdd(Order(chi2)) then
-        chi := Sqrt(chi2);
+// The function below relies on Lemma 11.2.1 in the CMF paper
+intrinsic TwistingCharacters (chi::GrpDrchElt,chipsi2::GrpDrchElt:Conjugate:=false) -> List
+{ Given characters chi of modulus N, and chipsi2 of modulus M returns a list of primitive Dirichlet characters psi for which chi*psi^2 = chipsi2,
+  cond(psi)cond(chi*psi)|LCM(M,N), and M|LCM(N,cond(psi)cond(chi*psi).  If Conjugate is true, only requires chi*psi^2 to be conjugate to chipsi2.
+  If f is a newform of chi and g is a twist of f by psi of character chipsi2 then psi will be in the list of reteruned characters. }
+    N := Modulus(chi); M := Modulus(chipsi2); L := LCM(M,N);
+    LL := IsEven(L) select LCM(L,8) else L;                  // make sure we get all possible square-roots
+    n := 2*LCM(Order(chi),Order(chipsi2));
+    G := DirichletGroup(LL,CyclotomicField(n));              // We will compute square-roots in G (we want to avoid using FullDirichletGroup, LL could be huge!)
+    if Conjugate then
+        chis :={@ G!x2/G!chi : x2 in Conjugates(chipsi2) @};  // take conjugates of chipsi2 in its ambient group, not G
+        X := &join[{@ G| psi:psi in SquareRoots(chi) @}:chi in chis];
     else
-        // Deal with case Magma doesn't know how to handle
-        g := Generators(Parent(chi2));
-        n := [Order(x):x in g];
-        e := ElementToSequence(chi2);
-        assert #e eq #g and &*[g[i]^e[i]:i in [1..#g]] eq chi2;
-        if #[i:i in [1..#g]|IsEven(n[i]) and IsOdd(e[i])] gt 0 then return [**]; end if; // no square root
-        chi := &*[g[i]^(IsEven(e[i]) select e[i] div 2 else ((e[i]*InverseMod(2,n[i])) mod n[i])):i in [1..#g]];
+        X := SquareRoots(G!chipsi2/G!chi);
     end if;
-    return [*MinimalBaseRingCharacter(AssociatedPrimitiveCharacter(x*chi)):x in Elements(DirichletGroup(N))*]; // 2-torsion Dirichlet chars are precisely the rational ones (which is what DirichletGroup returns)
+    // Apply Lemma 11.2.1 (both parts (a) and (b) are relevant)
+    X := [psi : psi in X | IsDivisibleBy(LCM(N,n),M) and IsDivisibleBy(L,n) where n:=LCM(N,Conductor(psi)*Conductor(chi*psi))];
+    return [* MinimalBaseRingCharacter(AssociatedPrimitiveCharacter(psi)):psi in X *];
 end intrinsic;
 
+// This function is effectively superseded by IsTwist below (just call IsTwist with g=f and AllTwists:=true)
 intrinsic InnerTwists (a::SeqEnum, chi::GrpDrchElt, k::RngIntElt) -> List, RngIntElt
-{ Given a list of coffieicnts of the q-expansion of an eigenform f of character chi and weight k returns a list Dirichlet characters psi for which f*psi is conjugate to f, provided #a exceeds the Sturm bound and the largest Hecke cutter prime, result is rigorous.  Note: assumes Parent(a) = Q(f). }
+{ Given a list of cofficients of a newform f of character chi and weight k returns a list Dirichlet characters psi for which f*psi is conjugate to f, provided #a exceeds the Sturm bound and the largest Hecke cutter prime, result is rigorous.  Note: assumes Parent(a) = Q(f). }
     N := Modulus(chi);
     K := Universe(a);
     if Degree(K) eq 1 then return [**]; end if;
@@ -167,7 +169,7 @@ intrinsic InnerTwists (a::SeqEnum, chi::GrpDrchElt, k::RngIntElt) -> List, RngIn
     // In fact, more is true: if chi takes nonzero values in <zeta_m> then phi takes values in <+/-zeta_m>
     // We use cond(psi)cond(chi*psi) | N, per Lemma 1.4 of Booker, Min, Strombergsson https://arxiv.org/pdf/1803.06016.pdf
     // which is also Theorem 12.2.5 in CMF paper
-    X := &cat [[* psi : psi in TwistingCharacters(chi,gchi) | IsDivisibleBy(N,Conductor(psi)*Conductor(chi*psi)) and IsDivisibleBy(LCM(2,Order(chi)),Order(psi)) and Conductor(psi) gt 1 *] : gchi in Conjugates(chi)];
+    X := &cat [[* psi : psi in TwistingCharacters(chi,gchi) | IsDivisibleBy(LCM(2,Order(chi)),Order(psi)) and Conductor(psi) gt 1 *] : gchi in Conjugates(chi)];
     if #X eq 0 then return [**]; end if;
     rho := EmbedCharacterField(chi,k,a);
     n := 0;
@@ -177,7 +179,7 @@ intrinsic InnerTwists (a::SeqEnum, chi::GrpDrchElt, k::RngIntElt) -> List, RngIn
         X := [* psi : psi in X | MinimalPolynomial(rho(psi(p))*a[p]) eq f *];
         if #X eq 0 then return [**]; end if;
         n +:= 1;
-        if n eq 10 then break; end if;  // arbitrary cutoff, doesn't effect correctness only performance
+        if n eq 10 then break; end if;  // arbitrary cutoff, does not effect correctness only performance
     end for;
     A := Remove(Automorphisms(K),1);
     Y := [**];
@@ -193,3 +195,88 @@ intrinsic InnerTwists (a::SeqEnum, chi::GrpDrchElt, k::RngIntElt) -> List, RngIn
     return [* MinimalBaseRingCharacter(psi) : psi in Y *];
 end intrinsic;
 
+
+// IsTwist checks whether a conjugate of g is a twist of f (i.e if [g] is a twist of [f])
+// Returns a (possibly empty) list of labels of orbits of twisting characters and a correspoding list of multiplicities
+intrinsic IsTwist(g::SeqEnum, gchi::GrpDrchElt, f::SeqEnum, fchi::GrpDrchElt:AllTwists:=false,Verbose:=0) -> SeqEnum, SeqEnum
+{ Given lists of coefficients of newforms g and f of characters gchi and fchi, determine whether some conjugate of g may be a twist of f, and if so the orbit label of a primitive twisting character.
+  If AllTwists is true then a complete list of orbit labels of twisting characters is returned, along with a corresponding list of multiplicities.
+  The correctness of this result depends on the length of the given lists of coefficients, only given ap with p prime to the conductor of the twisting character are checked. }
+    require #g gt 0 and #f gt 0: "g and f should be lists of at least two coefficients";
+
+    // TODO use a Magma verbose flag
+    if Type(Verbose) eq BoolElt then Verbose := Verbose select 1 else 0; end if;
+    if Verbose gt 0 then start:=Cputime(); end if;
+    if Verbose gt 0 then printf "Computing twisting characters...\n"; t:=Cputime(); end if;
+    T := TwistingCharacters(fchi,gchi:Conjugate);  if #T eq 0 then return [Parent("")|],[Integers()|]; end if;
+
+    // Reduce to set of character orbit reps sorted by conductor and order
+    S := Sort([<Conductor(T[i]),Order(T[i]),Sprintf("%o",Sort(ConjugateAngles(CharacterAngles(T[i])))),i>: i in [1..#T]]);
+    Psis := [* T[S[i][4]] : i in [1..#S] | i eq 1 or S[i][1] ne S[i-1][1] or S[i][3] ne S[i-1][3] *];
+    if Verbose gt 0 then printf "Found %o twisting characters in %o character orbits (%.3os)\n", #T, #Psis, Cputime()-t; end if;
+
+    Kf := NumberField(Universe(f)); Kg := NumberField(Universe(g)); Ag := Automorphisms(Kg);
+    if Verbose gt 1 then print "Coefficients of Kf", Coefficients(DefiningPolynomial(Kf)); end if;
+    if Verbose gt 1 then print "Coefficients of Kg", Coefficients(DefiningPolynomial(Kg)); end if;
+
+    // Create ambient field K into which we can embed both Kf and Kf (which need not be normal!)
+    if Verbose gt 0 then printf "Creating ambient field containing coefficient fields of degrees %o and %o (%.3os)\n", Degree(Kf), Degree(Kg), Cputime()-t; t:=Cputime(); end if;
+    K,piKf,piKg := AmbientField(Kf,Kg);
+    if Verbose gt 1 then print "Coefficients of K", Coefficients(DefiningPolynomial(K)); end if;
+    if Verbose gt 0 then printf "Ambient field K has degree %o (%.3os)\n", Degree(K), Cputime()-t; end if;
+
+    // Compute a torsion generator for K (note that K may be horrible so we want to use Kf and Kg to do this if K is not equal to Kf or Kg)
+    if Verbose gt 0 then printf "Computing torsion generator for ambient of degree %o\n", K; t:=Cputime(); end if;
+    if DefiningPolynomial(K) eq DefiningPolynomial(Kf) or DefiningPolynomial(K) eq DefiningPolynomial(Kg) then
+        zK,nK := TorsionGenerator(K);
+    else
+        zKf,nKf := TorsionGenerator(Kf);  zKg,nKg := TorsionGenerator(Kg);
+        m := &*[Integers()|p^Valuation(nKf,p) : p in PrimeDivisors(nKf) | Valuation(nKf,p) gt Valuation(nKg,p)];
+        zK := piKf(zKf^ExactQuotient(nKf,m))*piKg(zKg);  nK := m*ExactQuotient(nKg,GCD(nKg,m));
+    end if;
+    if Verbose gt 0 then printf "Torsion generator has order %o (%.3os)\n", nK, Cputime()-t; t:=Cputime(); end if;
+
+    // Determine primes to check (if f[p] and g[p] are both zero every value of psi(p) works so there is nothing to check)
+    P := [p:p in PrimesInInterval(1,Min(#f,#g))|f[p] ne 0 or g[p] ne 0];
+
+    lastKpsi := RationalsAsNumberField(); L,piK,piKpsi := AmbientField(K,lastKpsi); // bogus cached values we will never use but needed to shut up Magma
+
+    twists := []; counts := [];
+    for psi in Psis do
+        if Verbose gt 0 then tpsi := Cputime(); end if;
+        c := Conductor(psi); n := Order(psi);
+        Kpsi := NumberField(Codomain(psi));  Apsi := Automorphisms(Kpsi);
+        if IsDivisibleBy(nK,n) then // if K already contains an nth root of unity we don't need to extend it
+            L := K; piK := hom<K->L|L.1>;
+            piKpsi := hom<Kpsi->L|piK(zK^ExactQuotient(nK,n))>;
+        else
+            if DefiningPolynomial(Kpsi) eq DefiningPolynomial(lastKpsi) then  // Reuse the last ambient if Kpsi has not changed
+                piKpsi := hom<Kpsi->L|piKpsi(lastKpsi.1)>;
+            else
+                if Verbose gt 0 then printf "Extending ambient coefficient field of degree %o to include character field of degree %o for character orbit %o\n", Degree(K), Degree(Kpsi), CharacterOrbitLabel(psi); t:=Cputime(); end if;
+                if Verbose gt 1 then print "Coeffs of K", Coefficients(DefiningPolynomial(K)); print "Coeffs of Kpsi", Coefficients(DefiningPolynomial(Kpsi)); end if;
+                L,piK,piKpsi := AmbientField(K,Kpsi); lastKpsi := Kpsi; // this can be very expensive
+                if Verbose gt 0 then printf "Ambient field has degree %o (%.3os)\n", Degree(L), Cputime()-t; end if;
+            end if;
+        end if;
+        fL := [piK(piKf(f[p])):p in P];
+        i := 1; while i le #P and GCD(c,P[i]) ne 1 do i+:=1; end while; assert i le #P; p := P[i]; // we better have at least one prime to check
+        if Verbose gt 0 then printf "Computing initial list of pairs of automorphisms valid for first prime p=%o ...\n", p; t := Cputime(); end if;
+        S := [<ag,apsi> : ag in Ag, apsi in Apsi | piK(piKg(ag(g[p]))) eq piKpsi(apsi(psi(p)))*fL[i]];
+        if Verbose gt 0 then printf "Found %o pairs of automorphism that work at p=%o (%.3os)\n", #S, p, Cputime()-t; t:=Cputime(); end if;
+        if #S eq 0 then continue; end if;
+        for j:=i+1 to #P do
+            p := P[j]; if GCD(c,p) ne 1 then continue; end if;
+            S := [r:r in S | piK(piKg(r[1](g[p]))) eq piKpsi(r[2](psi(p)))*fL[j]];
+            if #S eq 0 then break; end if;
+            if Verbose gt 2 then printf "%o pairs of automorphism work up to p=%o (%.3os)\n", #S, p, Cputime()-t; t:= Cputime(); end if;
+        end for;
+        assert #{r[2]:r in S} eq #S;    // at most one conjugate of g should work for each conjugate of psi, but this could fail if we don't have enough ap
+        if Verbose gt 0 then printf "Character orbit %o of order %o appears to give %o twists (%.3os)\n", CharacterOrbitLabel(psi), Order(psi), #S, Cputime()-tpsi; end if;
+        if #S gt 0 then Append(~twists,CharacterOrbitLabel(psi)); Append(~counts,#S); if not AllTwists then return twists,counts; end if; end if;
+    end for;
+    if Verbose gt 0 then printf "Total time %.3os\n", Cputime()-start; end if;
+    if #twists le 1 then return twists, counts; end if;
+    S := Sort([<twists[i],counts[i]>:i in [1..#twists]],func<a,b|CompareCharacterOrbitLabels(a[1],b[1])>);
+    return [r[1]:r in S], [r[2]:r in S];
+end intrinsic;
