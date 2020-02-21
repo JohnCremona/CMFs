@@ -1,6 +1,7 @@
 {
     polredabs.m
     utils.m
+    nf.m
     mfutils.m
     chars.m
     mfchars.m

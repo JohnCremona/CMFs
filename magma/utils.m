@@ -1,6 +1,16 @@
-intrinsic getrecs(filename::MonStgElt) -> SeqEnum
-{ Reads a colon delimited file, returns list of lists of strings (one list per line). }
-    return [Split(r,":"):r in Split(Read(filename))];
+intrinsic lpoly(C,p) -> RngUPolElt
+{ Given a curve defined over Q attempts to compute its L-polynomial modulo p (with no guarantees of correctness if C has bad reduction at p). }
+    R<T> := PolynomialRing(Integers());
+    try
+        return R!LPolynomial(ChangeRing(C,GF(p)));
+    catch e
+        return R!1;
+    end try;
+end intrinsic;
+
+intrinsic getrecs(filename::MonStgElt:Delimiter:=":") -> SeqEnum
+{ Reads a delimited file, returns list of lists of strings (one list per line). }
+    return [Split(r,Delimiter):r in Split(Read(filename))];
 end intrinsic;
 
 intrinsic putrecs(filename::MonStgElt,S::SeqEnum[SeqEnum[MonStgElt]]) -> RngIntElt
@@ -12,9 +22,24 @@ intrinsic putrecs(filename::MonStgElt,S::SeqEnum[SeqEnum[MonStgElt]]) -> RngIntE
     return n;
 end intrinsic;
 
+intrinsic StringToStrings (s::MonStgElt) -> SeqEnum[MonStgElt]
+{ Given a string encoding a list of strings that do not contain commas or whitespace, e.g. "[cat,dog]", returns a list of the strings, e.g [ "cat", "dog" ]. }
+    s := StripWhiteSpace(s);
+    require s[1] eq "[" and s[#s] eq "]": "Input must be a string representing a list";
+    s := s[2..#s-1];
+    return Split(s,",");
+end intrinsic;
+
 intrinsic sum(X::[]) -> .
 { Sum of a sequence (empty sum is 0). }
-    return #X eq 0 select Universe(X)!0 else &+X;
+    if #X eq 0 then
+        try
+            return Universe(X)!0;
+        catch e
+            return Integers()!0;
+        end try;
+    end if;
+    return &+X;
 end intrinsic;
 
 intrinsic sum(v::ModTupRngElt) -> .
@@ -24,7 +49,14 @@ end intrinsic;
 
 intrinsic prod(X::[]) -> .
 { Product of a sequence (empty product is 1). }
-    return #X eq 0 select Universe(X)!1 else &*X;
+    if #X eq 0 then
+        try
+            return Universe(X)!1;
+        catch e
+            return Integers()!1;
+        end try;
+    end if;
+    return &*X;
 end intrinsic;
 
 intrinsic prod(v::ModTupRngElt) -> .
@@ -39,12 +71,43 @@ end intrinsic;
 
 intrinsic sprint(X::.) -> MonStgElt
 { Sprints object X with spaces and carraige returns stripped. }
+    if Type(X) eq Assoc then return Join(Sort([ $$(k) cat "=" cat $$(X[k]) : k in Keys(X)]),":"); end if;
     return strip(Sprintf("%o",X));
 end intrinsic;
 
 intrinsic atoi(s::MonStgElt) -> RngIntElt
 { Converts a string to an integer (alias for StringToInteger). }
     return StringToInteger(s);
+end intrinsic;
+
+intrinsic StringToReal(s::MonStgElt) -> RngIntElt
+{ Converts a decimal string (like 123.456 or 1.23456e40 or 1.23456e-10) to a real number at default precision. }
+    if "e" in s then
+        t := Split(s,"e");
+        require #t eq 2: "Input should have the form 123.456e20 or 1.23456e-10";
+        return StringToReal(t[1])*10.0^StringToInteger(t[2]);
+    end if;
+    t := Split(s,".");
+    require #t le 2: "Input should have the form 123 or 123.456 or 1.23456e-10";
+    n := StringToInteger(t[1]);  s := t[1][1] eq "-" select -1 else 1;
+    return #t eq 1 select RealField()!n else RealField()!n + s*RealField()!StringToInteger(t[2])/10^#t[2];
+end intrinsic;
+
+intrinsic atof (s::MonStgElt) -> RngIntElt
+{ Converts a decimal string (like "123.456") to a real number at default precision. }
+    return StringToReal(s);
+end intrinsic;
+
+intrinsic StringsToAssociativeArray(s::SeqEnum[MonStgElt]) -> Assoc
+{ Converts a list of strings "a=b" to an associative array A with string keys and values such that A[a]=b. Ignores strings not of the form "a=b". }
+    A := AssociativeArray(Universe(["string"]));
+    for a in s do t:=Split(a,"="); if #t eq 2 then A[t[1]]:=t[2]; end if; end for;
+    return A;
+end intrinsic;
+
+intrinsic atod(s::SeqEnum[MonStgElt]) -> Assoc
+{ Converts a list of strings "a=b" to an associative array A with string keys and values such that A[a]=b (alias for StringsToAssociativeArray). }
+    return StringsToAssociativeArray(s);
 end intrinsic;
 
 intrinsic StringToIntegerArray(s::MonStgElt) -> SeqEnum[RngIntElt]
@@ -61,13 +124,13 @@ intrinsic atoii(s::MonStgElt) -> SeqEnum[RngIntElt]
 end intrinsic;
 
 intrinsic atoiii(s::MonStgElt) -> SeqEnum[RngIntElt]
-{ Converts a string to a sequence of sequences of integers (alias for StringToIntegerArray). }
+{ Converts a string to a sequence of sequences of integers. }
     t := strip(s);
     if t eq "[]" then return []; end if;
     if t eq "[[]]" then return [[Integers()|]]; end if;
     assert #t gt 4 and t[1..2] eq "[[" and t[#t-1..#t] eq "]]";
-    r := Split(t[2..#t-2],"[");
-    return [[Integers()|StringToInteger(n):n in Split(Split(a,"]")[1],",")]:a in r];
+    r := Split(t[2..#t-1],"[");
+    return [[Integers()|StringToInteger(n):n in Split(a[1] eq "]" select "" else Split(a,"]")[1],",")]:a in r];
 end intrinsic;
 
 intrinsic StringToRationalArray(s::MonStgElt) -> SeqEnum[RatFldElt]
@@ -76,6 +139,29 @@ intrinsic StringToRationalArray(s::MonStgElt) -> SeqEnum[RatFldElt]
     t := strip(s);
     assert #t ge 2 and t[1] eq "[" and t[#t] eq "]";
     return [StringToRational(n):n in Split(t[2..#t-1],",")];
+end intrinsic;
+
+intrinsic StringToRealArray(s::MonStgElt) -> SeqEnum[RatFldElt]
+{ Given string representing a sequence of real numbers, returns the sequence (faster and safer than eval). }
+    if s eq "[]" then return []; end if;
+    t := strip(s);
+    assert #t ge 2 and t[1] eq "[" and t[#t] eq "]";
+    return [atof(n):n in Split(t[2..#t-1],",")];
+end intrinsic;
+
+intrinsic atoff(s::MonStgElt) -> SeqEnum[RngIntElt]
+{ Converts a string to a sequence of reals (alias for StringToRealArray). }
+    return StringToRealArray(s);
+end intrinsic;
+
+intrinsic atofff(s::MonStgElt) -> SeqEnum[RngIntElt]
+{ Converts a string to a sequence of sequences of real numbers. }
+    t := strip(s);
+    if t eq "[]" then return []; end if;
+    if t eq "[[]]" then return [[RealField()|]]; end if;
+    assert #t gt 4 and t[1..2] eq "[[" and t[#t-1..#t] eq "]]";
+    r := Split(t[2..#t-1],"[");
+    return [[RealField()|StringToReal(n):n in Split(a[1] eq "]" select "" else Split(a,"]")[1],",")]:a in r];
 end intrinsic;
 
 intrinsic nfdisc(f::RngUPolElt) -> RngIntElt
@@ -164,14 +250,34 @@ intrinsic OrderStats(G::Grp) -> SetMulti[RngIntElt]
     return SequenceToMultiset(&cat[[c[1]:i in [1..c[2]]]:c in C]);
 end intrinsic;
 
-intrinsic IndexFibers (S::[], f::UserProgram) -> Assoc
+intrinsic IndexFibers (S::SeqEnum, f::UserProgram : Unique:=false, Project:=func<r|r>) -> Assoc
 { Given a list of objects S and a function f on S creates an associative array satisfying A[f(s)] = [t:t in S|f(t) eq f(s)]. }
     A := AssociativeArray();
-    for x in S do
-        y := f(x);
-        A[y] := IsDefined(A,y) select Append(A[y],x) else [x];
-    end for;
+    if Unique then
+        for x in S do y := f(x); assert not IsDefined(A,y); A[y]:=Project(x); end for;
+    else 
+        for x in S do y := f(x); A[y] := IsDefined(A,y) select Append(A[y],Project(x)) else [Project(x)]; end for;
+    end if;
     return A;
+end intrinsic;
+
+intrinsic IndexFibers (S::List, f::UserProgram : Unique:=false, Project:=func<r|r>) -> Assoc
+{ Given a list of objects S and a function f on S creates an associative array satisfying A[f(s)] = [t:t in S|f(t) eq f(s)]. }
+    A := AssociativeArray();
+    if Unique then
+        for x in S do y := f(x); assert not IsDefined(A,y); A[y]:=Project(x); end for;
+    else 
+        for x in S do y := f(x); A[y] := IsDefined(A,y) select Append(A[y],Project(x)) else [*Project(x)*]; end for;
+    end if;
+    return A;
+end intrinsic;
+
+intrinsic IndexFile (filename::MonStgElt, key::. : Delimiter:=":", Unique:=false, data:=[]) -> Assoc
+{ Loads file with colon-delimited columns (or as specified by Delimiter) creating an AssociativeArray with key specified by keys (a column index or list of column indexes) and contents determined by data, which should be either a column index or list of column indexes (empty list means entire record). }
+    require Type(key) eq RngIntElt or Type(key) eq SeqEnum: "second parameter should be a column index or list of column indices";
+    if Type(data) eq RngIntElt then data := [data]; end if;
+    if #data eq 1 then Project := func<r|r[data[1]]>; else if #data gt 1 then Project := func<r|r[data]>; else Project := func<r|r>; end if; end if;
+    return IndexFibers(getrecs(filename), func<r|r[key]> : Unique:=Unique, Project:=Project);
 end intrinsic;
 
 intrinsic ReduceToReps (S::[], E::UserProgram) -> SeqEnum
