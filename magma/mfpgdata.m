@@ -684,6 +684,7 @@ hecke_nf_columns := [
 hecke_lpolys_columns := [
 <"hecke_orbit_code","bigint">,
 <"lpoly","numeric[]">,
+<"lpoly_factorization","numeric[]">,
 <"p","integer">
 ];
 
@@ -792,6 +793,7 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, 
     rechnf := AssociativeArray();
     RCP := AssociativeArray();  RCPI := AssociativeArray();
     LPP := PrimesInInterval(1,100);
+    RT<T> := PolynomialRing(Integers());
     for s in S do
         N := StringToInteger(Substring(s,1,Index(s,":")-1));
         if not SplitInput and ((N-JobId) mod Jobs) ne 0 then continue; end if;
@@ -1108,7 +1110,12 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, 
                 P := PrimesInInterval(1,#tr);
                 rechnf["ap"] := sprint([[tr[p]] : p in P]);
                 rechnf["maxp"] := P[#P];
-                for p in LPP do Puts(lpoly_fp,Sprintf("%o:%o:%o",code,curly(sprint([1,-tr[p],(Integers()!chi(p))*p^(k-1)])),p)); end for; lpcnt +:= #LPP; Flush(lpoly_fp);
+                for p in LPP do
+                    lpoly := RT![1,-tr[p],(Integers()!chi(p))*p^(k-1)];
+                    factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in Factorization(lpoly)];
+                    Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),curly(sprint(factored_lpoly)),p));
+                end for;
+                lpcnt +:= #LPP; Flush(lpoly_fp);
             end if;
             if n gt m and n le m+#r[10] then
                 nn := n-m;
@@ -1151,7 +1158,11 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, 
                     function densify(a,n) v:=[0:i in [1..n]]; for t in a do v[t[2]+1]:=t[1]; end for; return v; end function;
                     rec["qexp_display"] := qExpansionStringOverNF([densify(z,zzn):z in an],MIN_QEXP_DIGITS,MAX_QEXP_DIGITS,zzn,0);
                     KR:=PolynomialRing(K);
-                    for p in LPP do Puts(lpoly_fp,Sprintf("%o:%o:%o",code,curly(sprint(Eltseq(Norm(KR!1 - a[p]*KR.1 + xi(p)*p^(k-1)*KR.1^2)))),p)); end for;
+                    for p in LPP do
+                        lpoly := RT!Norm(KR!1 - a[p]*KR.1 + xi(p)*p^(k-1)*KR.1^2);
+                        factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in Factorization(lpoly)];
+                        Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),curly(sprint(factored_lpoly)),p));
+                    end for;
                     lpcnt +:=#LPP; Flush(lpoly_fp);
                 else
                     rechnf["hecke_ring_power_basis"] := (dens eq [1:i in [1..dim]] and nums eq [[i eq j select 1 else 0:i in [1..dim]]:j in [1..dim]]) select 1 else 0;
@@ -1178,7 +1189,11 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, 
                     K := Universe(a);
                     xi := CharacterFromValues(N,r[17][n][1],[K|x : x in r[17][n][2]]);
                     KR:=PolynomialRing(K);
-                    for p in LPP do Puts(lpoly_fp,Sprintf("%o:%o:%o",code,curly(sprint(Eltseq(Norm(KR!1 - a[p]*KR.1 + xi(p)*p^(k-1)*KR.1^2)))),p)); end for;
+                    for p in LPP do
+                        lpoly := RT!Norm(KR!1 - a[p]*KR.1 + xi(p)*p^(k-1)*KR.1^2);
+                        factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in Factorization(lpoly)];
+                        Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),curly(sprint(factored_lpoly)),p));
+                    end for;
                     lpcnt +:=#LPP; Flush(lpoly_fp);
                 end if;
             end if;
