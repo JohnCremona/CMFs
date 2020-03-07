@@ -684,7 +684,7 @@ hecke_nf_columns := [
 hecke_lpolys_columns := [
 <"hecke_orbit_code","bigint">,
 <"lpoly","numeric[]">,
-<"lpoly_factorization","numeric[]">,
+<"lpoly_factorization","jsonb">,
 <"p","integer">
 ];
 
