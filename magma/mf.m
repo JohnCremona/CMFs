@@ -211,6 +211,7 @@ eap = list of lists of lists of real or complex valued a_p's for p up to the coe
 function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], DimensionsOnly:=false, ComputeEigenvalues:=false, ComputeTwists:=false, ComputeTraceStats:=false,
                        NumberOfCoefficients:=0, DegreeBound:=0, EmbeddingPrecision:= 0, Detail:=0, ReturnDecomposition:=false, ComputeCutters:=false)
     start := Cputime();
+    if o eq 0 then o := CharacterOrbit(chi); end if;
     N := Modulus(chi);
     dNS := QDimensionNewCuspForms(chi,k);
     if dNS eq 0 then
