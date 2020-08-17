@@ -28,6 +28,15 @@ function uncurly(s)
     return t;
 end function;
 
+function LPolyFactorization(L)
+    L := PolynomialRing(Integers())!L;
+    assert ConstantCoefficient(L) eq 1;
+    LL,c := Factorization(L);
+    assert c in [-1,1];
+    return Sort([<ConstantCoefficient(f[1])*f[1],f[2]> : f in LL],
+                func<a,b|Degree(a[1]) ne Degree(b[1]) select Degree(a[1])-Degree(b[1]) else (a[2] ne b[2] select a[2]-b[2] else (Coefficients(a[1]) le Coefficients(b[1]) select -1 else 1))>);
+end function;
+
 function AnalyticConductor (N, k)
     return N*(Exp(Psi(k/2))/(2*Pi(RealField())))^2;
 end function;
@@ -1112,8 +1121,8 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, 
                 rechnf["maxp"] := P[#P];
                 for p in LPP do
                     lpoly := RT![1,-tr[p],(Integers()!chi(p))*p^(k-1)];
-                    factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in Factorization(lpoly)];
-                    Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),curly(sprint(factored_lpoly)),p));
+                    factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in LPolyFactorization(lpoly)];
+                    Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),sprint(factored_lpoly),p));
                 end for;
                 lpcnt +:= #LPP; Flush(lpoly_fp);
             end if;
@@ -1160,8 +1169,8 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, 
                     KR:=PolynomialRing(K);
                     for p in LPP do
                         lpoly := RT!Norm(KR!1 - a[p]*KR.1 + xi(p)*p^(k-1)*KR.1^2);
-                        factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in Factorization(lpoly)];
-                        Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),curly(sprint(factored_lpoly)),p));
+                        factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in LPolyFactorization(lpoly)];
+                        Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),sprint(factored_lpoly),p));
                     end for;
                     lpcnt +:=#LPP; Flush(lpoly_fp);
                 else
@@ -1191,8 +1200,8 @@ procedure FormatNewformData (infile, outfile_prefix, outfile_suffix: Detail:=0, 
                     KR:=PolynomialRing(K);
                     for p in LPP do
                         lpoly := RT!Norm(KR!1 - a[p]*KR.1 + xi(p)*p^(k-1)*KR.1^2);
-                        factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in Factorization(lpoly)];
-                        Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),curly(sprint(factored_lpoly)),p));
+                        factored_lpoly := [[sprint(Eltseq(a[1])),sprint(a[2])]:a in LPolyFactorization(lpoly)];
+                        Puts(lpoly_fp,Sprintf("%o:%o:%o:%o",code,curly(sprint(Eltseq(lpoly))),sprint(factored_lpoly),p));
                     end for;
                     lpcnt +:=#LPP; Flush(lpoly_fp);
                 end if;
