@@ -193,9 +193,10 @@ E = Hecke Eigenvalue data [<g,b,n,m,e>,...] list of tuples <g,b,n,m,e> of Hecke 
     g is a polredbestified field poly for the coefficient field (should be the same as the corresponding poly in F),
     b is a basis for the Hecke ring R:=Z[a_n] in terms of the power basis of K:=Q[x]/(f(x)) (a list of lists of rationals),
     n is an integer that divides the index [O_K:R] of the Hecke ring R in the ring of integers O_K
-    m is a boolean (0 or 1) indicating whether or not we know that n is maximal, i.e. n = [Z(f):O_{Q(f)}]
+    d is a pair that is either <0,[]> or <D,[<p,e>]> giving the discriminant of the Hecke ring and its prime factorization (if known)
     e is a list of eigenvalues specified in terms of the basis b (list of deg(f) integers for each a_n)
     x is a pair <u,v> where u is a list of integers generating Z/NZ* and v is a list of values of chi on u in written in the basis b
+    m is the list integer such that teh first m eigenvalues generate the Hecke ring (as a ring)
 cm = list of cm discriminants, one for each subspace listed in D up to the degree bound, 0 indicates non-CM forms (rigorous)
 tw = list of lists of quadruples <b,n,m,i> identifying char orbits m.i of non-trivial inner twists with multiplicity n, b=0,1 indicates proved or not
 pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
@@ -206,6 +207,8 @@ X = list of pairs <u,v> one for each entry in F where u is a list of integers r 
 sd = list of booleans, one for each entry in D, indicating whether newform is self dual or not (i.e. a_n are real)
 eap = list of lists of lists of real or complex valued a_p's for p up to the coefficient bound for each embedding of each form where exact eigenvalues have not been computed
       if character is trivial embedded a_p's will always be real (this is actually the only case currently used)
+
+This format is also documented in https://github.com/JohnCremona/CMFs/blob/master/README.md.
 */
 
 function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], DimensionsOnly:=false, ComputeEigenvalues:=false, ComputeTwists:=false, ComputeTraceStats:=false,
@@ -480,11 +483,11 @@ procedure ValidateSpaceData (s:Coeffs:=1000,DegBound:=20,EmbeddingPrecision:=80,
         assert &and[&and[Type(a[2]) eq SeqEnum and Type(a[2][1]) eq RngIntElt and a[2][#a[2]] eq 1 and IsIrreducible(R!a[2]):a in c]:c in HC];
         assert #HC[1] lt #D; for n:= 2 to #HC[1] do assert #{c[1..n]:c in HC} gt #{c[1..n-1]:c in HC}; end for;
     end if;
-    // Check that E is a list of 5-tuples <g,b,n,m,a> encoding Hecke eigenvalue data for each entry d in D with 1 < d <= DegBound where
+    // Check that E is a list of tuples <g,b,n,D,a,...> encoding Hecke eigenvalue data for each entry d in D with 1 < d <= DegBound where
     // g is a list of integers encoding an irreducible monic poly of degree d, 
     // b is a list of lists of rationals encoding a basis for the Hecke ring in terms of the power basis defined by g
     // n is a positive integer (a divisor of the index of the Hecke ring in the maximal order, not checked)
-    // m is 0 or 1 (indicates whether or not n is equal to the index)
+    // D is is a pair that is either <0,[]> or <D,[<p,e>]> where [<p,e>] is the prime factorization of D
     // a is a list of lists of d integers encoding eigenvalues a_1,a_2,... in terms of the basis b
     assert Type(E) eq SeqEnum and #E ge #[d:d in D|1 lt d and d le DegBound];
     off := #[d:d in D|d eq 1];
