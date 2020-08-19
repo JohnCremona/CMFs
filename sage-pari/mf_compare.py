@@ -35,40 +35,116 @@ def read_ALs(s):
         return []
     return str_nested_list_to_nested_list(s.replace("<","[").replace(">","]"),3)
 
-def read_eigdata(s, key):
+def split_eigdata(edata, debug=False):
+    """Split a string representing one eigdata packet
+    <pol,bas,ind,disc,an,char,m> into substrings.
+
+    - pol is a list of ints giving the Hecke field K defining
+      polynomial.
+
+    - basis is a list of lists of rationals giving the Hecke order O's
+      basis in terms of the power basis.
+    
+    - ind is an int, the index of O in O_K.
+
+    - disc is <D,fac> where D=disc(O) and fac is a list of pairs <p,e> giving the factorization of |D|.
+
+    - an is a list of lists of deg(K) ints giving the a_n in terms of the Z-basis of O.
+
+    - char is a pair <u,v> where u is a list of ints generating
+    (Z/NZ)^* and v a list (of the same length) of lists of d ints
+    giving their character values with respect to the Z-basis of O.
+
+    - m is an int, the least positive m such that the first m a_n generate O as a ring.
+
+    Example: '[1,0,1],[[1,0],[0,2]],2,<-4,[<2,2>]>,[[1,0],[0,1],[-1,0],[-2,0]],<[2],[[-1,0]]>,2'
+
+    has 
+
+    pol = '[1,0,1]'
+    basis = '[[1,0],[0,2]]'
+    ind = '2'
+    disc = '<-4,[<2,2>]>'
+    an = '[[1,0],[0,1],[-1,0],[-2,0]]'
+    char = '<[2],[[-1,0]]>'
+    m = '2'
+    """
+    s = edata.replace(" ","")
+    if debug: print("s has length {}".format(len(s)))
+    if debug: print("Looking for ',[[' in {}...".format(s[:300]))
+    i = s.index(',[[')
+    pol = s[:i]
+    if debug: print("pol = {}".format(pol))
+    s = s[i+1:]
+    if debug: print("s has length {}".format(len(s)))
+    if debug: print("Looking for ']]' in {}...".format(s[:300]))
+    i = s.index(']]')+2    
+    basis = s[:i]
+    if debug: print("basis = {}".format(basis))
+    s = s[i+1:]
+    if debug: print("s has length {}".format(len(s)))
+    if debug: print("Looking for ',' in {}...".format(s[:300]))
+    i = s.index(',')
+    ind = s[:i]
+    if debug: print("ind = {}".format(ind))
+    s = s[i+1:]
+    if debug: print("s has length {}".format(len(s)))
+    if debug: print("Looking for ',[[' in {}...".format(s[:300]))
+    i = s.index(',[[')
+    disc = s[:i]
+    if debug: print("disc = {}".format(disc))
+    s = s[i+1:]
+    if debug: print("s has length {}".format(len(s)))
+    if debug: print("Looking for ']],' in {}...".format(s))#[:300]))
+    i = s.index(']],')+2
+    an = s[:i]
+    if debug: print("an = {}...".format(an[:100]))
+    s = s[i+1:]
+    if debug: print("s has length {}".format(len(s)))
+    if debug: print("Looking for '>,' in {}...".format(s))#[:300]))
+    i = s.index('>,')+1
+    char = s[:i]
+    if debug: print("char = {}".format(char))
+    m = s[i+1:]
+    if debug: print("m = {}".format(m))
+    return pol, basis, ind, disc, an, char, m
+
+def read_eigdata(s, key, debug=False):
     # input is a string representing a list of <pol,bas,n,m,e> where
     # pol is a list of ints, bas is a list of lists of rationals, n &
     # m are ints, and e is a list of lists of lists of ints, i.e.
     # < intlist, ratlistlist, int, int, intlistlist>
-
+    if debug:
+        print("read_eigdata(s={}..., key={}".format(s[:300],key))
     s=s.replace(" ","")
-    #print(s)
     if s=='[]':
         return []
-    parts = s[2:-2].split(">,<")
-    # now each part is a single intlist, ratlistlist, int, int, intlistlist with no "<"...">"
+    parts = s[2:-2].split(">,<[")
+    parts = [part if part[0]=='[' else '['+part for part in parts]
+    if debug:
+        for i,part in enumerate(parts):
+            print("part {}: {}".format(i,part))
     def read_one(part):
-        pol, rest = part[1:-2].split("],[[")
-        #print("pol part is {}".format(pol))
-        pol = [ZZ(c) for c in pol.split(",")]
-        #print("pol = {}".format(pol))
-        bas, rest = rest.split("]],")
-        #print("bas part is {}".format(bas))
-        bas = [[QQ(str(c)) for c in b.split(",")] for b in bas.split("],[")]
-        #print("bas = {}".format(bas))
-        #print("Now rest is = {}".format(rest))
-        mn, rest = rest.split(",[[")
-        #print("mn part is {}".format(mn))
-        m,n = [ZZ(c) for c in mn.split(",")]
-        #print("m,n ={}".format(m,n))
-        #print("Now rest is = {}".format(rest))
-        ans = rest.split("],[")
+        pol, bas, ind, disc, ans, char, m = split_eigdata(part)
+        pol = [ZZ(c) for c in pol[1:-1].split(",")]
+        bas = [[QQ(str(c)) for c in b.split(",")] for b in bas[2:-2].split("],[")]
+        n = ZZ(ind)
+        m = ZZ(m)
         try:
-            ans = [[ZZ(c) for c in an.split(",")] for an in ans]
+            ans = [[ZZ(c) for c in an.split(",")] for an in ans[2:-2].split("],[")]
         except TypeError:
             raise RuntimeError("invalid eigdata for {}: an coefficients not integral: {}".format(key,s))
-            #print("ans = {}".format(ans))
-        return {'poly':pol, 'basis':bas, 'n':n, 'm':m, 'ans':ans}
+
+        if debug:
+            print("char = {}".format(char))
+        char_gens, char_values = char[2:-3].split('],[[')
+        char_gens = [ZZ(c) for c in char_gens.split(",")]
+        char_values = [[ZZ(c) for c in v.split(",")] for v in char_values.split("],[")]
+        if debug:
+            print("char gens = {}".format(char_gens))
+            print("char vals = {}".format(char_values))
+
+        return {'poly':pol, 'basis':bas, 'n':n, 'm':m, 'ans':ans, 'char': [char_gens,char_values]}
 
     return [read_one(part) for part in parts]
 
