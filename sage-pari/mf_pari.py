@@ -954,7 +954,7 @@ def bestify_newform(nf, dmax=20, Detail=0):
         nf['best_poly'] = None
         return nf
     Qx = PolynomialRing(QQ,'x')
-    pari_Qx_poly_to_sage = lambda f: Qx(gen_to_sage(f.Vecrev()))
+    #pari_Qx_poly_to_sage = lambda f: Qx(gen_to_sage(f.Vecrev()))
     poly = Qx(nf['poly'].list())
     if Detail:
         print("non-best poly for {} is {}".format(Nko,poly))
@@ -1154,7 +1154,7 @@ def DecomposeSpaces(filename, Nk2min, Nk2max, dmax=20, nan=100, njobs=1, jobno=0
                     else:
                         screen.write('\n')
                         screen.write(line)
-                except PariError, e:
+                except PariError as e:
                     t1=time.time()
                     print("\n*************************\nPariError {} on ({},{},{}) after {}s\n***********************".format(e,N,k,i+1,t1-t0))
                     failed_spaces.append((N,k,i+1))
