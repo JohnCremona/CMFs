@@ -212,7 +212,7 @@ This format is also documented in https://github.com/JohnCremona/CMFs/blob/maste
 */
 
 function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], DimensionsOnly:=false, ComputeEigenvalues:=false, ComputeTwists:=false, ComputeTraceStats:=false,
-                       NumberOfCoefficients:=0, DegreeBound:=0, EmbeddingPrecision:= 0, Detail:=0, ReturnDecomposition:=false, ComputeCutters:=false)
+                       NumberOfCoefficients:=0, DegreeBound:=0, EmbeddingPrecision:= 0, Detail:=0, ReturnDecomposition:=false, ComputeCutters:=false, ComputeCharacterValues:=true)
     start := Cputime();
     if o eq 0 then o := CharacterOrbit(chi); end if;
     N := Modulus(chi);
@@ -346,9 +346,16 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
             if Detail gt 0 then printf "Computing %o exact Hecke eigenvalues form %o:%o:%o:%o of dimension %o...",n,N,k,o,i,D[i]; t:=Cputime(); end if;
             K := AbsoluteField(BaseRing(Parent(F[i])));
             f,b,a,c,d,pr,m := OptimizedOrderBasis(Eltseq(MinimalPolynomial(K.1)),[Eltseq(K!Coefficient(F[i],j)) : j in [1..n]]:Verbose:=Detail gt 0);
-            aa := NFSeq(f,b,a);
-            v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,aa)] else [];
-            w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
+            if ComputeCharacterValues then
+                if Detail gt 0 then printf "Computing character values in Hecke field for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
+                aa := NFSeq(f,b,a);
+                v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,aa)] else [];
+                w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
+                if Detail gt 0 then printf "Computed character values in %o secs\n", Cputime()-t; end if;                
+            else
+                if Detail gt 0 then printf "Computed Hecke eigenvalues but not computing character values in Hecke field."; end if;  
+                v := []; w := [];
+            end if;
             Append(~E,<f,b,c,<d,d eq 0 select Factorization(1) else Factorization(d)>,a,<u,w>,m>);  Append(~pra,pr select 1 else 0);  Append(~HF,f);  Append(~X,<u,v>);
             if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;
             if ComputeTwists then 
