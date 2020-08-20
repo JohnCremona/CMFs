@@ -21,8 +21,8 @@ intrinsic  EmbedCharacterField (chi::GrpDrchElt,k::RngIntElt,a::SeqEnum[FldNumEl
     K := NumberField(Universe(a));
     if Degree(chi) eq 1 then return hom<Rationals()->K|>; end if;
     N := Modulus(chi); e := Order(chi); F:=Codomain(chi);
-    u,pi := TorsionUnitGroup(K);
-    z := K!pi(u.1)^ExactQuotient(#u,e);
+    R<t>:=PolynomialRing(K);
+    z := Roots(R!CyclotomicPolynomial(e))[1][1];
     assert z^e eq 1;
     T := [r:r in [1..e-1]|GCD(r,e) eq 1];
     for n:= 2 to Floor(Sqrt(#a)) do
