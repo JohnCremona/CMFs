@@ -22,22 +22,23 @@ intrinsic  EmbedCharacterField (chi::GrpDrchElt,k::RngIntElt,a::SeqEnum[FldNumEl
     K := NumberField(Universe(a));
     if Degree(chi) eq 1 then return hom<Rationals()->K|>; end if;
     N := Modulus(chi); e := Order(chi); F:=Codomain(chi);
-    R<t>:=PolynomialRing(K);
-    if Detail gt 0 then printf "Computing a primitive %oth root z of unity in number field %o...", e, DefiningPolynomial(K); t:=Cputime(); end if;
-    z := Roots(R!CyclotomicPolynomial(e))[1][1];  assert z^e eq 1;
-    if Detail gt 0 then printf "took %o secs\n", Cputime()-t; end if;                
-    T := [r:r in [1..e-1]|GCD(r,e) eq 1];
-    if Detail gt 0 then printf "Determining the correct primitive %oth root..."; t:=Cputime(); end if;
+    assert Degree(F) eq EulerPhi(e);
+    if Detail gt 0 then printf "Using nfisincl to find all primitive %oth roots of unity in number field %o...", e, DefiningPolynomial(K); t:=Cputime(); end if;
+    zs := nfisincl(DefiningPolynomial(F),DefiningPolynomial(K));
+    assert #zs eq Degree(F);
+    zs := [Evaluate(f,K.1):f in zs];
+    // Paranoid varification of results, could be removed later...
+    assert &and[z^e eq 1:z in zs] and &and[&and[z^a ne 1:a in Divisors(e)|a ne e]:z in zs];
+    if Detail gt 0 then printf "Took %o secs.\nDetermining the correct primitive %oth root of unity...", Cputime()-t, e; t:=Cputime(); end if;
     for n:= 2 to Floor(Sqrt(#a)) do
         if GCD(N,n) ne 1 then continue; end if;
-        if Detail gt 0 then printf "Checking z^%o...",n; t:=Cputime(); end if;
-        T := [r:r in T|a[n]^2 eq &+[d^(k-1)*rho(chi(d))*a[ExactQuotient(n,d)^2]:d in Divisors(n)] where rho:=hom<F->K|z^r>];
-        assert #T gt 0;
-        if #T eq 1 then if Detail gt 0 then printf "z^%o works!\n",n; t:=Cputime(); end if; break; end if;
-        if Detail gt 0 then printf "nope\n",n; t:=Cputime(); end if;
+        zs := [z : z in zs | a[n]^2 eq &+[d^(k-1)*rho(chi(d))*a[ExactQuotient(n,d)^2]:d in Divisors(n)] where rho:=hom<F->K|z>];
+        assert #zs gt 0;
+        if #zs eq 1 then break; end if;
     end for;
-    assert #T eq 1; // This may fail if not enough coefficients were provided
-    return hom<F->K|z^T[1]>;
+    assert #zs eq 1; // This may fail if not enough coefficients were provided
+    if Detail gt 0 then printf "Took %o secs.\n", Cputime()-t; end if;
+    return hom<F->K|zs[1]>;
 end intrinsic;
 
 intrinsic EmbeddedCharacterValuesOnUnitGenerators (chi::GrpDrchElt,k::RngIntElt,a::SeqEnum[FldNumElt]:Detail:=0) -> SeqEnum[FldNumElt]
