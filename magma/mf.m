@@ -349,7 +349,7 @@ function NewspaceData (chi, k, o: CharTable:=AssociativeArray(), TraceHint:=[], 
             if ComputeCharacterValues then
                 if Detail gt 0 then printf "Computing character values in Hecke field for form %o:%o:%o:%o of dimension %o...",N,k,o,i,D[i]; t:=Cputime(); end if;
                 aa := NFSeq(f,b,a);
-                v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,aa)] else [];
+                v := #u gt 0 select [Eltseq(z):z in EmbeddedCharacterValuesOnUnitGenerators(chi,k,aa:Detail:=Detail)] else [];
                 w := #u gt 0 select [Eltseq(r):r in Rows(Matrix(Rationals(),v)*Matrix(Rationals(),b)^-1)] else [];
                 if Detail gt 0 then printf "Computed character values in %o secs\n", Cputime()-t; end if;                
             else

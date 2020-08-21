@@ -89,7 +89,7 @@ intrinsic OptimizedOrderBasis(KPoly::SeqEnum,ZSeq::SeqEnum[SeqEnum]:KBestPoly:=[
             if #notsohard eq #hard then KDisc := Discriminant(Obest); end if;
         end if;
         _,Oindex := IsSquare(ExactQuotient(Discriminant(O),KDisc eq 0 select Discriminant(Obest) else KDisc));
-        if Verbose then printf "%.3o secs, discOK = %o, Oindex = %o\n", Cputime()-t, KDisc, Oindex; end if;
+        if Verbose then printf "%.3o secs\n  (discOK = %o, Oindex = %o)\n", Cputime()-t, KDisc, Oindex; end if;
     else
         _,Oindex := IsSquare(ExactQuotient(Discriminant(O),KDisc));
     end if;
