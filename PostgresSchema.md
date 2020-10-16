@@ -419,7 +419,9 @@ parity | smallint | +1 = even, -1 =  odd
 galois_orbit | integer[] | sorted list of conrey indexes of characters in the same galois orbit
 is_real | boolean | if quadratic or trivial
 is_primitive | boolean | if modulus = conductor
+is_minimal | boolean | if the character is minimal (as defined in the character.dirichlet.minimal knowl)
 char_degree | integer | degree of the cyclotomic field containing the image, ie Euler phi of the order; this is the same as the size of the Galois orbit
+kernel_field_poly | numeric[] | coefficients of defining polynomial for kernel field
 
 
 **Table** `char_dir_values`:
