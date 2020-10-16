@@ -409,6 +409,7 @@ Dirichlet characters
 
 Column | Type | Notes
 -------|------|------
+label | text | character orbit label N.a, where N is the modulus and a is the orbit index base 26 encoded
 orbit_label | text | character orbit label N.a, where N is the modulus and a is the orbit index (currently not base26 encoded, this should really be fixed!)
 orbit_index | smallint | Index in the list of traces down to Q of the values of all characters of modulus N
 modulus | integer
