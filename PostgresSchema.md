@@ -362,14 +362,14 @@ n | integer | index of a_n
 trace_an | numeric | trace of a_n down to Z
 
 
-**Table** `mf_hecke_lpolys`:
+**Table** `mf_hecke_charpolys`:
 
 Column | Type | Notes
 -------|------|------
 hecke_orbit_code | bigint | encoding of the tuple (N.k.a.x) into 64 bits
 p | integer | prime identifying L-poly L_p(T) = prod_(sigma in Gal(Q(f)/Q) (1 - sigma(a_p(f))T + chi(p)p^(k-1)T^2))
-lpoly | numeric[] | integer coefficients of L_p(t) (total of 2 * dim + 1 coeffs at good p, either 1 or dim+1 at bad p)
-lpoly_factorization | numeric[] | list of pairs [fac,e] where fac is a list of coefficients of an irreducible factor of the L-polynomial and e is the multiplicity of the factor; pairs are ordered by degree, then exponent, then lex on coefficients of fac
+charpoly_factorization | jsonb | list consisting of a single pair [fac,e] where fac is a list of coefficients of the minpoly and e is [Q(f):Q(a_p)]
+
 
 **Table** `mf_hecke_newspace_traces`:
 
