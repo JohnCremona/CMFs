@@ -18,7 +18,6 @@ end intrinsic;
 intrinsic  EmbedCharacterField (chi::GrpDrchElt,k::RngIntElt,a::SeqEnum[FldNumElt]:Detail:=0) -> Map
 { Computes a Hecke-compatible embeding of Q(chi) into the coefficient field Q(f) of a weight k eigenform f of character chi with specified Fourier coefficients (NB: an error may occur if not enough coefficients are provided). }
     require k gt 0: "Weight must be a positive integer";
-    print "Detail = ",Detail;
     K := NumberField(Universe(a));
     if Degree(chi) eq 1 then return hom<Rationals()->K|>; end if;
     N := Modulus(chi); e := Order(chi); F:=Codomain(chi);
@@ -77,7 +76,7 @@ intrinsic SturmBound (N::RngIntElt, k::RngIntElt) -> RngIntElt
 end intrinsic;
 
 intrinsic TwistLevelBound (N::RngIntElt, chi::GrpDrchElt, psi::GrpDrchElt) -> RngIntElt
-{ Upper bound (by divisibility) on the level of the newspace known to contain twist of form of level N weight k character chi by character psi. }
+{ Upper bound (by divisibility) on the level of the newspace known to contain twist of form of level N character chi by character psi. }
     require N ge 1: "Level N must be positive integers";
     return LCM([N,Conductor(psi)*Conductor(psi*chi)]);
 end intrinsic;
@@ -162,6 +161,13 @@ intrinsic TwistingCharacters (chi::GrpDrchElt,chipsi2::GrpDrchElt:Conjugate:=fal
     // Apply Lemma 11.2.1 (both parts (a) and (b) are relevant)
     X := [psi : psi in X | IsDivisibleBy(LCM(N,n),M) and IsDivisibleBy(L,n) where n:=LCM(N,Conductor(psi)*Conductor(chi*psi))];
     return [* MinimalBaseRingCharacter(AssociatedPrimitiveCharacter(psi)):psi in X *];
+end intrinsic;
+
+intrinsic TwistingCharacters (chi::MonStgElt,chipsi2::MonStgElt:Conjugate:=false) -> List
+{ Given characters chi of modulus N, and chipsi2 of modulus M returns a list of primitive Dirichlet characters psi for which chi*psi^2 = chipsi2,
+  cond(psi)cond(chi*psi)|LCM(M,N), and M|LCM(N,cond(psi)cond(chi*psi).  If Conjugate is true, only requires chi*psi^2 to be conjugate to chipsi2.
+  If f is a newform of chi and g is a twist of f by psi of character chipsi2 then psi will be in the list of reteruned characters. }
+    return TwistingCharacters(DirichletCharacter(chi),DirichletCharacter(chipsi2):Conjugate:=Conjugate);
 end intrinsic;
 
 // This function is effectively superseded by IsTwist below (just call IsTwist with g=f and AllTwists:=true)

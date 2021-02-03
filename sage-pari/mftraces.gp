@@ -66,7 +66,7 @@ DumpTraces(outfile,N,k,o,n) =
     T = Traces(N,k,chis[o],n);
     if (T[1] > 0,
         t = gettime()/1000;
-        fprintf(outfile,"%d:%d:%d:%.3f:%s",N,k,o,t,length(T));
+        fprintf(outfile,"%d:%d:%d:%.3f:%s",N,k,o,t,T);
     );
     return(1.0*t);
 }

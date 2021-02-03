@@ -318,7 +318,7 @@ def Newforms_v2(N, k, chi_number, dmax=20, nan=100, Detail=0):
             yield p, Snew.mfheckemat(p)
 
     Tp_iter = Hecke_op_iter()
-    p, op = Tp_iter.next()
+    p, op = next(Tp_iter)
     s1=time.time()
     if Detail:
         print("testing T_{}".format(p))
@@ -331,7 +331,7 @@ def Newforms_v2(N, k, chi_number, dmax=20, nan=100, Detail=0):
         f = op.charpoly()
     ops=[(p,op)]
     while not ok:
-        pi, opi = Tp_iter.next()
+        pi, opi = next(Tp_iter)
         if Detail:
             print("testing T_{}".format(pi))
         ok = is_semisimple_modular(op,chi_order_2)
