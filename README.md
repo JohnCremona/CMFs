@@ -38,7 +38,7 @@ Format of mfdata_B.m.txt is *N:k:i:t:D:T:A:F:C:E:cm:tw:pra:zr:mm:h:X:sd:eap* whe
 12) tw = list of lists of quadrauples <proved,n,m,o> where proved=0,1, n >=1 is a multiplicity, and m and o identify a Galois orbit of a characters [phi] of modulus m for which the corresponding form admits n distinct non-trivial inner-twist by characters in xi in [phi], one list for each subspace up to degree bound. All non-trivial self-twists (CM or RM) are guaranteed to be included, but quadruples with proved=0 could in principal be false positives.
 13) pra = list of boolean values (0 or 1) such that pra[i] is 1 if F[i] is the polredabs polynomial for the Hecke field
 14) zr = list of proportions of trace zero a_p over primes p < 2^13 (decimal number), one for each subspace
-15) mm = list of list of moments of normalized a_p over primes p < 2^13 (decimal numbers), one for each subspace
+15) mm = list of list of moments of normalized traces of a_p over primes p < 2^13 (decimal numbers), one for each subspace
 16) h = list of trace hashes (linear combination of tr(a_p) over p in [2^12,2^13] mod 2^61-1), one for each subspace of dimension up to the degree bound (not yet present for weight 1)
 17) X = list of pairs <u,v>, one for each entry in F, where u is a list of integer generators for (Z/NZ)* and v is a list of lists of rationals specifying corresponding values of chi in the Hecke field in terms of the power basis for F[i].
 18) sd = list of boolean values (0,1), one for each subspace in D indicating whether the subspace is self-dual (meaning the a_n are real-valued)
