@@ -299,7 +299,7 @@ intrinsic ConreyCharacterOrbitRep (s::MonStgElt) -> MonStgElt
 end intrinsic;
 
 
-intrinsic CharacterOrbitLabel (chi::GrpDrchElt) -> RngIntElt
+intrinsic CharacterOrbitLabel (chi::GrpDrchElt) -> MonStgElt
 { Label N.o of the orbit of the specified Dirichlet character. }
     return Sprintf("%o.%o",Modulus(chi),Base26Encode(CharacterOrbit(chi)-1));
 end intrinsic;
