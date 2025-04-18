@@ -296,8 +296,8 @@ function TraceFormulaALCuspNew(N,k,Q)
     return TraceFormulaALNew(N, k, Q, TraceFormulaALCusp);
 end function;
 
-// This is actually not true, as Eisenstein series do not satisfy the same 
-// direct sum decomposition
+// This is actually not true for k = 2, as Eisenstein series do not satisfy the same 
+// direct sum decomposition because of the trivial character. 
 function TraceFormulaALFullNew(N,k,Q)
     return TraceFormulaALNew(N, k, Q, TraceFormulaALFull);
 end function;
