@@ -61,7 +61,11 @@ function ALdimsModSymTraces(N, k)
     for i->V in spaces do
         als := [AtkinLehnerOperator(V,p) : p in PrimeDivisors(N)];
         subsets := [ J : J in Subsets({1..#als})];
-        traces := [Trace(&*[Universe(als) | als[j] : j in J]) : J in subsets];
+        if IsEmpty(als) then
+            traces := [Dimension(V) : J in subsets];
+        else
+            traces := [Trace(&*[Universe(als) | als[j] : j in J]) : J in subsets];
+        end if;
         V_dims := [Integers() | &+[&*[Integers() | sgns[j] : j in J]*traces[i] : i->J in subsets] / 2^(#als) 
                     : sgns in CartesianPower([1,-1],#als)];
         dims[keys[i]] := V_dims;
@@ -390,3 +394,19 @@ function TraceALonMS(N, k, Q : New := false, Sub := "Cusp")
     return trace;
 end function;
 
+procedure test_ALdims(N,k)
+    aldims_modsym := ALdimsModSym(N,k);
+    aldims_modsym_traces := ALdimsModSymTraces(N,k);
+    aldims_traces := ALdimsTraceFormula(N,k);
+    assert &and[aldims_modsym[k] eq aldims_modsym_traces[k] : k in Keys(aldims_modsym)];
+    assert &and[aldims_modsym[k] eq aldims_traces[k] : k in Keys(aldims_modsym)];
+end procedure;
+
+procedure test_many_ALdims(: Ns := [1..100], ks := [2..8 by 2])
+    for N in Ns do
+        for k in ks do
+            print N,k;
+            test_ALdims(N,k);
+        end for;
+    end for;
+end procedure;
