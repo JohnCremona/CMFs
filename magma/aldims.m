@@ -286,10 +286,38 @@ function TraceFormulaALNew(N, k, Q, orig_trace)
     return trace;
 end function;
 
+// When k = 2, we separate the Eisenstein series to two spaces
+// Eis_2(N) = Eis_2(N)^(not-1) + Eis_2(N)^(1)
+// where the Eis_2(N)^(1) are spanned by alpha_1(E_2(N)) - alpha_d(E_2(N)) for d | N
+// Then the not-1 space has a direct sum decomposition in terms of
+// the new subspaces as before, but the 1-space has the following traces - 
+// Tr(W_Q | Eis_2(N)^(1)) = -1 if Q is not a square
+// and Tr(W_Q | Eis_2(N)^(1)) = sigma_0(N/Q)-1 if Q is a square
+// The Eis_2(N)^(1) contributes to the new subspace iff N is prime
+
+function TraceFormulaALEisOne(Q,N)
+    if N eq 1 then return 0; end if;
+    if Q eq 1 then return #Divisors(N) - 1; end if;
+    if not IsSquare(Q) then return -1; end if;
+    return #Divisors(N div Q) - 1;
+end function;
+
 // This is actually not true, as Eisenstein series do not satisfy the same 
 // direct sum decomposition
 function TraceFormulaALEisNew(N,k,Q)
-    return TraceFormulaALNew(N, k, Q, TraceFormulaALEis);
+    function trace_formula(N,k,Q)
+        trace := TraceFormulaALEis(N,k,Q);
+        if (k eq 2) then
+            trace -:= TraceFormulaALEisOne(Q,N);
+        end if;
+        return trace;
+    end function;
+    trace := TraceFormulaALNew(N, k, Q, trace_formula);
+    if (k eq 2) and IsPrime(N) then
+        if Q eq N then trace -:= 1; end if;
+        if Q eq 1 then trace +:= 1; end if;
+    end if;
+    return trace;
 end function;
 
 function TraceFormulaALCuspNew(N,k,Q)
@@ -361,3 +389,4 @@ function TraceALonMS(N, k, Q : New := false, Sub := "Cusp")
     end if;
     return trace;
 end function;
+
