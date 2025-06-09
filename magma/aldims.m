@@ -2,7 +2,7 @@
 // This file is for computing dimensions of AL spaces for a given sequence of Atkin-Lehner signs
 // for the old and new spaces, and for the corresponding Eisenstein subspaces.
 
-import "magma/Caching.m" : SetCache, GetCache, class_nos, traces;
+import "magma/Caching.m" : SetCache, GetCache, class_nos, traces_coh, traces_eis;
 
 // Since we are already constructing the space, we can do all the signs at once
 // Here sgns are +-1, check later whether we prefer 0,1
