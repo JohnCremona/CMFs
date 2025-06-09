@@ -519,7 +519,7 @@ end procedure;
 
 // write all data for N up to N_max and k up to k_max
 procedure write_ALdims_upto(N_min, N_max, k_max : OnlyPrimes := false)
-    fname := Sprintf("mf_aldims_N_%o_k_%o.m.txt",N_max, k_max);
+    fname := Sprintf("mf_aldims_N_%o_k_%o." cat (OnlyPrimes select "primes" else "") cat ".m.txt",N_max, k_max);
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     SetColumns(0);
     fp := Open(fname, "w");
