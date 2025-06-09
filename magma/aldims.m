@@ -1,8 +1,8 @@
-// usage: magma -b exitsignal:={true/false} N:={N} k:={k} aldims.m
+// usage: magma -b exitsignal:={true/false} aldims.m
 // This file is for computing dimensions of AL spaces for a given sequence of Atkin-Lehner signs
 // for the old and new spaces, and for the corresponding Eisenstein subspaces.
 
-import "magma/Caching.m" : SetCache, GetCache, class_nos;
+import "magma/Caching.m" : SetCache, GetCache, class_nos, traces;
 
 // Since we are already constructing the space, we can do all the signs at once
 // Here sgns are +-1, check later whether we prefer 0,1
@@ -306,9 +306,17 @@ end function;
 // (Also appears in Skoruppa-Zagier, but this way of stating the formula was easier to work with).
 function TraceFormulaALCusp(N, k, Q)
     assert k ge 2;
-    S1 := TraceFormulaALCohomology(N,k,Q);
+    b, S1 := GetCache(<N,k,Q>, traces_coh);
+    if not b then
+        S1 := TraceFormulaALCohomology(N,k,Q);
+        SetCache(<N,k,Q>, S1, traces_coh); 
+    end if;
     // -S1 is trace on E + S + Sbar
-    S2 := TraceFormulaALEis(N,k,Q);
+    b, S2 := GetCache(<N,k,Q>, traces_eis);
+    if not b then
+        S2 := TraceFormulaALEis(N,k,Q);
+        SetCache(<N,k,Q>, S2, traces_eis); 
+    end if;
     // print "S2 = ", S2;
     ret := -S1 / 2 - S2 / 2;
     // this yields trace on S
@@ -485,21 +493,62 @@ procedure test_many_ALdims(: Ns := [1..100], ks := [2..8 by 2])
     end for;
 end procedure;
 
-procedure write_ALdims_upto(N_max,k_max)
-    fname := Sprintf("mf_aldims_%o_%o.m.txt",N_max, k_max);
+procedure write_line(keys, N, k, fp)
+    al_dims := ALdimsTraceFormula(N,k);
+    data := [al_dims[key] : key in keys];
+    data_str := Sprintf("%o:%o:", N, k) cat Join([Sprintf("%o", x) : x in data], ":");
+    Puts(fp, data_str);
+    return;
+end procedure;
+
+// write all data for N up to N_max and k up to k_max
+procedure write_ALdims_upto(N_max,k_max : OnlyPrimes := false)
+    fname := Sprintf("mf_aldims_N_%o_k_%o.m.txt",N_max, k_max);
+    keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
+    SetColumns(0);
+    fp := Open(fname, "w");
+    Ns := OnlyPrimes select PrimesUpTo(N_max) else [1..N_max];
+    for N in Ns do
+        for k in [2..k_max by 2] do
+            write_line(keys, N, k, fp);
+        end for;
+    end for;
+    delete fp;
+    return;
+end procedure;
+
+// write all data for N k^2 up to Nk2 
+procedure write_ALdims_Nk2_upto(Nk2 : N_max := Nk2)
+    fname := Sprintf("mf_aldims_Nk2_%o_N_%o.m.txt",Nk2,N_max);
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     SetColumns(0);
     fp := Open(fname, "w");
     for N in [1..N_max] do
+        k2 := Nk2 div N;
+        k_max := Floor(Sqrt(k2));
         for k in [2..k_max by 2] do
-            al_dims := ALdimsTraceFormula(N,k);
-            data := [al_dims[key] : key in keys];
-            data_str := Sprintf("%o:%o:", N, k) cat Join([Sprintf("%o", x) : x in data], ":");
-            Puts(fp, data_str);
+            write_line(keys, N, k, fp);
         end for;
     end for;
+    delete fp;
     return;
 end procedure;
 
-write_ALdims_upto(eval(N),eval(k));
+// Following completeness pages on the LMFDB
+// 1. This covers the cases of Nk^2 <= 4000, chi trivial and Nk^2 <= 40000, N <= 24 and Nk^2 <= 40000, k > 1, dim S_k(N,chi)^new <= 100 and Nk^2 <= 40000
+// write_ALdims_Nk2_upto(40000);
+write_ALdims_Nk2_upto(1000);
+
+// 2. This covers N <= 10, Nk^2 <= 100000
+// write_ALdims_Nk2_upto(100000 : N_max := 10);
+
+// 3. This covers the case N <= 100, k <= 12
+write_ALdims_upto(100,12);
+
+// 4. k = 2, chi trivial N <= 50000
+// write_ALdims_upto(50000, 2);
+
+// 5. k = 2, chi trivial, N <= 10^6 prime
+// write_AL_dims_upto(10^6, 2 : OnlyPrimes);
+
 if assigned exitsignal and eval(exitsignal) then exit; end if;
