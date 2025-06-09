@@ -523,6 +523,7 @@ procedure write_ALdims_upto(N_min, N_max, k_max : OnlyPrimes := false)
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     SetColumns(0);
     fp := Open(fname, "w");
+    Puts(fp, "label:ALdims_debug:ALdims_old:ALdims_eis_new:ALdims_eis_old");
     Ns := OnlyPrimes select PrimesInInterval(N_min, N_max) else [N_min..N_max];
     for N in Ns do
         for k in [2..k_max by 2] do
@@ -539,6 +540,7 @@ procedure write_ALdims_Nk2_upto(Nk2_min, Nk2_max : N_min := 1, N_max := Nk2_max 
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     SetColumns(0);
     fp := Open(fname, "w");
+    Puts(fp, "label:ALdims_debug:ALdims_old:ALdims_eis_new:ALdims_eis_old");
     for N in [N_min..N_max] do
         k_min := 2*Ceiling(Sqrt(Nk2_min/N)/2);
         k_max := 2*Floor(Sqrt(Nk2_max/N)/2);
