@@ -511,7 +511,7 @@ end procedure;
 
 procedure write_line(keys, N, k, fp)
     al_dims := ALdimsTraceFormula(N,k);
-    data := [al_dims[key] : key in keys];
+    data := ["{" cat Join([Sprintf("%o", v) : v in al_dims[key]], ",") cat "}" : key in keys];
     data_str := Sprintf("%o.%o.a:", N, k) cat Join([Sprintf("%o", x) : x in data], ":");
     Puts(fp, data_str);
     return;
