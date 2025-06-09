@@ -518,12 +518,12 @@ procedure write_line(keys, N, k, fp)
 end procedure;
 
 // write all data for N up to N_max and k up to k_max
-procedure write_ALdims_upto(N_max,k_max : OnlyPrimes := false)
+procedure write_ALdims_upto(N_min, N_max, k_max : OnlyPrimes := false)
     fname := Sprintf("mf_aldims_N_%o_k_%o.m.txt",N_max, k_max);
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     SetColumns(0);
     fp := Open(fname, "w");
-    Ns := OnlyPrimes select PrimesUpTo(N_max) else [1..N_max];
+    Ns := OnlyPrimes select PrimesInInterval(N_min, N_max) else [N_min..N_max];
     for N in Ns do
         for k in [2..k_max by 2] do
             write_line(keys, N, k, fp);
@@ -553,22 +553,22 @@ end procedure;
 // Following completeness pages on the LMFDB
 // 1. This covers the cases of Nk^2 <= 4000, chi trivial and Nk^2 <= 40000, N <= 24 and Nk^2 <= 40000, k > 1, dim S_k(N,chi)^new <= 100 and Nk^2 <= 40000
 // This one takes several minutes on a single machine
-// write_ALdims_Nk2_upto(40000);
+// write_ALdims_Nk2_upto(1, 40000);
 
 // 2. This covers N <= 10, Nk^2 <= 100000
-// How long is this one?
-// write_ALdims_Nk2_upto(100000 : N_max := 10);
+// This one is relaly quick - less than 1s
+// write_ALdims_Nk2_upto(1, 100000 : N_max := 10);
 
 // 3. This covers the case N <= 100, k <= 12
-// This one is really quick
-// write_ALdims_upto(100,12);
+// This one is really quick - less than 1s
+// write_ALdims_upto(1, 100,12);
 
 // 4. k = 2, chi trivial N <= 50000
 // This one takes several minutes
-// write_ALdims_upto(50000, 2);
+// write_ALdims_upto(1, 50000, 2);
 
 // 5. k = 2, chi trivial, N <= 10^6 prime
 // This one is long. How long? 
-// write_AL_dims_upto(10^6, 2 : OnlyPrimes);
+// write_AL_dims_upto(1, 10^6, 2 : OnlyPrimes);
 
 // if assigned exitsignal and eval(exitsignal) then exit; end if;
