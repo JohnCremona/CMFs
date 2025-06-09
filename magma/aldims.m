@@ -1,3 +1,4 @@
+// usage: magma -b N:={N} k:={k} aldims.m
 // This file is for computing dimensions of AL spaces for a given sequence of Atkin-Lehner signs
 // for the old and new spaces, and for the corresponding Eisenstein subspaces.
 
@@ -342,12 +343,16 @@ function TraceFormulaALCuspOld(N,k,Q)
     return TraceFormulaALCusp(N,k,Q) - TraceFormulaALCuspNew(N, k, Q);
 end function;
 
-function ALdimsTraceFormula(N, k)
-    assert k ge 2; // Trace formula would not work for k=1
-    // We compute the redundant Ek, Sk and Mk for verification
-    keys := ["cusp_new", "cusp_old", "eis_new", "eis_old", "cusp", "eis", "full"];
+function ALdimsTraceFormula(N, k : Debug := true)
+    keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     trace_formulas := [TraceFormulaALCuspNew, TraceFormulaALCuspOld, TraceFormulaALEisNew, 
-                        TraceFormulaALEisOld, TraceFormulaALCusp, TraceFormulaALEis, TraceFormulaALFull];
+                            TraceFormulaALEisOld];
+    if Debug then
+        assert k ge 2; // Trace formula would not work for k=1
+        // We compute the redundant Ek, Sk and Mk for verification
+        keys cat:= ["cusp", "eis", "full"];
+        trace_formulas cat:= [TraceFormulaALCusp, TraceFormulaALEis, TraceFormulaALFull];
+    end if;
     dims := AssociativeArray();
     als := [p^Valuation(N,p) : p in PrimeDivisors(N)];
     for i->V in keys do
@@ -358,14 +363,16 @@ function ALdimsTraceFormula(N, k)
                     : sgns in CartesianPower([1,-1],#als)];
         dims[keys[i]] := V_dims;
     end for;
-    for i in [1..2^#PrimeDivisors(N)] do
-        assert dims["cusp_new"][i] + dims["cusp_old"][i] eq dims["cusp"][i];
-        assert dims["eis_new"][i] + dims["eis_old"][i] eq dims["eis"][i];
-        assert dims["cusp"][i] + dims["eis"][i] eq dims["full"][i];
-    end for;
-    Remove(~dims, "cusp");
-    Remove(~dims, "full");
-    Remove(~dims, "eis");
+    if Debug then
+        for i in [1..2^#PrimeDivisors(N)] do
+            assert dims["cusp_new"][i] + dims["cusp_old"][i] eq dims["cusp"][i];
+            assert dims["eis_new"][i] + dims["eis_old"][i] eq dims["eis"][i];
+            assert dims["cusp"][i] + dims["eis"][i] eq dims["full"][i];
+        end for;
+        Remove(~dims, "cusp");
+        Remove(~dims, "full");
+        Remove(~dims, "eis");
+    end if;
     return dims;
 end function;
 
@@ -410,3 +417,22 @@ procedure test_many_ALdims(: Ns := [1..100], ks := [2..8 by 2])
         end for;
     end for;
 end procedure;
+
+procedure write_ALdims_upto(N_max,k_max)
+    fname := Sprintf("mf_aldims_%o_%o.m.txt",N_max, k_max);
+    keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
+    SetColumns(0);
+    fp := Open(fname, "w");
+    for N in [1..N_max] do
+        for k in [2..k_max by 2] do
+            al_dims := ALdimsTraceFormula(N,k);
+            data := [al_dims[key] : key in keys];
+            data_str := Sprintf("%o:%o:", N, k) cat Join([Sprintf("%o", x) : x in data], ":");
+            Puts(fp, data_str);
+        end for;
+    end for;
+    return;
+end procedure;
+
+write_ALdims_upto(eval(N),eval(k));
+exit;
