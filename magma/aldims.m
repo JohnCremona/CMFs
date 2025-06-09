@@ -2,6 +2,8 @@
 // This file is for computing dimensions of AL spaces for a given sequence of Atkin-Lehner signs
 // for the old and new spaces, and for the corresponding Eisenstein subspaces.
 
+import "magma/Caching.m" : SetCache, GetCache, class_nos;
+
 // Since we are already constructing the space, we can do all the signs at once
 // Here sgns are +-1, check later whether we prefer 0,1
 function ALdimsModSym(N, k)
@@ -86,29 +88,41 @@ function ALdimsModSymTraces(N, k)
     return dims;
 end function;
 
-// For the trcae formula, using [Assaf, a note on the trace formula]
+// For the trace formula, using [Assaf, a note on the trace formula]
 
 function H(n)
-  if n lt 0 then
-    is_sq, u := IsSquare(-n);
-    return (is_sq select -u/2 else 0);
-  end if;
-  if n eq 0 then
-    return -1/12;
-  end if;
-  if n mod 4 in [1,2] then
-    return 0;
-  end if;
+// Returns the Kronecker-Hurwitz class number of n, as extended by Zagier, see [Popa, 2.2]
+    if n lt 0 then
+        is_sq, u := IsSquare(-n);
+        return (is_sq select -u/2 else 0);
+    end if;
+    if n eq 0 then
+        return -1/12;
+    end if;
+    if n mod 4 in [1,2] then
+        return 0;
+    end if;
 
-  ret := &+[ClassNumber(-n div d) : d in Divisors(n)
-		       | IsSquare(d) and (n div d) mod 4 in [0,3] ];
-  if IsSquare(n) and IsEven(n) then
-    ret -:= 1/2;
-  end if;
-  if n mod 3 eq 0 and IsSquare(n div 3) then
-    ret -:= 2/3;
-  end if;
-  return ret;
+    ret := 0;
+    for d in Divisors(n) do
+        if IsSquare(d) and  (n div d) mod 4 in [0,3] then
+            b, v := GetCache(-n div d, class_nos);
+            if not b then
+                v := ClassNumber(-n div d);
+                SetCache(-n div d, v, class_nos); 
+            end if;
+            ret +:= v;
+        end if;
+    end for;
+    // ret := &+[ClassNumber(-n div d) : d in Divisors(n)
+    // 		       | IsSquare(d) and (n div d) mod 4 in [0,3] ];
+    if IsSquare(n) and IsEven(n) then
+        ret -:= 1/2;
+    end if;
+    if n mod 3 eq 0 and IsSquare(n div 3) then
+        ret -:= 2/3;
+    end if;
+    return ret;
 end function;
 
 // Gegenbauer polynomials
@@ -181,10 +195,63 @@ function Lemma4_5(N, u, D)
     return ret;
 end function;
 
-// This can be made faster - look at the Shimura curve code
+function Sfast(N, u, t, n)
+// Returns |S_N(u,t,n)| as defined in [Popa, 4.1]
+// Recal S_N(u,t,n) = { \alpha in (Z/NZ)^{\times} : \alpha^2 - t \alpha + n = 0 (mod Nu)}
+// It is called Sfast because it does not produce the set, buut merely counts using straight-forward formulas coming from 
+// local-global principle and Hensel lifting.
+    fac := Factorization(N*u);
+    num_sols := 1;
+    y := t^2-4*n;
+    for f in fac do
+        p,e := Explode(f);
+        if (y eq 0) then
+	        num_sols *:= p^(e div 2);
+            continue;
+        end if;
+        e_y := Valuation(y, p);
+        y_0 := y div p^e_y;
+        // following [Assaf]
+        if p eq 2 then
+            if (e_y le e + 1) and IsOdd(e_y) then
+                return 0;
+            end if;
+        if (e le e_y-2) then
+            num_sols *:= 2^(e div 2);
+        elif (e_y le e - 1) and IsEven(e_y) then
+            num_sols *:= 2^(e_y div 2 - 1)*(1 + KroneckerSymbol(y_0, 2))*(1 + KroneckerSymbol(-1, y_0));
+        elif (e eq e_y) and IsEven(e_y) then
+            num_sols *:= 2^(e_y div 2 - 1)*(1 + KroneckerSymbol(-1, y_0));
+        elif (e eq e_y - 1) and IsEven(e_y) then
+            num_sols *:= 2^(e_y div 2 - 1);
+        else
+            Error("Not Implemented!");
+        end if;
+        else
+            if e_y lt e then
+                if IsOdd(e_y) then
+                    return 0;
+                end if;
+                is_sq := IsSquare(Integers(p)!y_0);
+                if not is_sq then
+                    return 0;
+                end if;
+                num_sols *:= p^(e_y div 2) * 2;
+            else
+                num_sols *:= p^(e div 2);  
+            end if;
+        end if;
+    end for;
+    return Integers()!num_sols div u;
+end function;
+
 function Cfast(N, u, t, n)
-    S := [x : x in [0..N-1] | (GCD(x,N) eq 1) and (((x^2 - t*x + n) mod N) eq 0)];
-    return #S * Lemma4_5(N, u, t^2 - 4*n);
+// Returns C_N(u,t,n), computed using [Popa, Lemma 4.5]
+    // S := [x : x in [0..N-1] | (GCD(x,N) eq 1) and (((x^2 - t*x + n) mod N) eq 0)];
+    // nS1 := #S(N, 1, t, n);
+    nS2 := Sfast(N, 1, t, n);
+    // assert nS1 eq nS2;
+    return nS2 * Lemma4_5(N, u, t^2 - 4*n);
 end function;
 
 function TraceFormulaALEis(N, k, Q)
@@ -343,7 +410,7 @@ function TraceFormulaALCuspOld(N,k,Q)
     return TraceFormulaALCusp(N,k,Q) - TraceFormulaALCuspNew(N, k, Q);
 end function;
 
-function ALdimsTraceFormula(N, k : Debug := true)
+function ALdimsTraceFormula(N, k : Debug := false)
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     trace_formulas := [TraceFormulaALCuspNew, TraceFormulaALCuspOld, TraceFormulaALEisNew, 
                             TraceFormulaALEisOld];
