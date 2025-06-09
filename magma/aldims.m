@@ -558,7 +558,7 @@ end procedure;
 // write_ALdims_Nk2_upto(1, 40000);
 
 // 2. This covers N <= 10, Nk^2 <= 100000
-// This one is relaly quick - less than 1s
+// This one is really quick - less than 1s
 // write_ALdims_Nk2_upto(1, 100000 : N_max := 10);
 
 // 3. This covers the case N <= 100, k <= 12
