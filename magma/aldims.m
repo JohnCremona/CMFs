@@ -1,8 +1,7 @@
-// usage: magma -b exitsignal:={true/false} aldims.m
 // This file is for computing dimensions of AL spaces for a given sequence of Atkin-Lehner signs
 // for the old and new spaces, and for the corresponding Eisenstein subspaces.
 
-import "magma/Caching.m" : SetCache, GetCache, class_nos, traces_coh, traces_eis;
+import "Caching.m" : SetCache, GetCache, class_nos, traces_coh, traces_eis, mu_star_mus, inv_weights;
 
 // Since we are already constructing the space, we can do all the signs at once
 // Here sgns are +-1, check later whether we prefer 0,1
@@ -358,11 +357,28 @@ function inverse_weights_of_traces(d, Q)
     g := GCD(d, Q);
     is_sq, m := IsSquare(g);
     if not is_sq then return 0; end if;
-    return MoebiusMu(m) * mu_star_mu(d div g);
+    dog := d div g;
+    b, msm := GetCache(dog, mu_star_mus);
+    if not b then
+        msm := mu_star_mu(dog);
+        SetCache(dog, msm, mu_star_mus); 
+    end if;
+    msm := mu_star_mu(d div g);
+    return MoebiusMu(m) * msm;
 end function;
 
 function TraceFormulaALNew(N, k, Q, orig_trace)
-    trace := &+[orig_trace(Nprime, k, GCD(Q, Nprime))*inverse_weights_of_traces(N div Nprime, Q) : Nprime in Divisors(N)];
+    wts := [];
+    for Nprime in Divisors(N) do
+        NoNp := N div Nprime;
+        b, wt := GetCache(<NoNp, Q>, inv_weights);
+        if not b then
+            wt := inverse_weights_of_traces(NoNp, Q);
+            SetCache(<NoNp, Q>, wt, inv_weights); 
+        end if;
+        Append(~wts, wt);
+    end for;
+    trace := &+[orig_trace(Nprime, k, GCD(Q, Nprime))*wts[j] : j->Nprime in Divisors(N)];
     return trace;
 end function;
 
@@ -518,15 +534,15 @@ procedure write_ALdims_upto(N_max,k_max : OnlyPrimes := false)
 end procedure;
 
 // write all data for N k^2 up to Nk2 
-procedure write_ALdims_Nk2_upto(Nk2 : N_max := Nk2)
-    fname := Sprintf("mf_aldims_Nk2_%o_N_%o.m.txt",Nk2,N_max);
+procedure write_ALdims_Nk2_upto(Nk2_min, Nk2_max : N_min := 1, N_max := Nk2_max div 4)
+    fname := Sprintf("mf_aldims_Nk2_%o_%o_N_%o_%o.m.txt",Nk2_min,Nk2_max,N_min,N_max);
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     SetColumns(0);
     fp := Open(fname, "w");
-    for N in [1..N_max] do
-        k2 := Nk2 div N;
-        k_max := Floor(Sqrt(k2));
-        for k in [2..k_max by 2] do
+    for N in [N_min..N_max] do
+        k_min := 2*Ceiling(Sqrt(Nk2_min/N)/2);
+        k_max := 2*Floor(Sqrt(Nk2_max/N)/2);
+        for k in [k_min..k_max by 2] do
             write_line(keys, N, k, fp);
         end for;
     end for;
@@ -536,19 +552,23 @@ end procedure;
 
 // Following completeness pages on the LMFDB
 // 1. This covers the cases of Nk^2 <= 4000, chi trivial and Nk^2 <= 40000, N <= 24 and Nk^2 <= 40000, k > 1, dim S_k(N,chi)^new <= 100 and Nk^2 <= 40000
+// This one takes several minutes on a single machine
 // write_ALdims_Nk2_upto(40000);
-write_ALdims_Nk2_upto(1000);
 
 // 2. This covers N <= 10, Nk^2 <= 100000
+// How long is this one?
 // write_ALdims_Nk2_upto(100000 : N_max := 10);
 
 // 3. This covers the case N <= 100, k <= 12
-write_ALdims_upto(100,12);
+// This one is really quick
+// write_ALdims_upto(100,12);
 
 // 4. k = 2, chi trivial N <= 50000
+// This one takes several minutes
 // write_ALdims_upto(50000, 2);
 
 // 5. k = 2, chi trivial, N <= 10^6 prime
+// This one is long. How long? 
 // write_AL_dims_upto(10^6, 2 : OnlyPrimes);
 
-if assigned exitsignal and eval(exitsignal) then exit; end if;
+// if assigned exitsignal and eval(exitsignal) then exit; end if;

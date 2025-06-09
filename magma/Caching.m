@@ -1,6 +1,8 @@
 class_nos := NewStore();
 traces_eis := NewStore();
 traces_coh := NewStore();
+mu_star_mus := NewStore();
+inv_weights := NewStore();
 
 intrinsic CacheClear(name)
 {Clear the internal cache}
