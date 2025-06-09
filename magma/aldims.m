@@ -523,7 +523,7 @@ procedure write_ALdims_upto(N_min, N_max, k_max : OnlyPrimes := false)
     keys := ["cusp_new", "cusp_old", "eis_new", "eis_old"];
     SetColumns(0);
     fp := Open(fname, "w");
-    Puts(fp, "label:ALdims_debug:ALdims_old:ALdims_eis_new:ALdims_eis_old\n");
+    Puts(fp, "label:ALdims_debug:ALdims_old:ALdims_eis_new:ALdims_eis_old");
     Puts(fp, "text:integer[]:integer[]:integer[]:integer[]\n");
     Ns := OnlyPrimes select PrimesInInterval(N_min, N_max) else [N_min..N_max];
     for N in Ns do
