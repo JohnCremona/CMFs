@@ -1,4 +1,4 @@
-// usage: magma -b N:={N} k:={k} aldims.m
+// usage: magma -b exitsignal:={true/false} N:={N} k:={k} aldims.m
 // This file is for computing dimensions of AL spaces for a given sequence of Atkin-Lehner signs
 // for the old and new spaces, and for the corresponding Eisenstein subspaces.
 
@@ -502,4 +502,4 @@ procedure write_ALdims_upto(N_max,k_max)
 end procedure;
 
 write_ALdims_upto(eval(N),eval(k));
-exit;
+if assigned exitsignal and eval(exitsignal) then exit; end if;
