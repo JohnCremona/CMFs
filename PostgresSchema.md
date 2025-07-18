@@ -109,7 +109,7 @@ eis_dim | integer | Q-dimension of the eisenstein subspace of `M_k(Gamma1(N))`
 eis_new_dim | integer | Q-dimension of the new eisenstein subspace of`M_k(Gamma1(N))`
 cusp_dim | integer | Q-dimension of the cuspidal space `S_k(Gamma1(N))`
 mf_dim | integer | Q-dimension of the full space`M_k(Gamma1(N))`
-mf_new_dim | integer | Q-dimension of the new subspace of `M_k(N,\chi)`
+mf_new_dim | integer | Q-dimension of the new subspace of `M_k(Gamma1(N))`
 trace_display | numeric[] | list of integer traces tr(a_2), tr(a_3), tr(a_5), tr(a_7), only set when dim > 0, not yet computed in every case.
 traces | numeric[] | integer coefficients a_n of the trace form (sum of all newforms) for n from 1 to 1000, only set when dim > 0, not yet computed in every case.
 dihedral_dim | integer | total dimension of dihedral Hecke orbits (only set for weight 1)
